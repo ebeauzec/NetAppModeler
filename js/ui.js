@@ -225,6 +225,7 @@ const stepNodes = document.querySelectorAll(".step-node");
 
 // --- Initialization ---
 function initApp() {
+  document.body.setAttribute("data-init", "true");
   setupUploadListeners();
   setupWizardListeners();
   setupModelerListeners();
@@ -1428,6 +1429,49 @@ function renderASUPAlertsTable(state) {
   });
 }
 
+// Helper to resolve storage ports with breakout support for NVMe (NS224) shelves
+function resolveStoragePorts(state, shelfType, totalShelvesCount) {
+  const profile = getPlatformProfile(state.version.model);
+  const pDef = profile.ports || { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], san: ["0e", "0f"], storage: ["0a", "0b"] };
+  const onboardStoragePorts = pDef.storage || ["0a", "0b"];
+  const hbaStoragePorts = [];
+  const addedCards = state.expansionCards || [];
+  addedCards.forEach(c => {
+    const cSpec = EXP_CARDS_CATALOG[c.cardKey];
+    if (cSpec && cSpec.type === "storage") {
+      const dynamicPorts = getCardPorts(c.cardKey, c.slot);
+      dynamicPorts.forEach(p => hbaStoragePorts.push(p));
+    }
+  });
+  let ports = [...onboardStoragePorts, ...hbaStoragePorts];
+
+  // Apply breakout logic for NVMe shelves (NS224) if ports are exhausted
+  const isNVMe = shelfType && shelfType.toLowerCase().includes("ns224");
+  const stackLimit = isNVMe ? 1 : 4;
+  const numStacks = Math.ceil(totalShelvesCount / stackLimit);
+  const portsNeeded = numStacks * 2;
+
+  if (isNVMe && ports.length < portsNeeded) {
+    const breakoutPorts = [];
+    const channelsCount = portsNeeded > ports.length * 2 ? 4 : 2;
+    for (let c = 1; c <= channelsCount; c++) {
+      ports.forEach(p => {
+        const lowerPort = p.toLowerCase();
+        const isBreakoutCapable = lowerPort.startsWith("e") || lowerPort.startsWith("0");
+        if (isBreakoutCapable) {
+          breakoutPorts.push(`${p}.${c}`);
+        } else {
+          if (c === 1) {
+            breakoutPorts.push(p);
+          }
+        }
+      });
+    }
+    return breakoutPorts;
+  }
+  return ports;
+}
+
 // Draw interactive SVG cabling diagram with MetroCluster support
 function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
   const container = document.getElementById(targetFrameId);
@@ -1440,9 +1484,9 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
   
   const width = isMetroCluster ? 750 : 650;
 
-  // Group shelves into stacks based on loop limits (2 for NVMe, 4 for SAS)
+  // Group shelves into stacks based on loop limits (1 for NVMe, 4 for SAS)
   const shelfType = (totalShelvesCount > 0) ? (proposedShelvesArray.length > 0 ? proposedShelvesArray[0].model.toLowerCase() : state.shelves[0].model.toLowerCase()) : "ns224";
-  const stackLimit = shelfType.includes("ns224") ? 2 : 4;
+  const stackLimit = shelfType.includes("ns224") ? 1 : 4;
   const stacks = [];
   let currentStack = [];
   
@@ -1482,19 +1526,9 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
   const profile = getPlatformProfile(state.version.model);
   const pDef = profile.ports || { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], san: ["0e", "0f"], storage: ["0a", "0b"] };
 
-  // Gather all available storage ports (onboard + expansion cards)
-  const onboardStoragePorts = pDef.storage || ["0a", "0b"];
-  const hbaStoragePorts = [];
-  const addedCards = state.expansionCards || [];
-  addedCards.forEach(c => {
-    const cSpec = EXP_CARDS_CATALOG[c.cardKey];
-    if (cSpec && cSpec.type === "storage") {
-      const dynamicPorts = getCardPorts(c.cardKey, c.slot);
-      dynamicPorts.forEach(p => hbaStoragePorts.push(p));
-    }
-  });
-  const allStoragePortsA = [...onboardStoragePorts, ...hbaStoragePorts];
-  const allStoragePortsB = [...onboardStoragePorts, ...hbaStoragePorts];
+  // Gather all available storage ports with breakout support
+  const allStoragePortsA = resolveStoragePorts(state, shelfType, totalShelvesCount);
+  const allStoragePortsB = [...allStoragePortsA];
 
   if (isMetroCluster) {
     // --- METROCLUSTER DUAL SITE DRAWING ---
@@ -3665,21 +3699,8 @@ function generateCablingTableHtml(state) {
   
   const shelfType = state.shelves[0].model.toLowerCase();
   const cableType = shelfType.includes("ns224") ? "100GbE copper/optical (RoCE)" : "12Gb SAS (mini-SAS HD)";
-  const profile = getPlatformProfile(state.version.model);
-  const pDef = profile.ports || { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], san: ["0e", "0f"], storage: ["0a", "0b"] };
-  const onboardStoragePorts = pDef.storage || ["0a", "0b"];
-  const hbaStoragePorts = [];
-  const addedCards = state.expansionCards || [];
-  addedCards.forEach(c => {
-    const cSpec = EXP_CARDS_CATALOG[c.cardKey];
-    if (cSpec && cSpec.type === "storage") {
-      const dynamicPorts = getCardPorts(c.cardKey, c.slot);
-      dynamicPorts.forEach(p => hbaStoragePorts.push(p));
-    }
-  });
-  const allStoragePortsA = [...onboardStoragePorts, ...hbaStoragePorts];
-
-  const stackLimit = shelfType.includes("ns224") ? 2 : 4;
+  const allStoragePortsA = resolveStoragePorts(state, shelfType, state.shelves.length);
+  const stackLimit = shelfType.includes("ns224") ? 1 : 4;
   
   // Group shelves into stacks
   const stacks = [];
@@ -4376,23 +4397,11 @@ function generateReport() {
 
   // Step 6: Hardware shelves
 // Gather all available storage ports for LLD commands
-    const profile = getPlatformProfile(currentState.version.model);
-    const pDef = profile.ports || { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], san: ["0e", "0f"], storage: ["0a", "0b"] };
-    const onboardStoragePorts = pDef.storage || ["0a", "0b"];
-    const hbaStoragePorts = [];
-    const addedCards = currentState.expansionCards || [];
-    addedCards.forEach(c => {
-      const cSpec = EXP_CARDS_CATALOG[c.cardKey];
-      if (cSpec && cSpec.type === "storage") {
-        const dynamicPorts = getCardPorts(c.cardKey, c.slot);
-        dynamicPorts.forEach(p => hbaStoragePorts.push(p));
-      }
-    });
-    const allStoragePortsA = [...onboardStoragePorts, ...hbaStoragePorts];
+    const allStoragePortsA = resolveStoragePorts(currentState, shelfType, shelfCount);
 
     if (shelfType !== "none") {
       const spec = SHELF_SPEC_MAP[shelfType];
-      const stackLimit = shelfType.includes("ns224") ? 2 : 4;
+      const stackLimit = shelfType.includes("ns224") ? 1 : 4;
       const numStacks = Math.ceil(shelfCount / stackLimit);
       
       let lldCablingDesc = `Physically mount the ${ruAdded}U shelf capacity stacks in cabinet rack. Run cabling loops according to NetApp Multipath HA best practices:<br>`;
