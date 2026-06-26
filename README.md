@@ -1,1 +1,94 @@
-# NetAppModeler
+# NetApp AutoSupport Analyzer & Modeler (v2.0)
+
+A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
+
+This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations, sparing, licensing, cabling, firmware, and ONTAP lifecycle support status. It also includes an interactive sizing modeler to plan storage aggregates and forecast capacity growth.
+
+---
+
+## 🚀 Key Features
+
+* **Resilient ASUP Parser:** Drag-and-drop or import raw NetApp AutoSupport text logs. The parser extracts cluster models, ONTAP versions, node IDs, shelf structures, disk inventories, spares, aggregates, and license keys.
+* **Best Practice Audit Engine:** Evaluates cluster compliance against NetApp storage design guidelines:
+  * **ONTAP Lifecycle Support:** Checks if your ONTAP release is in active support, limited support, or has reached End of Support.
+  * **Cabling Integrity:** Identifies single-path HA cabling risks (Single Points of Failure) and reports multipath HA compliance.
+  * **Aggregate Sizing & Capacity Limits:** Audits active aggregate sizes against system maximums and warns at 80%/90% capacity thresholds.
+  * **Disk Sparing Compliance:** Verifies that correct spare counts are maintained per loop/pool.
+  * **License Expirations:** Audits installed software features for expired or missing entitlements.
+* **Interactive Sizing Modeler:** A scenario planning tool to model:
+  * Node additions and platform upgrades (e.g., FAS to All-Flash AFF).
+  * Aggregate configurations (RAID group sizes, disk layout, RAID-DP/RAID-TEC).
+  * Storage efficiency gains (Deduplication, Compression, Pattern Detection) with real-time usable capacity forecasting.
+* **100% Client-Side & Secure:** All parsing and calculations run locally in the browser. No data is sent to external servers, making it compliant with strict enterprise data privacy requirements.
+* **Single-File Portability:** Compile the entire project (HTML, CSS, JS, libraries) into a single, offline-executable HTML bundle for field use in dark sites.
+
+---
+
+## 🛠️ Architecture & Project Structure
+
+The project is built as a modular client-side web application using vanilla HTML5, CSS3 variables (Dark-Mode/Glassmorphism theme), and ES6 modules.
+
+```
+NetAppModeler/
+│
+├── index.html                  # Main application structure & wizards
+├── app.css                     # Premium Dark-Mode / Glassmorphic UI stylesheet
+├── build_standalone.py         # Python build script to compile the offline bundle
+├── standalone_netapp_modeler.html # Compiled single-file offline distribution
+├── README.md                   # Project documentation
+├── .gitignore                  # Git ignore rules
+│
+└── js/                         # JavaScript application logic
+    ├── parser.js               # AutoSupport text parser engine
+    ├── bestPractices.js        # Best practice audit rules engine
+    ├── compatibility.js        # NetApp platform registry, port layouts & support boundaries
+    ├── ui.js                   # Wizard workflow controller and interactive sizing UI
+    └── jszip.min.js            # Library for compressing/decompressing configurations
+```
+
+---
+
+## 💻 How to Run Locally
+
+### Option A: Development Mode (For Code Edits)
+To work on the modular source files, serve the project using any local HTTP server (to resolve ES6 module CORS policies):
+
+**Using Python:**
+```bash
+python -m http.server 8000
+```
+Then navigate to `http://localhost:8000` in your web browser.
+
+**Using VS Code:**
+Install the **Live Server** extension, open the directory, and click **Go Live** in the status bar.
+
+---
+
+## 📦 How to Compile the Standalone Offline Bundle
+
+For field deployments and dark sites (disconnected environments), you can bundle all modular HTML, CSS, and JS files into a single, self-contained HTML file.
+
+Run the build script using Python:
+```bash
+python build_standalone.py
+```
+This compiles the application and outputs the file to:
+* **`standalone_netapp_modeler.html`**
+
+You can double-click this file to open and run the entire app in any browser without needing a local web server or internet connection.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please ensure that:
+1. Changes to CSS styles are done within `app.css` using the established design system variables.
+2. Changes to compatibility maps, disk catalogs, or port slot details are updated in `js/compatibility.js`.
+3. New audit rules are added inside `js/bestPractices.js` following the standard rule format.
+4. Prior to committing code, compile the standalone bundle (`python build_standalone.py`) to verify it compiles successfully.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
