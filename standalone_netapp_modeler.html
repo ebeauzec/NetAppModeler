@@ -4310,14 +4310,20 @@ const resetBtn = document.getElementById("reset-btn");
 const stepNodes = document.querySelectorAll(".step-node");
 
 // --- Initialization ---
-document.addEventListener("DOMContentLoaded", () => {
+function initApp() {
   setupUploadListeners();
   setupWizardListeners();
   setupModelerListeners();
   populateManualPlatformDropdown();
   setupMetroClusterCheckbox();
   resetState();
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
 
 function setupMetroClusterCheckbox() {
   const checkbox = document.getElementById("deploy-metrocluster");
