@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetApp AutoSupport Analyzer & Modeler</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand-title">
+        <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
+          <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
+        </svg>
+        NetApp ASUP Analyzer & Modeler <span>v2.0</span>
+      </div>
+      <div class="no-print">
+        <button id="reset-btn" class="btn-secondary" style="padding: 8px 16px;">Reset Tool</button>
+      </div>
+    </header>
+
+    <!-- Wizard Steps Indicator -->
+    <div class="wizard-steps no-print">
+      <div class="step-node active" data-step="1">
+        <div class="step-circle">1</div>
+        <div class="step-label">Import</div>
+      </div>
+      <div class="step-node" data-step="2">
+        <div class="step-circle">2</div>
+        <div class="step-label">Audit</div>
+      </div>
+      <div class="step-node" data-step="3">
+        <div class="step-circle">3</div>
+        <div class="step-label">Upgrades</div>
+      </div>
+      <div class="step-node" data-step="4">
+        <div class="step-circle">4</div>
+        <div class="step-label">Capacity</div>
+      </div>
+      <div class="step-node" data-step="5">
+        <div class="step-circle">5</div>
+        <div class="step-label">Compare</div>
+      </div>
+      <div class="step-node" data-step="6">
+        <div class="step-circle">6</div>
+        <div class="step-label">Report</div>
+      </div>
+    </div>
+
+    <!-- Main Panels Container -->
+    <main id="main-content">
+      
+      <!-- STEP 1: IMPORT PANEL -->
+      <section id="step1" class="wizard-panel glass-panel">
+        <div class="upload-container">
+          <div style="text-align: center; max-width: 600px; margin-bottom: 1rem;">
+            <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Import AutoSupport Message Bundle</h2>
+            <p style="color: var(--color-muted); font-size: 0.95rem;">
+              Upload an ONTAP AutoSupport message bundle (ZIP/GZ format) or drop individual configuration files (`VERSION`, `SYSCONFIG-A`, `SYSCONFIG-R`, `LICENSE`, `NETPORT`).
+            </p>
+          </div>
+          
+          <div id="drop-zone" class="drop-zone">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <p>Drag and drop ASUP zip or files here</p>
+            <span>or click to browse from your computer</span>
+            <input type="file" id="file-input" multiple class="hidden">
+          </div>
+
+          <div class="demo-selector">
+            <div class="demo-title">Or choose a high-fidelity Demo System Profile:</div>
+            <div class="demo-buttons">
+              <button id="demo-fas8300-btn" class="btn-secondary">
+                <strong>FAS8300 Cluster Profile</strong>
+                <span class="btn-desc">ONTAP 9.7, Mixed SAS/SSD shelves, single-path warnings, expired licenses.</span>
+              </button>
+              <button id="demo-affa400-btn" class="btn-secondary">
+                <strong>AFF A400 Cluster Profile</strong>
+                <span class="btn-desc">ONTAP 9.9.1, NS224 NVMe shelf, 86% aggregate capacity limit warning.</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="manual-selector" style="margin-top: 1.5rem; width: 100%; max-width: 650px; border-top: 1px dashed var(--border-color); padding-top: 1.5rem; text-align: center;">
+            <div class="demo-title" style="margin-bottom: 0.5rem; font-weight:600;">Or manually select a NetApp Platform to model:</div>
+            
+            <!-- Dynamic Sizing Inputs: Usable Capacity & Node Count -->
+            <div style="display: flex; gap: 15px; align-items: center; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="manual-capacity" style="font-size: 0.85rem; color: var(--color-muted); font-weight: 500;">Required Usable Capacity:</label>
+                <input type="number" id="manual-capacity" class="form-control" value="50" min="5" max="5000" style="max-width: 90px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-md);">
+                <span style="font-size: 0.85rem; color: var(--color-muted);">TB</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="manual-nodes-select" style="font-size: 0.85rem; color: var(--color-muted); font-weight: 500;">Number of Nodes:</label>
+                <select id="manual-nodes-select" class="form-control" style="max-width: 110px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-md);">
+                  <option value="2">2 Nodes</option>
+                  <option value="4">4 Nodes</option>
+                  <option value="8">8 Nodes</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap;">
+              <select id="manual-platform-select" class="form-control" style="max-width: 250px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-md);">
+                <!-- Populated dynamically by UI.js -->
+              </select>
+              <select id="manual-ontap-select" class="form-control" style="max-width: 180px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-md);">
+                <!-- Populated dynamically by UI.js -->
+              </select>
+              <button id="load-manual-platform-btn" class="btn-secondary" style="padding: 10px 20px; white-space: nowrap;">Initialize (Audit Demo)</button>
+              <button id="load-greenfield-btn" class="btn-primary" style="padding: 10px 20px; white-space: nowrap;">Initialize Greenfield (Compliant)</button>
+            </div>
+            
+            <!-- MetroCluster DR Selection Checkboxes -->
+            <div style="display: flex; gap: 15px; align-items: center; justify-content: center; font-size: 0.85rem; color: var(--color-muted); margin-bottom: 0.5rem;">
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" id="deploy-metrocluster" style="cursor: pointer;">
+                Deploy as MetroCluster DR Configuration
+              </label>
+              <select id="metrocluster-type" class="form-control" style="max-width: 160px; background: rgba(0,0,0,0.4); color: #fff; padding: 4px 8px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); display: none;">
+                <option value="ip">MetroCluster IP</option>
+                <option value="fc">MetroCluster FC</option>
+              </select>
+            </div>
+
+            <!-- Cluster Interconnect Switch Configuration -->
+            <div style="display: flex; gap: 15px; align-items: center; justify-content: center; font-size: 0.85rem; color: var(--color-muted); flex-wrap: wrap;">
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" id="use-cluster-switches" style="cursor: pointer;">
+                Configure Dedicated Cluster Interconnect Switches
+              </label>
+              <select id="cluster-switch-model" class="form-control" style="max-width: 220px; background: rgba(0,0,0,0.4); color: #fff; padding: 4px 8px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); display: none;">
+                <!-- Dynamically populated -->
+              </select>
+              <select id="cluster-switch-fw" class="form-control" style="max-width: 160px; background: rgba(0,0,0,0.4); color: #fff; padding: 4px 8px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); display: none;">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 2: AUDIT & CURRENT VIEW PANEL -->
+      <section id="step2" class="wizard-panel glass-panel hidden">
+        <div class="dashboard-grid">
+          
+          <!-- Visual Cluster Diagram -->
+          <div>
+            <h2 style="font-size: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <svg style="width: 20px; height: 20px; fill: var(--color-primary);" viewBox="0 0 24 24">
+                <path d="M12,3C7.58,3 4,4.79 4,7C4,9.21 7.58,11 12,11C16.42,11 20,9.21 20,7C20,4.79 16.42,3 12,3M4,9V12C4,14.21 7.58,16 12,16C16.42,16 20,14.21 20,12V9C20,11.21 16.42,13 12,13C7.58,13 4,11.21 4,9M4,14V17C4,19.21 7.58,21 12,21C16.42,21 20,19.21 20,17V14C20,16.21 16.42,18 12,18C7.58,18 4,16.21 4,14Z" />
+              </svg>
+              Current Storage Deployment Topology
+            </h2>
+            
+            <div class="system-details">
+              <div class="detail-card">
+                <div class="detail-label">Controller Model</div>
+                <div id="cur-model" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">ONTAP Software</div>
+                <div id="cur-version" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Cluster Serial</div>
+                <div id="cur-serial" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Controllers (Nodes)</div>
+                <div id="cur-nodes" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Total Raw Capacity</div>
+                <div id="cur-raw" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Shelves & Drives</div>
+                <div id="cur-shelves-drives" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Active Licenses</div>
+                <div id="cur-lics" class="detail-value" style="font-size: 0.85rem; line-height: 1.3;">-</div>
+              </div>
+            </div>
+
+            <!-- MetroCluster Site Partitioning Card -->
+            <div id="mc-partitioning-card" class="detail-card hidden" style="margin-top: 1rem; padding: 1.25rem; text-align: left; width: 100%; border: 1px solid rgba(59, 130, 246, 0.2); background: rgba(59, 130, 246, 0.05); border-radius: var(--radius-lg); margin-bottom: 1rem;">
+              <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 0.75rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                <svg style="width: 18px; height: 18px; fill: var(--color-info);" viewBox="0 0 24 24">
+                  <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
+                </svg>
+                MetroCluster DR Site Partitioning
+              </h3>
+              <p style="font-size: 0.82rem; color: var(--color-muted); margin-bottom: 1rem; line-height: 1.4;">
+                Active disaster recovery site node layout mapping. Nodes are geographically separated across local and partner remote sites with active replication.
+              </p>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <!-- Site A (Local) -->
+                <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-md); padding: 0.75rem 1rem;">
+                  <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--color-primary); font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); display: inline-block;"></span>
+                    Local Site (Site-A)
+                  </h4>
+                  <ul id="mc-site-a-nodes" style="margin: 0; padding-left: 1.25rem; font-size: 0.82rem; line-height: 1.5; color: var(--color-text);">
+                    <!-- Injected dynamically -->
+                  </ul>
+                </div>
+                <!-- Site B (Remote) -->
+                <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-md); padding: 0.75rem 1rem;">
+                  <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--color-info); font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-info); display: inline-block;"></span>
+                    Remote Partner Site (Site-B)
+                  </h4>
+                  <ul id="mc-site-b-nodes" style="margin: 0; padding-left: 1.25rem; font-size: 0.82rem; line-height: 1.5; color: var(--color-text);">
+                    <!-- Injected dynamically -->
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cable Topology Graph -->
+            <div class="visualizer-container" style="min-height: 480px; height: auto; display:flex; align-items:center; justify-content:center;">
+              <div id="visualizer-svg-frame" style="width:100%;">
+                <!-- SVG injected dynamically by UI.js -->
+              </div>
+            </div>
+            <div style="text-align: right; margin-top: -0.5rem; margin-bottom: 0.5rem;">
+              <button id="download-cabling-btn" class="btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24">
+                  <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+                </svg>
+                Download Diagram (SVG)
+              </button>
+            </div>
+            <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--color-muted); display: flex; gap: 1.5rem; justify-content: center;">
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; border-radius: 2px; background: #06b6d4; display: inline-block;"></span> NVMe SSD</span>
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; border-radius: 2px; background: #3b82f6; display: inline-block;"></span> SAS SSD</span>
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; border-radius: 2px; background: #f59e0b; display: inline-block;"></span> SAS HDD</span>
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; border-radius: 2px; background: #10b981; display: inline-block;"></span> Spare Disk</span>
+            </div>
+
+            <!-- Port Validation Table -->
+            <div id="port-audit-card" class="detail-card" style="margin-top: 1.5rem; padding: 1rem; text-align: left; width: 100%; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2);">
+              <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 0.75rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                <svg style="width: 18px; height: 18px; fill: var(--color-info);" viewBox="0 0 24 24">
+                  <path d="M7,15H9V17H7V15M11,15H13V17H11V15M15,15H17V17H15V15M19,15H21V17H19V15M3,15H5V17H3V15M3,19H5V21H3V19M7,19H9V21H7V19M11,19H13V21H11V19M15,19H17V21H15V19M19,19H21V21H19V19M3,11H5V13H3V11M7,11H9V13H7V11M11,11H13V13H11V11M15,11H17V13H15V11M19,11H21V13H19V11M3,7H5V9H3V7M7,7H9V9H7V7M11,7H13V9H11V7M15,7H17V9H15V7M19,7H21V9H19V7M3,3H5V5H3V3M7,3H9V5H7V3M11,3H13V5H11V3M15,3H17V5H15V3M19,3H21V5H19V3Z" />
+                </svg>
+                Physical Port & Connectivity Status
+              </h3>
+              <div style="overflow-x: auto;">
+                <table class="compare-table" style="width: 100%; font-size: 0.82rem; margin-bottom: 0;">
+                  <thead>
+                    <tr>
+                      <th>Node</th>
+                      <th>Port</th>
+                      <th>Operational Role</th>
+                      <th>Speed</th>
+                      <th>Status</th>
+                      <th>Best-Practice Recommendation</th>
+                    </tr>
+                  </thead>
+                  <tbody id="port-audit-table-body">
+                    <!-- Injected dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Storage Shelves & Disks Inventory Card -->
+            <div id="storage-inventory-card" class="detail-card" style="margin-top: 1.5rem; padding: 1.25rem; text-align: left; width: 100%; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); border-radius: var(--radius-lg);">
+              <h3 style="font-size: 1.15rem; margin-top: 0; margin-bottom: 0.75rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                <svg style="width: 20px; height: 20px; fill: var(--color-primary);" viewBox="0 0 24 24">
+                  <path d="M4,4H20A2,2 0 0,1 22,6V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4M4,6V18H20V6H4M6,9H18V11H6V9M6,13H18V15H6V13Z" />
+                </svg>
+                Physical Storage & Disk Drive Inventory
+              </h3>
+              <p style="font-size: 0.82rem; color: var(--color-muted); margin-bottom: 1rem; line-height: 1.4;">
+                Active storage tiers, shelf cabling types, drive media speeds, capacity sizes, and spares assigned to local nodes.
+              </p>
+              <div id="storage-inventory-content">
+                <!-- Injected dynamically -->
+              </div>
+            </div>
+
+            <!-- Logical Storage & Aggregates Audit Card -->
+            <div id="aggregate-inventory-card" class="detail-card" style="margin-top: 1.5rem; padding: 1.25rem; text-align: left; width: 100%; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); border-radius: var(--radius-lg);">
+              <h3 style="font-size: 1.15rem; margin-top: 0; margin-bottom: 0.75rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                <svg style="width: 20px; height: 20px; fill: var(--color-info);" viewBox="0 0 24 24">
+                  <path d="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M15,12A3,3 0 1,1 12,9A3,3 0 0,1 15,12Z" />
+                </svg>
+                Logical Storage & Aggregates Audit
+              </h3>
+              <p style="font-size: 0.82rem; color: var(--color-muted); margin-bottom: 1rem; line-height: 1.4;">
+                Active RAID aggregates, disk assignments, and storage utilization parsed from the system configuration.
+              </p>
+              <div id="aggregate-inventory-content">
+                <!-- Injected dynamically -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Best Practice Assessment -->
+          <div>
+            <div class="audit-header">
+              <h2 style="font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                <svg style="width: 20px; height: 20px; fill: var(--color-warning);" viewBox="0 0 24 24">
+                  <path d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M12 20C7.6 20 4 16.4 4 12S7.6 4 12 4 20 7.6 20 12 16.4 20 12 20M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+                </svg>
+                Best Practice Audit
+              </h2>
+              <div class="compliance-meter">
+                <div class="detail-label" style="margin-bottom: 0;">Compliance Score</div>
+                <div id="compliance-score" class="meter-circle">-</div>
+              </div>
+            </div>
+
+            <div id="audit-list" class="audit-list">
+              <!-- Instantiated dynamically -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ASUP Alerts & Event Messages Section -->
+        <div id="asup-alerts-card" class="detail-card" style="margin-top: 1.5rem; padding: 1.25rem; text-align: left; width: 100%; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); border-radius: var(--radius-lg);">
+          <h3 style="font-size: 1.15rem; margin-top: 0; margin-bottom: 1rem; color: #fff; display: flex; align-items: center; justify-content: space-between;">
+            <span style="display: flex; align-items: center; gap: 0.5rem;">
+              <svg style="width: 20px; height: 20px; fill: var(--color-danger);" viewBox="0 0 24 24">
+                <path d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M12 20C7.6 20 4 16.4 4 12S7.6 4 12 4 20 7.6 20 12 16.4 20 12 20M11 15H13V17H11V15M11 7H13V13H11V7Z" />
+              </svg>
+              AutoSupport Bundle Alerts & Event Messages
+            </span>
+            <span id="asup-alerts-count-badge" class="status-badge warning" style="padding: 2px 8px; font-size: 0.75rem;">0 Alerts</span>
+          </h3>
+          <div style="overflow-x: auto;">
+            <table class="compare-table" style="width: 100%; font-size: 0.82rem; margin-bottom: 0;">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">Severity</th>
+                  <th style="width: 120px;">Component</th>
+                  <th>Issue / Alert Message</th>
+                  <th style="width: 110px;">Source File</th>
+                  <th>Recommended Resolution Path</th>
+                </tr>
+              </thead>
+              <tbody id="asup-alerts-table-body">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 3: SOFTWARE & LICENSING UPGRADES -->
+      <section id="step3" class="wizard-panel glass-panel hidden">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <svg style="width: 24px; height: 24px; fill: var(--color-primary);" viewBox="0 0 24 24">
+            <path d="M12,15.5A2.5,2.5 0 0,1 9.5,13A2.5,2.5 0 0,1 12,10.5A2.5,2.5 0 0,1 14.5,13A2.5,2.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.35 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.47,5.34 14.86,5.08L14.48,2.42C14.44,2.18 14.24,2 14,2H10C9.76,2 9.56,2.18 9.52,2.42L9.14,5.08C8.53,5.34 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11.03C4.53,11.35 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.04 4.95,18.95L7.44,17.95C7.96,18.34 8.53,18.66 9.14,18.92L9.52,21.58C9.56,21.82 9.76,22 10,22H14C14.24,22 14.44,21.82 14.48,21.58L14.86,18.92C15.47,18.66 16.04,18.34 16.56,17.95L19.05,18.95C19.27,19.04 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+          </svg>
+          Model Software & License Modifications
+        </h2>
+
+        <div class="form-grid">
+          
+          <!-- Inputs Column -->
+          <div>
+            <div class="form-group">
+              <label for="target-ontap">Target ONTAP Operating System Version</label>
+              <select id="target-ontap" class="form-control">
+                <!-- Injected dynamically -->
+              </select>
+              <div id="upgrade-timeline-box" class="hidden">
+                <div class="detail-label" style="margin-top: 1rem; margin-bottom: 0.25rem;">Calculated Upgrade Hops</div>
+                <div id="hop-timeline" class="hop-timeline">
+                  <!-- Timeline elements injected -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Hop specific risk considerations cards -->
+            <div id="hop-considerations-box" class="hidden" style="margin-top: 1.5rem;">
+              <div class="detail-label" style="margin-bottom: 0.5rem; color: var(--color-warning);">Upgrade Hop Risks & Technical Checklists</div>
+              <div id="hop-considerations-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <!-- Injected dynamically by UI.js -->
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 2rem;">
+              <label>Remediation Operations</label>
+              
+              <label id="firmware-card" class="checkbox-card">
+                <input type="checkbox" id="model-upgrade-firmware" checked>
+                <div class="checkbox-content">
+                  <h4>Upgrade Controller & Storage Shelf Firmware</h4>
+                  <p>Updates system shelf bios and loop controllers to latest qualified baselines.</p>
+                </div>
+              </label>
+
+              <label id="cabling-card" class="checkbox-card">
+                <input type="checkbox" id="model-fix-cabling" checked>
+                <div class="checkbox-content">
+                  <h4>Remediate Cabling to Multipath HA</h4>
+                  <p>Corrects single-path loop wiring errors to restore dual path redundancy.</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Licenses Entitlements Column -->
+          <div>
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--color-muted);">Entitlement & Protocol Licenses</h3>
+            <div id="license-list-form" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- STEP 4: CAPACITY & HARDWARE EXPANSION MODELING -->
+      <section id="step4" class="wizard-panel glass-panel hidden">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <svg style="width: 24px; height: 24px; fill: var(--color-primary);" viewBox="0 0 24 24">
+            <path d="M4,4H20A2,2 0 0,1 22,6V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4M4,6V18H20V6H4M6,9H18V11H6V9M6,13H18V15H6V13Z" />
+          </svg>
+          Model Storage Capacity & Hardware Expansion
+        </h2>
+
+        <div class="form-grid">
+          
+          <!-- Shelf & PCIe Selection inputs -->
+          <div>
+            <div class="form-group">
+              <label for="shelf-type" style="font-weight: 600;">Add Disk Shelf Expansion Stack</label>
+              <select id="shelf-type" class="form-control">
+                <option value="none">-- No Shelf Added --</option>
+                <option value="ns224">NS224 (2U, NVMe SSD Disk Shelf)</option>
+                <option value="ds224c">DS224C (2U, 12G SAS SFF SSD/HDD Shelf)</option>
+                <option value="ds212c">DS212C (2U, 12G SAS LFF HDD Shelf)</option>
+                <option value="ds460c">DS460C (4U, 12G High-Density SAS HDD Shelf)</option>
+                <option value="ds2246">DS2246 (Legacy 2U, 6G SAS HDD Shelf - EOL)</option>
+              </select>
+            </div>
+
+            <div id="shelf-expansion-details" class="hidden">
+              <div class="form-group">
+                <label for="disk-size">Disk Drive Media & Sizing</label>
+                <select id="disk-size" class="form-control">
+                  <!-- Dynamically populated based on shelf -->
+                </select>
+              </div>
+
+              <!-- Shelf Count Input (NEW) -->
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="shelf-count-input" style="font-weight: 600; margin-bottom: 0.35rem; display: block;">Quantity of Disk Shelves to Add</label>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <input type="number" id="shelf-count-input" class="form-control" min="1" max="8" value="1" style="flex: 1; min-width: 60px;">
+                  <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; font-size: 0.85rem; color: var(--color-text); margin: 0; user-select: none;">
+                    <input type="checkbox" id="fully-populate-checkbox" checked style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
+                    Fully Populate Shelves
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="disk-count" style="font-weight: 600;">Total Quantity of Disk Drives to Insert</label>
+                <input type="number" id="disk-count" class="form-control" min="2" max="192" value="24">
+                <span id="disk-count-hint" style="font-size: 0.8rem; color: var(--color-muted); display: block; margin-top: 4px;">-</span>
+              </div>
+
+              <div class="form-group">
+                <label for="disk-allocation">Drive Assignment Strategy</label>
+                <select id="disk-allocation" class="form-control">
+                  <option value="spare">Add as Spare Reserves (No capacity change)</option>
+                  <option value="expand">Expand Existing Active Aggregate</option>
+                  <option value="new">Create New RAID-DP Aggregate</option>
+                </select>
+              </div>
+
+              <div id="expand-aggr-select-group" class="form-group hidden">
+                <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Allocate Drives to Aggregates</label>
+                <div id="aggr-distribution-list" style="display: flex; flex-direction: column; gap: 0.75rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+                  <!-- Dynamic distribution inputs populated here -->
+                </div>
+                <div id="aggr-allocation-status" style="font-size: 0.82rem; margin-top: 0.5rem; font-weight: 500; color: var(--color-info);">
+                  Allocated: <span id="allocated-disks-count">0</span> / <span id="target-disks-count">24</span> drives. (Remaining drives will go to Spare Reserves).
+                </div>
+              </div>
+            </div>
+
+            <!-- PCIe Card Modeler Section (NEW) -->
+            <div class="form-group" style="margin-top: 2rem; border-top: 1px dashed var(--border-color); padding-top: 1.5rem;">
+              <label for="add-pcie-card" style="font-weight: 600;">Add PCIe Interface Expansion Card</label>
+              <div style="display:flex; gap:10px; margin-bottom:0.75rem;">
+                <select id="add-pcie-card" class="form-control" style="background: rgba(0,0,0,0.2); flex: 2;">
+                  <option value="none">-- Select Supported Card --</option>
+                  <!-- Populated dynamically -->
+                </select>
+                <select id="add-pcie-slot" class="form-control" style="background: rgba(0,0,0,0.2); flex: 1;">
+                  <option value="none">-- Target Slot --</option>
+                  <!-- Populated dynamically -->
+                </select>
+                <button id="add-card-btn" class="btn-primary" style="padding: 10px 16px; white-space: nowrap;">Add Card</button>
+              </div>
+              <div id="pcie-slots-hint" style="font-size: 0.8rem; color: var(--color-muted); margin-bottom: 0.75rem;">
+                Available PCIe Slots: <strong id="pcie-slots-count">2 / 2</strong> slots free.
+              </div>
+              
+              <!-- Cards Inventory List -->
+              <div id="added-cards-list" style="display:flex; flex-direction:column; gap:0.5rem;">
+                <!-- Injected dynamically -->
+              </div>
+              
+              <div id="pcie-compat-card" class="hidden" style="margin-top:1rem; padding:0.75rem; border-radius: var(--radius-md); font-size:0.8rem; line-height:1.4;">
+                <!-- Error messages -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Physical and Capacity Overhead Output -->
+          <div>
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--color-muted);">Estimated Physical Impact</h3>
+            <div class="system-details" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+              <div class="detail-card">
+                <div class="detail-label">Rack Space (RU)</div>
+                <div id="impact-ru" class="detail-value">0 U</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Power Consumption</div>
+                <div id="impact-watts" class="detail-value">0 W</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Thermal Output</div>
+                <div id="impact-btu" class="detail-value">0 BTU/hr</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Raw Space Added</div>
+                <div id="impact-raw-capacity" class="detail-value">0 GB</div>
+              </div>
+            </div>
+            <div id="shelf-notes" class="detail-card" style="font-size: 0.85rem; color: var(--color-muted);">
+              Select a shelf model to simulate power, cooling, shelf height, and loop speed changes.
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- STEP 5: BEFORE VS AFTER SIDE-BY-SIDE COMPARE -->
+      <section id="step5" class="wizard-panel glass-panel hidden">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1.5rem;">Modelled Configuration Transition</h2>
+        
+        <div class="compare-container">
+          
+          <!-- Before view -->
+          <div class="glass-panel" style="background: rgba(239, 68, 68, 0.02); border-color: rgba(239, 68, 68, 0.15);">
+            <div class="compare-title" style="color: var(--color-danger);">
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--color-danger); display: inline-block;"></span>
+              Before: Current Deployment
+            </div>
+            
+            <div class="system-details" style="grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+              <div class="detail-card" style="padding: 0.5rem 0.75rem;">
+                <div class="detail-label">ONTAP OS</div>
+                <div id="comp-before-ontap" class="detail-value" style="font-size: 0.95rem;">-</div>
+              </div>
+              <div class="detail-card" style="padding: 0.5rem 0.75rem;">
+                <div class="detail-label">Audit Score</div>
+                <div id="comp-before-score" class="detail-value" style="font-size: 0.95rem;">-</div>
+              </div>
+            </div>
+
+            <!-- Capacity visualization -->
+            <div class="capacity-summary" style="margin-bottom: 1rem;">
+              <div class="detail-label">Usable Storage Aggregate Volume</div>
+              <div id="comp-before-cap-bar" class="capacity-bar-wrapper">
+                <!-- Bar segments -->
+              </div>
+              <div class="capacity-labels">
+                <span id="comp-before-cap-used">-</span>
+                <span id="comp-before-cap-free">-</span>
+              </div>
+            </div>
+
+            <!-- Cable Topology Diagram BEFORE -->
+            <div id="comp-before-cabling" class="visualizer-container" style="min-height: 280px; height: auto; margin-bottom: 0.5rem; border: 1px dashed rgba(239, 68, 68, 0.15); padding: 5px; border-radius: var(--radius-sm); display:flex; align-items:center; justify-content:center;">
+              <!-- Rendered dynamically -->
+            </div>
+            <div style="text-align: right; margin-top: -0.25rem; margin-bottom: 1rem;">
+              <button id="download-before-cabling-btn" class="btn-secondary" style="padding: 2px 6px; font-size: 0.7rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                <svg style="width: 12px; height: 12px; fill: currentColor;" viewBox="0 0 24 24">
+                  <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+                </svg>
+                Download
+              </button>
+            </div>
+
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th>Component</th>
+                  <th>Status / Config</th>
+                </tr>
+              </thead>
+              <tbody id="comp-before-table-body">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- After view -->
+          <div class="glass-panel" style="background: rgba(16, 185, 129, 0.02); border-color: rgba(16, 185, 129, 0.15);">
+            <div class="compare-title" style="color: var(--color-success);">
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--color-success); display: inline-block;"></span>
+              After: Modelled Target
+            </div>
+
+            <div class="system-details" style="grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+              <div class="detail-card" style="padding: 0.5rem 0.75rem;">
+                <div class="detail-label">ONTAP OS</div>
+                <div id="comp-after-ontap" class="detail-value" style="font-size: 0.95rem;">-</div>
+              </div>
+              <div class="detail-card" style="padding: 0.5rem 0.75rem;">
+                <div class="detail-label">Audit Score</div>
+                <div id="comp-after-score" class="detail-value" style="font-size: 0.95rem;">-</div>
+              </div>
+            </div>
+
+            <!-- Capacity visualization -->
+            <div class="capacity-summary" style="margin-bottom: 1rem;">
+              <div class="detail-label">Usable Storage Aggregate Volume</div>
+              <div id="comp-after-cap-bar" class="capacity-bar-wrapper">
+                <!-- Bar segments -->
+              </div>
+              <div class="capacity-labels">
+                <span id="comp-after-cap-used">-</span>
+                <span id="comp-after-cap-free">-</span>
+              </div>
+            </div>
+
+            <!-- Cable Topology Diagram AFTER -->
+            <div id="comp-after-cabling" class="visualizer-container" style="min-height: 280px; height: auto; margin-bottom: 0.5rem; border: 1px dashed rgba(16, 185, 129, 0.15); padding: 5px; border-radius: var(--radius-sm); display:flex; align-items:center; justify-content:center;">
+              <!-- Rendered dynamically -->
+            </div>
+            <div style="text-align: right; margin-top: -0.25rem; margin-bottom: 1rem;">
+              <button id="download-after-cabling-btn" class="btn-secondary" style="padding: 2px 6px; font-size: 0.7rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                <svg style="width: 12px; height: 12px; fill: currentColor;" viewBox="0 0 24 24">
+                  <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+                </svg>
+                Download
+              </button>
+            </div>
+
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th>Component</th>
+                  <th>Status / Config</th>
+                </tr>
+              </thead>
+              <tbody id="comp-after-table-body">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <!-- Compliance Score Improvement Analysis -->
+        <div class="glass-panel" style="margin-top: 1.5rem; border-color: rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.01);">
+          <h3 style="margin-top: 0; color: var(--color-success); display: flex; align-items: center; gap: 8px; font-size: 1.1rem;">
+            <svg style="width: 20px; height: 20px; fill: var(--color-success);" viewBox="0 0 24 24">
+              <path d="M12,2C6.5,2 2,6.5 2,12S6.5,22 12,22 22,17.5 22,12 17.5,2 12,2M10,17L5,12L6.41,10.59L10,14.17L17.59,6.58L19,8L10,17Z"/>
+            </svg>
+            Best Practice Compliance Score Improvement Analysis
+          </h3>
+          <p style="font-size: 0.82rem; color: var(--color-muted); margin-bottom: 1rem; line-height: 1.4;">
+            The following table analyzes individual best-practice guidelines that were failing or degraded in the current environment, details the remediations applied in the target design, and shows the resulting compliance state.
+          </p>
+          <div id="compare-score-breakdown-container" style="overflow-x: auto;">
+            <!-- Injected dynamically -->
+          </div>
+        </div>
+
+        <!-- Modeled Cabling Port-to-Port Connections Table -->
+        <div class="glass-panel" style="margin-top: 1.5rem; border-color: rgba(59, 130, 246, 0.2);">
+          <h3 style="margin-top: 0; color: var(--color-info); display: flex; align-items: center; gap: 8px; font-size: 1.1rem;">
+            <svg style="width: 20px; height: 20px; fill: var(--color-info);" viewBox="0 0 24 24">
+              <path d="M19,15H15A3,3 0 0,1 12,18A3,3 0 0,1 9,15H5V5H19M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z"/>
+            </svg>
+            Detailed Cabling Port-to-Port Mappings (Modeled Target)
+          </h3>
+          <p style="font-size: 0.82rem; color: var(--color-muted); margin-bottom: 1rem; line-height: 1.4;">
+            This table specifies the exact physical cable routing from controller host storage ports (onboard & HBA adapters) to expansion shelf IOM modules. Cable paths comply with NetApp Multipath HA best practices to ensure link redundancy.
+          </p>
+          <div id="compare-cabling-table-container" style="overflow-x: auto;">
+            <!-- Injected dynamically -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- STEP 6: EXECUTIVE SUMMARY & IMPLEMENTATION PLAN -->
+      <section id="step6" class="wizard-panel">
+        <div class="no-print" style="display: flex; gap: 1rem; justify-content: flex-end; margin-bottom: 1rem;">
+          <button id="print-report-btn" class="btn-primary">
+            <svg style="width: 18px; height: 18px; fill: #fff;" viewBox="0 0 24 24">
+              <path d="M18,3H6V7H18M19,12A1,1 0 0,1 18,11A1,1 0 0,1 19,10A1,1 0 0,1 20,11A1,1 0 0,1 19,12M16,19H8V14H16M19,8H5A3,3 0 0,0 2,11V17H6V21H18V17H22V11A3,3 0 0,0 19,8Z" />
+            </svg>
+            Print/Download PDF Report
+          </button>
+        </div>
+
+        <div id="report-frame" class="report-body">
+          <!-- Full Technical Report generated dynamically in UI.js -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Wizard Footer Navigation Buttons -->
+    <div class="wizard-footer no-print">
+      <button id="prev-btn" class="btn-secondary hidden">Back</button>
+      <button id="next-btn" class="btn-primary hidden">
+        Next
+        <svg style="width: 18px; height: 18px; fill: #fff;" viewBox="0 0 24 24">
+          <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- JSZip archive utility library -->
+  <script src="js/jszip.min.js"></script>
+  <!-- App Entry Point Module -->
+  <script type="module" src="js/ui.js"></script>
+</body>
+</html>
