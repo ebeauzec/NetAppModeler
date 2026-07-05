@@ -1,6 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      var div = document.createElement('div');
+      div.id = 'js-error-banner';
+      div.style.color = '#ef4444';
+      div.style.background = 'rgba(239, 68, 68, 0.1)';
+      div.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      div.style.padding = '16px';
+      div.style.margin = '16px';
+      div.style.borderRadius = '8px';
+      div.style.fontFamily = 'monospace';
+      div.style.fontSize = '0.9rem';
+      div.innerHTML = '<strong>' + 'Uncaught JS ' + 'Error:</strong> ' + msg + ' <br>Location: ' + url + ':' + line + ':' + col + (error && error.stack ? '<pre style="margin-top:8px; white-space:pre-wrap;">' + error.stack + '</pre>' : '');
+      if (document.body) {
+        document.body.insertBefore(div, document.body.firstChild);
+      } else {
+        window.addEventListener('DOMContentLoaded', function() {
+          document.body.insertBefore(div, document.body.firstChild);
+        });
+      }
+      return false;
+    };
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NetApp AutoSupport Analyzer & Modeler</title>

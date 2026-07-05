@@ -1,6 +1,6 @@
 import { DEMO_DATA } from './demoData.js';
 import { parseASUP, formatGB, parseSizeToGB } from './parser.js';
-import { runAudit, calculateComplianceScore } from './bestPractices.js';
+import { runAudit, calculateComplianceScore, ONTAP_LIFECYCLE, getPlatformMaxDrives } from './bestPractices.js';
 import { getPlatformProfile, getUpgradeHopsConsiderations, NETAPP_PLATFORMS, EXP_CARDS_CATALOG, compareVersions, getPlatformSlots } from './compatibility.js';
 
 // --- Application State ---
@@ -36,7 +36,6 @@ const ONTAP_HOPS = {
     "9.18.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1"],
     "9.19.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.19.1"],
     "9.20.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1", "9.20.1"],
-    "9.21.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.19.1", "9.21.1"]
   },
   "9.8": {
     "9.8": [],
@@ -50,7 +49,6 @@ const ONTAP_HOPS = {
     "9.18.1": ["9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1"],
     "9.19.1": ["9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.19.1"],
     "9.20.1": ["9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1", "9.20.1"],
-    "9.21.1": ["9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.19.1", "9.21.1"]
   },
   "9.9.1": {
     "9.9.1": [],
@@ -63,7 +61,6 @@ const ONTAP_HOPS = {
     "9.18.1": ["9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1"],
     "9.19.1": ["9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.19.1"],
     "9.20.1": ["9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1", "9.20.1"],
-    "9.21.1": ["9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.19.1", "9.21.1"]
   },
   "9.12.1": {
     "9.12.1": [],
@@ -75,7 +72,6 @@ const ONTAP_HOPS = {
     "9.18.1": ["9.15.1", "9.17.1", "9.18.1"],
     "9.19.1": ["9.15.1", "9.17.1", "9.19.1"],
     "9.20.1": ["9.15.1", "9.17.1", "9.18.1", "9.20.1"],
-    "9.21.1": ["9.15.1", "9.17.1", "9.19.1", "9.21.1"]
   },
   "9.13.1": {
     "9.13.1": [],
@@ -86,7 +82,6 @@ const ONTAP_HOPS = {
     "9.18.1": ["9.15.1", "9.17.1", "9.18.1"],
     "9.19.1": ["9.15.1", "9.17.1", "9.19.1"],
     "9.20.1": ["9.15.1", "9.17.1", "9.18.1", "9.20.1"],
-    "9.21.1": ["9.15.1", "9.17.1", "9.19.1", "9.21.1"]
   },
   "9.15.1": {
     "9.15.1": [],
@@ -95,7 +90,6 @@ const ONTAP_HOPS = {
     "9.18.1": ["9.17.1", "9.18.1"],
     "9.19.1": ["9.17.1", "9.19.1"],
     "9.20.1": ["9.17.1", "9.18.1", "9.20.1"],
-    "9.21.1": ["9.17.1", "9.19.1", "9.21.1"]
   },
   "9.16.1": {
     "9.16.1": [],
@@ -103,33 +97,25 @@ const ONTAP_HOPS = {
     "9.18.1": ["9.18.1"],
     "9.19.1": ["9.18.1", "9.19.1"],
     "9.20.1": ["9.18.1", "9.20.1"],
-    "9.21.1": ["9.18.1", "9.19.1", "9.21.1"]
   },
   "9.17.1": {
     "9.17.1": [],
     "9.18.1": ["9.18.1"],
     "9.19.1": ["9.19.1"],
     "9.20.1": ["9.19.1", "9.20.1"],
-    "9.21.1": ["9.19.1", "9.21.1"]
   },
   "9.18.1": {
     "9.18.1": [],
     "9.19.1": ["9.19.1"],
     "9.20.1": ["9.20.1"],
-    "9.21.1": ["9.20.1", "9.21.1"]
   },
   "9.19.1": {
     "9.19.1": [],
     "9.20.1": ["9.20.1"],
-    "9.21.1": ["9.21.1"]
   },
   "9.20.1": {
     "9.20.1": [],
-    "9.21.1": ["9.21.1"]
   },
-  "9.21.1": {
-    "9.21.1": []
-  }
 };
 
 function resolveMediaType(diskSizeStr) {
@@ -209,8 +195,8 @@ function resolveBaseVersionKey(versionStr) {
   if (base === "9.18") return "9.18.1";
   if (base === "9.19") return "9.19.1";
   if (base === "9.20") return "9.20.1";
-  if (base === "9.21") return "9.21.1";
-  return "9.21.1";
+  if (base === "9.20") return "9.20.1";
+  return "9.20.1";
 }
 
 // --- DOM References ---
@@ -274,7 +260,7 @@ function populateManualPlatformDropdown() {
     const selectedModel = select.value;
     const profile = getPlatformProfile(selectedModel);
     
-    const targetOptions = ["9.7", "9.8", "9.9.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1", "9.20.1", "9.21.1"];
+    const targetOptions = ["9.7", "9.8", "9.9.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1", "9.20.1"];
     
     targetOptions.forEach(optVal => {
       if (compareVersions(optVal, profile.maxOntap) <= 0) {
@@ -996,7 +982,7 @@ function allocateHBACardsForState(state) {
       const portType = (p.type || "").toLowerCase();
       
       const isRoce = name.startsWith("e") && (speed.includes("100g") || speed.includes("roce") || portType.includes("storage"));
-      const isSas = (name.startsWith("0") || portType.includes("storage")) && (speed.includes("sas") || speed.includes("6g") || speed.includes("12g") || (!speed && (name.startsWith("0a") || name.startsWith("0b") || name.startsWith("0c") || name.startsWith("0d"))));
+      const isSas = (name.startsWith("0") || portType.includes("storage")) && (speed.includes("sas") || (speed.includes("6g") && !speed.includes("16g")) || speed.includes("12g") || (!speed && (name.startsWith("0a") || name.startsWith("0b") || name.startsWith("0c") || name.startsWith("0d"))));
       
       if (isRoce) roce++;
       else if (isSas) sas++;
@@ -1006,15 +992,37 @@ function allocateHBACardsForState(state) {
 
   let ports = countAvailablePorts();
   const slots = getPlatformSlots(state.version.model);
-  const getNextFreeSlot = (cardType) => {
+  const getNextFreeSlot = (cardSpec) => {
     const occupied = new Set(state.expansionCards.map(c => c.slot));
-    // 1. Try to find a slot optimized for this card type
-    let bestSlot = slots.find(s => !occupied.has(s.num) && s.recType === cardType);
-    if (bestSlot) return bestSlot;
-    // 2. Try to find a slot optimized for "any"
-    let anySlot = slots.find(s => !occupied.has(s.num) && s.recType === "any");
-    if (anySlot) return anySlot;
-    // 3. Fallback to any free slot
+    const cardType = cardSpec.type;
+    const is100G = cardSpec.speed && cardSpec.speed.includes("100G");
+    
+    const isGoodSlot = (s) => {
+      if (is100G && s.type.includes("x8")) return false;
+      return true;
+    };
+
+    // 1. Try to find a slot optimized for this card type AND has no bottleneck
+    let slot = slots.find(s => !occupied.has(s.num) && s.recType === cardType && isGoodSlot(s));
+    if (slot) return slot;
+    
+    // 2. Try to find a slot optimized for this card type (even with bottleneck)
+    slot = slots.find(s => !occupied.has(s.num) && s.recType === cardType);
+    if (slot) return slot;
+    
+    // 3. Try to find a slot optimized for "any" AND has no bottleneck
+    slot = slots.find(s => !occupied.has(s.num) && s.recType === "any" && isGoodSlot(s));
+    if (slot) return slot;
+    
+    // 4. Try to find a slot optimized for "any"
+    slot = slots.find(s => !occupied.has(s.num) && s.recType === "any");
+    if (slot) return slot;
+    
+    // 5. Try any free slot with no bottleneck
+    slot = slots.find(s => !occupied.has(s.num) && isGoodSlot(s));
+    if (slot) return slot;
+    
+    // 6. Fallback to any free slot
     return slots.find(s => !occupied.has(s.num));
   };
 
@@ -1025,7 +1033,7 @@ function allocateHBACardsForState(state) {
     for (let k = 0; k < cardsNeeded; k++) {
       const cardKey = "roce_hba_100g_2port";
       const cardSpec = EXP_CARDS_CATALOG[cardKey];
-      const freeSlot = getNextFreeSlot(cardSpec.type);
+      const freeSlot = getNextFreeSlot(cardSpec);
       if (freeSlot) {
         state.expansionCards.push({ slot: freeSlot.num, cardKey: cardKey, autoAdded: true });
         const dynamicPorts = getCardPorts(cardKey, freeSlot.num);
@@ -1049,7 +1057,7 @@ function allocateHBACardsForState(state) {
     for (let k = 0; k < cardsNeeded; k++) {
       const cardKey = "sas_hba_12g_4port";
       const cardSpec = EXP_CARDS_CATALOG[cardKey];
-      const freeSlot = getNextFreeSlot(cardSpec.type);
+      const freeSlot = getNextFreeSlot(cardSpec);
       if (freeSlot) {
         state.expansionCards.push({ slot: freeSlot.num, cardKey: cardKey, autoAdded: true });
         const dynamicPorts = getCardPorts(cardKey, freeSlot.num);
@@ -1067,18 +1075,185 @@ function allocateHBACardsForState(state) {
   }
 }
 
+// Dynamic Disk Sizing helper
+function getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield) {
+  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || !profile.supportedShelves.includes("ds224c"));
+  const maxDrives = getPlatformMaxDrives(model);
+  
+  const nvmeSizes = [
+    { label: "1.9TB", sizeGB: 1900, model: "X371_S16431T9ATE" },
+    { label: "3.8TB", sizeGB: 3800, model: "X372_S16433T8ATE" },
+    { label: "7.6TB", sizeGB: 7600, model: "X373_S16437T6ATE" },
+    { label: "15.3TB", sizeGB: 15300, model: "X374_S164315TATE" },
+    { label: "30.6TB", sizeGB: 30600, model: "X375_S164330TATE" }
+  ];
+  
+  const sasSizes = [
+    { label: "960GB", sizeGB: 960, model: "X425_H960G12G15K" },
+    { label: "3.8TB", sizeGB: 3800, model: "X427_H3800G12G15K" },
+    { label: "7.6TB", sizeGB: 7600, model: "X428_H7600G12G15K" },
+    { label: "15.3TB", sizeGB: 15300, model: "X429_H15300G12G15K" },
+    { label: "30.6TB", sizeGB: 30600, model: "X430_H30600G12G15K" }
+  ];
+  
+  const sizes = isAllNVMe ? nvmeSizes : sasSizes;
+  const usableTargetGB = capacityTB * 1000;
+  const slots = getPlatformSlots(model);
+  const slotsCount = slots.length;
+  const isHighEnd = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'].some(m => model.toUpperCase().includes(m));
+  
+  let bestOption = null;
+  let bestPenalty = Infinity;
+
+  // Standard sizing heuristic: we want to avoid putting huge capacities on tiny disks
+  let targetMinGB = 960;
+  if (capacityTB > 300) targetMinGB = 15300;
+  else if (capacityTB > 150) targetMinGB = 7600;
+  else if (capacityTB > 50) targetMinGB = 3800;
+
+  for (let option of sizes) {
+    const usableGBPerDisk = option.sizeGB * 0.70;
+    const totalDataDisksRequired = Math.ceil(usableTargetGB / usableGBPerDisk);
+    let dataDisksPerNode = Math.ceil(totalDataDisksRequired / nodesCount);
+    dataDisksPerNode = Math.max(6, dataDisksPerNode);
+    const sparesPerNode = isGreenfield ? 2 : 1;
+    const disksPerNode = dataDisksPerNode + sparesPerNode;
+    const totalDisks = disksPerNode * nodesCount;
+    
+    if (totalDisks > maxDrives) continue; // Hard limit
+
+    const shelfCount = Math.max(Math.ceil(nodesCount / 2), Math.ceil(totalDisks / 24));
+    const nvmeShelvesCount = isAllNVMe ? shelfCount : 0;
+    const sasShelvesCount = isAllNVMe ? 0 : shelfCount;
+    
+    const haPairsCount = Math.floor(nodesCount / 2) || 1;
+    const nvmeShelvesPerHA = Math.ceil(nvmeShelvesCount / haPairsCount);
+    const sasShelvesPerHA = Math.ceil(sasShelvesCount / haPairsCount);
+    
+    const requiredRocePorts = isHighEnd ? Math.ceil(nvmeShelvesPerHA / 2) * 2 : nvmeShelvesPerHA * 2;
+    const requiredSasPorts = Math.ceil(sasShelvesPerHA / 4) * 2;
+    
+    // Calculate onboard ports
+    const pDef = profile.ports || {};
+    const onboardRoce = (pDef.storage || []).filter(p => p.startsWith("e")).length || (isAllNVMe ? 2 : 0);
+    const onboardSas = (pDef.storage || []).filter(p => !p.startsWith("e")).length || (isAllNVMe ? 0 : 2);
+    
+    let deficitRoce = Math.max(0, requiredRocePorts - onboardRoce);
+    let deficitSas = Math.max(0, requiredSasPorts - onboardSas);
+    
+    let cardsNeededRoce = Math.ceil(deficitRoce / 2);
+    let cardsNeededSas = Math.ceil(deficitSas / 4);
+    let totalCardsNeeded = cardsNeededRoce + cardsNeededSas;
+    
+    let penalty = 0;
+    
+    // Penalty for too many cards
+    if (totalCardsNeeded > slotsCount) {
+      penalty += 1000;
+    }
+    
+    // Simulate slot placement bottleneck/warnings
+    let occupiedSlots = new Set();
+    const simulateGetSlot = (cardSpec) => {
+      const is100G = cardSpec.speed && cardSpec.speed.includes("100G");
+      const isGoodSlot = (s) => !(is100G && s.type.includes("x8"));
+      
+      let slot = slots.find(s => !occupiedSlots.has(s.num) && s.recType === cardSpec.type && isGoodSlot(s));
+      if (slot) { occupiedSlots.add(slot.num); return { slot, warn: false }; }
+      
+      slot = slots.find(s => !occupiedSlots.has(s.num) && s.recType === cardSpec.type);
+      if (slot) { occupiedSlots.add(slot.num); return { slot, warn: true }; } // bottleneck warning
+      
+      slot = slots.find(s => !occupiedSlots.has(s.num) && s.recType === "any" && isGoodSlot(s));
+      if (slot) { occupiedSlots.add(slot.num); return { slot, warn: false }; }
+      
+      slot = slots.find(s => !occupiedSlots.has(s.num) && s.recType === "any");
+      if (slot) { occupiedSlots.add(slot.num); return { slot, warn: true }; } // bottleneck warning
+      
+      slot = slots.find(s => !occupiedSlots.has(s.num) && isGoodSlot(s));
+      if (slot) { occupiedSlots.add(slot.num); return { slot, warn: true }; } // sub-optimal warning
+      
+      slot = slots.find(s => !occupiedSlots.has(s.num));
+      if (slot) { occupiedSlots.add(slot.num); return { slot, warn: true }; }
+      
+      return null;
+    };
+    
+    for (let c = 0; c < cardsNeededRoce; c++) {
+      const cardSpec = EXP_CARDS_CATALOG["roce_hba_100g_2port"];
+      const placement = simulateGetSlot(cardSpec);
+      if (!placement) penalty += 200;
+      else if (placement.warn) penalty += 50;
+    }
+    for (let c = 0; c < cardsNeededSas; c++) {
+      const cardSpec = EXP_CARDS_CATALOG["sas_hba_12g_4port"];
+      const placement = simulateGetSlot(cardSpec);
+      if (!placement) penalty += 200;
+      else if (placement.warn) penalty += 50;
+    }
+    
+    // Daisy-chain penalty
+    if (isAllNVMe) {
+      if (nvmeShelvesPerHA > 1 && !isHighEnd) {
+        penalty += 100; // Daisy chain not supported warning
+      } else if (nvmeShelvesPerHA > 2 && isHighEnd) {
+        penalty += 100; // Daisy chain limit exceeded warning
+      }
+    }
+    
+    // Penalty for not meeting target size heuristic
+    if (option.sizeGB < targetMinGB) {
+      penalty += 10;
+    }
+    
+    // Select the option with the absolute lowest penalty
+    if (penalty < bestPenalty) {
+      bestPenalty = penalty;
+      bestOption = option;
+    }
+  }
+  
+  const result = bestOption || sizes[sizes.length - 1];
+  return {
+    sizeStr: result.label,
+    sizeGB: result.sizeGB,
+    diskModel: result.model,
+    diskType: isAllNVMe ? "NVMe SSD" : "SAS SSD"
+  };
+}
+
 // Manual Baseline Config Generator
 function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCount = 2, isGreenfield = false) {
   const profile = getPlatformProfile(model);
   const serial = `MNL${Math.floor(100000 + Math.random() * 900000)}`;
   
   let startingOntap = manualOntap || profile.maxOntap;
+  if (isGreenfield) {
+    const compliantVersions = ["9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1", "9.20.1"];
+    let bestCompliant = null;
+    for (let cv of compliantVersions) {
+      if (compareVersions(cv, profile.maxOntap) <= 0) {
+        bestCompliant = cv;
+      }
+    }
+    if (bestCompliant) {
+      startingOntap = bestCompliant;
+    } else {
+      startingOntap = profile.maxOntap;
+    }
+  }
+  const ontapSelect = document.getElementById("manual-ontap-select");
+  if (ontapSelect) {
+    ontapSelect.value = startingOntap;
+  }
 
-  const isAllNVMe = profile.supportedShelves.includes("ns224") && !profile.supportedShelves.includes("ds224c");
+  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || !profile.supportedShelves.includes("ds224c"));
+  const optDisk = getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield);
   const shelfModel = isAllNVMe ? "NS224" : "DS224C";
-  const diskType = isAllNVMe ? "NVMe SSD" : "SAS SSD";
-  const diskSizeStr = isAllNVMe ? "1.9TB" : "960GB";
-  const diskSizeGB = isAllNVMe ? 1900 : 960;
+  const diskType = optDisk.diskType;
+  const diskSizeStr = optDisk.sizeStr;
+  const diskSizeGB = optDisk.sizeGB;
+  const diskModel = optDisk.diskModel;
   
   // Calculate dynamic disk sizing to meet capacityTB
   // Sizing uses a 70% usable efficiency factor (accounting for RAID-DP parity, WAFL overhead, root partition, spares)
@@ -1129,18 +1304,20 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
   // Generate shelves and populate disks
   const shelves = [];
   let diskSerialIndex = 0;
+  const shelfLatestFirmware = shelfModel === "NS224" ? "v0130" : "v0224";
+  const shelfFirmware = isGreenfield ? shelfLatestFirmware : "v0100";
   for (let s = 0; s < shelfCount; s++) {
     const disksInThisShelf = Math.min(24, totalDisks - s * 24);
     shelves.push({
       id: `${s + 1}`,
       model: shelfModel,
       serial: `SHFL-BASE-${s + 1}`,
-      firmware: isGreenfield ? "v0130" : "v0100", // Latest for Greenfield, old for Audit demo
-      latestFirmware: "v0130",
+      firmware: shelfFirmware,
+      latestFirmware: shelfLatestFirmware,
       cabling: isGreenfield ? "Multipath HA" : (s === 0 ? "Single-path (SPOF)" : "Multipath HA"),
       disks: Array.from({ length: disksInThisShelf }, (_, slot) => ({
         slot,
-        model: isAllNVMe ? "X371_S16431T9ATE" : "X425_H960G12G15K",
+        model: diskModel,
         sizeStr: diskSizeStr,
         sizeGB: diskSizeGB,
         type: diskType,
@@ -1188,7 +1365,8 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
     version: {
       model: model,
       ontap: startingOntap,
-      serial: serial
+      serial: serial,
+      systemFirmware: isGreenfield ? (profile.maxFirmware || "v20.0") : "v1.0"
     },
     expansionCards: [],
     metrocluster: document.getElementById("deploy-metrocluster").checked ? document.getElementById("metrocluster-type").value : "none",
@@ -1574,10 +1752,10 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
       `;
 
       // Controller A Cluster/Sync ports
-      svgStr += `<rect x="25" y="${yNode + 40}" width="48" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
-      svgStr += `<text x="49" y="${yNode + 37}" fill="var(--color-muted)" font-size="6" text-anchor="middle">Cluster/Sync</text>`;
+      svgStr += `<rect x="20" y="${yNode + 40}" width="48" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
+      svgStr += `<text x="44" y="${yNode + 37}" fill="var(--color-muted)" font-size="6" text-anchor="middle">Cluster/Sync</text>`;
       pDef.cluster.forEach((port, idx) => {
-        const x = 29 + idx * 22;
+        const x = 24 + idx * 22;
         svgStr += `
           <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="18" height="12" rx="1"/>
           <text x="${x + 9}" y="${yNode + 52}" fill="#fff" font-size="6" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
@@ -1585,21 +1763,23 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
       });
 
       // Controller A Data ports
-      svgStr += `<rect x="115" y="${yNode + 40}" width="48" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
-      svgStr += `<text x="139" y="${yNode + 37}" fill="var(--color-muted)" font-size="6" text-anchor="middle">Data Target</text>`;
+      svgStr += `<rect x="95" y="${yNode + 40}" width="48" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
+      svgStr += `<text x="119" y="${yNode + 37}" fill="var(--color-muted)" font-size="6" text-anchor="middle">Data Target</text>`;
       pDef.data.forEach((port, idx) => {
-        const x = 119 + idx * 22;
+        const x = 99 + idx * 22;
         svgStr += `
           <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="18" height="12" rx="1"/>
           <text x="${x + 9}" y="${yNode + 52}" fill="#fff" font-size="6" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
         `;
       });
 
-      // Controller A Storage ports
-      svgStr += `<rect x="200" y="${yNode + 40}" width="56" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
-      svgStr += `<text x="228" y="${yNode + 37}" fill="var(--color-info)" font-size="6" text-anchor="middle">Storage Loop</text>`;
-      pDef.storage.forEach((port, idx) => {
-        const x = 205 + idx * 24;
+      // Controller A Storage ports (dynamic)
+      const blockWidthA = Math.max(56, 8 + allStoragePortsA.length * 24);
+      const boxXA = 265 - blockWidthA;
+      svgStr += `<rect x="${boxXA}" y="${yNode + 40}" width="${blockWidthA}" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
+      svgStr += `<text x="${boxXA + blockWidthA/2}" y="${yNode + 37}" fill="var(--color-info)" font-size="6" text-anchor="middle">Storage Loop</text>`;
+      allStoragePortsA.forEach((port, idx) => {
+        const x = boxXA + 4 + idx * 24;
         svgStr += `
           <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="20" height="12" rx="1"/>
           <text x="${x + 10}" y="${yNode + 52}" fill="#fff" font-size="6" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
@@ -1613,11 +1793,13 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         <text x="605" y="${yNode + 29}" fill="var(--color-muted)" font-size="7" text-anchor="middle">S/N: ${serialB}</text>
       `;
 
-      // Controller B Storage ports (placed left in Site B Controller)
-      svgStr += `<rect x="485" y="${yNode + 40}" width="56" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
-      svgStr += `<text x="513" y="${yNode + 37}" fill="var(--color-info)" font-size="6" text-anchor="middle">Storage Loop</text>`;
-      pDef.storage.forEach((port, idx) => {
-        const x = 490 + idx * 24;
+      // Controller B Storage ports (dynamic, placed left in Site B Controller)
+      const blockWidthB = Math.max(56, 8 + allStoragePortsB.length * 24);
+      const boxXB = 485;
+      svgStr += `<rect x="${boxXB}" y="${yNode + 40}" width="${blockWidthB}" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
+      svgStr += `<text x="${boxXB + blockWidthB/2}" y="${yNode + 37}" fill="var(--color-info)" font-size="6" text-anchor="middle">Storage Loop</text>`;
+      allStoragePortsB.forEach((port, idx) => {
+        const x = boxXB + 4 + idx * 24;
         svgStr += `
           <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="20" height="12" rx="1"/>
           <text x="${x + 10}" y="${yNode + 52}" fill="#fff" font-size="6" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
@@ -1625,10 +1807,10 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
       });
 
       // Controller B Data ports
-      svgStr += `<rect x="585" y="${yNode + 40}" width="48" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
-      svgStr += `<text x="609" y="${yNode + 37}" fill="var(--color-muted)" font-size="6" text-anchor="middle">Data Target</text>`;
+      svgStr += `<rect x="605" y="${yNode + 40}" width="48" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
+      svgStr += `<text x="629" y="${yNode + 37}" fill="var(--color-muted)" font-size="6" text-anchor="middle">Data Target</text>`;
       pDef.data.forEach((port, idx) => {
-        const x = 589 + idx * 22;
+        const x = 609 + idx * 22;
         svgStr += `
           <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="18" height="12" rx="1"/>
           <text x="${x + 9}" y="${yNode + 52}" fill="#fff" font-size="6" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
@@ -1636,10 +1818,10 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
       });
 
       // Controller B Cluster/Sync ports
-      svgStr += `<rect x="675" y="${yNode + 40}" width="48" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
-      svgStr += `<text x="699" y="${yNode + 37}" fill="var(--color-muted)" font-size="6" text-anchor="middle">Cluster/Sync</text>`;
+      svgStr += `<rect x="680" y="${yNode + 40}" width="48" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
+      svgStr += `<text x="704" y="${yNode + 37}" fill="var(--color-muted)" font-size="6" text-anchor="middle">Cluster/Sync</text>`;
       pDef.cluster.forEach((port, idx) => {
-        const x = 679 + idx * 22;
+        const x = 684 + idx * 22;
         svgStr += `
           <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="18" height="12" rx="1"/>
           <text x="${x + 9}" y="${yNode + 52}" fill="#fff" font-size="6" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
@@ -1648,10 +1830,10 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
 
       // Peering ISL Switch Cables
       const portY = yNode + 44 + 6;
-      svgStr += `<path d="M 38,${portY} C 38,${switchY + 20} 310,${switchY + 5} 310,${switchY + 5}" stroke="var(--color-primary)" fill="none" stroke-width="1.5"/>`;
-      svgStr += `<path d="M 60,${portY} C 60,${switchY + 25} 310,${switchY + 10} 310,${switchY + 10}" stroke="var(--color-primary)" fill="none" stroke-width="1.5"/>`;
-      svgStr += `<path d="M 688,${portY} C 688,${switchY + 25} 440,${switchY + 10} 440,${switchY + 10}" stroke="var(--color-primary)" fill="none" stroke-width="1.5"/>`;
-      svgStr += `<path d="M 710,${portY} C 710,${switchY + 20} 440,${switchY + 5} 440,${switchY + 5}" stroke="var(--color-primary)" fill="none" stroke-width="1.5"/>`;
+      svgStr += `<path d="M 33,${portY} C 33,${switchY + 20} 310,${switchY + 5} 310,${switchY + 5}" stroke="var(--color-primary)" fill="none" stroke-width="1.5"/>`;
+      svgStr += `<path d="M 55,${portY} C 55,${switchY + 25} 310,${switchY + 10} 310,${switchY + 10}" stroke="var(--color-primary)" fill="none" stroke-width="1.5"/>`;
+      svgStr += `<path d="M 693,${portY} C 693,${switchY + 25} 440,${switchY + 10} 440,${switchY + 10}" stroke="var(--color-primary)" fill="none" stroke-width="1.5"/>`;
+      svgStr += `<path d="M 715,${portY} C 715,${switchY + 20} 440,${switchY + 5} 440,${switchY + 5}" stroke="var(--color-primary)" fill="none" stroke-width="1.5"/>`;
     }
 
     // Shelves stacked
@@ -1705,14 +1887,19 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         }
 
         // Local loop cabling to Node ports (first shelf in stack)
+        const blockWidthA = Math.max(56, 8 + allStoragePortsA.length * 24);
+        const boxXA = 265 - blockWidthA;
+        const blockWidthB = Math.max(56, 8 + allStoragePortsB.length * 24);
+        const boxXB = 485;
+
         if (j === 0) {
           if (!isPortExhausted) {
             const k = sIdx % nodesPerSite;
             const yNode = 10 + k * 90;
             const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
             const pAIdx = localPortPairIdx;
-            const pAX = 205 + pAIdx * 24 + 10;
-            const pBX = 490 + pAIdx * 24 + 10;
+            const pAX = boxXA + 14 + pAIdx * 24;
+            const pBX = boxXB + 14 + pAIdx * 24;
             const portY = yNode + 50;
             
             svgStr += `<path d="M ${pAX},${portY} C ${pAX},${yNode + 95} 25,${yNode + 110} 25,${y + 26}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
@@ -1729,8 +1916,8 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             const yNode = 10 + k * 90;
             const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
             const repAIdx = localPortPairIdx + 1;
-            const repAX = 205 + repAIdx * 24 + 10;
-            const repBX = 490 + repAIdx * 24 + 10;
+            const repAX = boxXA + 14 + repAIdx * 24;
+            const repBX = boxXB + 14 + repAIdx * 24;
             const portY = yNode + 50;
 
             svgStr += `<path d="M ${repAX},${portY} C ${repAX},${yNode + 120} 450,110 485,${y + 26}" class="${replicationClass}" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
@@ -1752,8 +1939,8 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             const yNode = 10 + k * 90;
             const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
             const rAIdx = localPortPairIdx + 1;
-            const rAX = 205 + rAIdx * 24 + 10;
-            const rBX = 490 + rAIdx * 24 + 10;
+            const rAX = boxXA + 14 + rAIdx * 24;
+            const rBX = boxXB + 14 + rAIdx * 24;
             const portY = yNode + 50;
             
             svgStr += `<path d="M ${rAX},${portY} C ${rAX},${yNode + 110} 265,125 265,${y + 26}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
@@ -2504,7 +2691,7 @@ function initStep3Inputs() {
   const curVer = currentState.version.ontap;
   const profile = getPlatformProfile(currentState.version.model);
   
-  const targetOptions = ["9.7", "9.8", "9.9.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1", "9.20.1", "9.21.1"];
+  const targetOptions = ["9.7", "9.8", "9.9.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1", "9.20.1"];
   
   targetOptions.forEach(opt => {
     const isDowngrade = compareVersions(opt, curVer) < 0 && !curVer.startsWith(opt);
@@ -3142,7 +3329,7 @@ function updateCapacityImpactDetails() {
           const portType = (p.type || "").toLowerCase();
           
           const isRoce = name.startsWith("e") && (speed.includes("100g") || speed.includes("roce") || portType.includes("storage"));
-          const isSas = (name.startsWith("0") || portType.includes("storage")) && (speed.includes("sas") || speed.includes("6g") || speed.includes("12g") || (!speed && (name.startsWith("0a") || name.startsWith("0b") || name.startsWith("0c") || name.startsWith("0d"))));
+          const isSas = (name.startsWith("0") || portType.includes("storage")) && (speed.includes("sas") || (speed.includes("6g") && !speed.includes("16g")) || speed.includes("12g") || (!speed && (name.startsWith("0a") || name.startsWith("0b") || name.startsWith("0c") || name.startsWith("0d"))));
           
           if (isRoce) roce++;
           else if (isSas) sas++;
@@ -3671,6 +3858,9 @@ function runModelingCalculations() {
       }
     }
   }
+
+  // Auto-allocate recommended storage HBA cards for the modeled target to ensure compliance
+  allocateHBACardsForState(modeledState);
 
   // 6. Connect SAN target ports in Node ports list if SAN license is active in modeled state
   const isSANLicensedModeled = modeledState.licenses.some(l => l.name === "FCP" && l.status === "active");

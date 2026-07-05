@@ -20,14 +20,11 @@ export const ONTAP_LIFECYCLE = {
   "9.18.1": { status: "compliant", label: "Active Support (Latest Stable)", desc: "ONTAP 9.18.1 is in General Support (GA) and is a modern recommended baseline." },
   "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, delivering NVMe-oF and AI optimizations." },
   "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault and cyber resiliency features." },
-  "9.21.1": { status: "compliant", label: "Active Support (Planned Release)", desc: "ONTAP 9.21.1 is the planned General Support (GA) release for late 2026." },
   "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault and cyber resiliency features." },
-  "9.21.1": { status: "compliant", label: "Active Support (Planned Release)", desc: "ONTAP 9.21.1 is the planned General Support (GA) release for late 2026." },
   "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault and advanced file security controls." },
-  "9.21.1": { status: "compliant", label: "Active Support (Planned Release)", desc: "ONTAP 9.21.1 is the planned General Support (GA) release for late 2026." }
 };
 
-function getPlatformMaxDrives(model) {
+export function getPlatformMaxDrives(model) {
   const upper = (model || "").toUpperCase();
   if (upper.includes("A1K") || upper.includes("9500") || upper.includes("9000") || upper.includes("A900")) return 1440;
   if (upper.includes("8700") || upper.includes("8300") || upper.includes("C800") || upper.includes("A90") || upper.includes("A70")) return 720;
@@ -37,6 +34,7 @@ function getPlatformMaxDrives(model) {
   if (upper.includes("A50") || upper.includes("A30") || upper.includes("C30") || upper.includes("C60") || upper.includes("2820") || upper.includes("2750") || upper.includes("2720")) return 144;
   return 144;
 }
+
 
 export function runAudit(systemState) {
   const reports = [];
@@ -577,6 +575,33 @@ export function runAudit(systemState) {
       "Hardware",
       "compliant",
       "All storage shelves and drive capacities reside within platform hardware limits, and controllers have adequate ports to cable the loops.",
+      "None required.",
+      ""
+    );
+  }
+
+  // --- Rule 13: Controller System Firmware (BIOS) Currency ---
+  const sysFirmwareProfile = getPlatformProfile(systemState.version.model);
+  const maxSysFirmware = (sysFirmwareProfile && sysFirmwareProfile.maxFirmware) || "v20.0";
+  const currentSysFirmware = systemState.version.systemFirmware || "v1.0";
+  
+  if (currentSysFirmware !== maxSysFirmware) {
+    addReport(
+      "BP_SYSTEM_FIRMWARE",
+      "Controller System Firmware (BIOS) Currency",
+      "Software",
+      "warning",
+      `System runs controller firmware version ${currentSysFirmware}, but the latest qualified version is ${maxSysFirmware}.`,
+      "Download and install the latest system firmware (BIOS) update package for the controller model. This update is crucial for hardware compatibility, security patches, and system stability.",
+      `Download system firmware update files for ${systemState.version.model} and update online or via loader boot using the 'system node firmware update' command.`
+    );
+  } else {
+    addReport(
+      "BP_SYSTEM_FIRMWARE",
+      "Controller System Firmware (BIOS) Currency",
+      "Software",
+      "compliant",
+      `Controller system firmware is running the latest qualified version (${maxSysFirmware}).`,
       "None required.",
       ""
     );

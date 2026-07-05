@@ -37,7 +37,8 @@ export function parseASUP(files) {
     version: {
       ontap: "9.7P12", // Default robust fallback
       model: "FAS8300", // Default robust fallback
-      serial: "700000111111" // Default robust fallback
+      serial: "700000111111", // Default robust fallback
+      systemFirmware: "v1.0" // Default robust fallback
     },
     nodes: [],
     shelves: [],
@@ -53,6 +54,14 @@ export function parseASUP(files) {
                      combinedText.match(/ONTAP Version:\s*([\d\.\w_]+)/i) ||
                      combinedText.match(/Release\s+([\d\.\w_]+)/i);
   if (ontapMatch) data.version.ontap = ontapMatch[1];
+  
+  const sysFirmwareMatch = combinedText.match(/System Firmware Version:\s*([^\r\n]+)/i) ||
+                           combinedText.match(/BIOS Version:\s*([^\r\n]+)/i) ||
+                           combinedText.match(/Motherboard Firmware:\s*([^\r\n]+)/i) ||
+                           combinedText.match(/Controller Firmware:\s*([^\r\n]+)/i);
+  if (sysFirmwareMatch) {
+    data.version.systemFirmware = sysFirmwareMatch[1].trim();
+  }
   
   const modelMatch = combinedText.match(/Model Name:\s*([^\r\n]+)/i) ||
                      combinedText.match(/System Model:\s*([^\r\n]+)/i);

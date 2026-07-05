@@ -58,7 +58,7 @@ export function getPlatformSlots(model) {
 export const NETAPP_PLATFORMS = {
   // --- AFF A-Series (NVMe High Performance All Flash) ---
   "AFF A1K": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -83,7 +83,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 8
   },
   "AFF A90": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 natively cabled to on-board RoCE ports." },
@@ -106,7 +106,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF A70": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -129,7 +129,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF A900": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -179,7 +179,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF A50": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -202,7 +202,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A400": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -227,7 +227,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF A30": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -250,7 +250,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A20": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -298,7 +298,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A250": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -348,7 +348,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A150": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ds224c"],
     unsupportedShelves: ["ns224", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SAS SSD shelf is supported." },
@@ -373,7 +373,7 @@ export const NETAPP_PLATFORMS = {
 
   // --- AFF C-Series (Capacity All Flash) ---
   "AFF C80": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -396,7 +396,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF C800": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf fully supported." },
@@ -419,7 +419,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF C400": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is highly recommended." },
@@ -441,7 +441,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF C250": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is supported natively." },
@@ -464,7 +464,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF C30": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -487,7 +487,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF C60": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -535,7 +535,7 @@ export const NETAPP_PLATFORMS = {
 
   // --- FAS Series (Hybrid / Capacity HDD) ---
   "FAS9500": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -581,7 +581,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "FAS8700": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -603,7 +603,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "FAS8300": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -649,7 +649,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2820": {
-    maxOntap: "9.21.1",
+    maxOntap: "9.20.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SFF shelf fully supported." },
@@ -938,8 +938,8 @@ export function getUpgradeHopsConsiderations(currentVersion, targetVersion, cont
       "security multi-admin-verification show",
       "system switch ethernet show"
     ]},
-    { from: "9.19.1", to: "9.21.1", title: "Hop 9.19.1 ➔ 9.21.1 Considerations", directUpgrade: true, risks: [
-      "End of Support for Legacy Protocols: ONTAP 9.21.1 deprecates insecure legacy protocols. Ensure all external services use TLS 1.3.",
+    { from: "9.19.1", to: "9.20.1", title: "Hop 9.19.1 ➔ 9.20.1 Considerations", directUpgrade: true, risks: [
+      "End of Support for Legacy Protocols: ONTAP 9.20.1 deprecates insecure legacy protocols. Ensure all external services use TLS 1.3.",
       "Root Aggregate Sizing Check: Root aggregates require at least 50GB free space for system core files."
     ], preReqs: [
       "Verify TLS 1.3 is configured for all management connections.",
