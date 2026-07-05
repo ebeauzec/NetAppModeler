@@ -937,7 +937,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.3</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.4</span>
       </div>
       <div class="no-print">
         <button id="reset-btn" class="btn-secondary" style="padding: 8px 16px;">Reset Tool</button>
@@ -1706,9 +1706,9 @@ slot 2: Quad-port 12G SAS Adapter (PMC-Sierra PM8068)
 slot 3: Dual-port 100GbE NIC
 
 Shelf 1: DS224C (S/N: SHFL-000001) v0212 (Latest: v0224)
-    Disk 0: NETAPP X343_S163A960ATE (960GB, SSD, S/N: SSD0001)
-    Disk 1: NETAPP X343_S163A960ATE (960GB, SSD, S/N: SSD0002)
-    Disk 2: NETAPP X343_S163A960ATE (960GB, SSD, S/N: SSD0003)
+    Disk 0: NETAPP X343_S163A960ATE (960GB, SSD, FW: NA04, S/N: SSD0001)
+    Disk 1: NETAPP X343_S163A960ATE (960GB, SSD, FW: NA04, S/N: SSD0002)
+    Disk 2: NETAPP X343_S163A960ATE (960GB, SSD, FW: NA04, S/N: SSD0003)
     Disk 3: NETAPP X343_S163A960ATE (960GB, SSD, S/N: SSD0004)
     Disk 4: NETAPP X343_S163A960ATE (960GB, SSD, S/N: SSD0005)
     Disk 5: NETAPP X343_S163A960ATE (960GB, SSD, S/N: SSD0006)
@@ -1830,9 +1830,9 @@ slot 2: Dual-port 100GbE NVMe-oF Shelf Adapter
 slot 3: Dual-port 32Gb FC Adapter
 
 Shelf 1: NS224 (S/N: NS224-000001) v0130 (Latest: v0130)
-    Disk 0: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0001)
-    Disk 1: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0002)
-    Disk 2: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0003)
+    Disk 0: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA02, S/N: NVM0001)
+    Disk 1: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA02, S/N: NVM0002)
+    Disk 2: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA02, S/N: NVM0003)
     Disk 3: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0004)
     Disk 4: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0005)
     Disk 5: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0006)
@@ -2073,25 +2073,28 @@ function parseASUP(files) {
     const shelf = shelfMap.get(shelfId);
     if (!shelf) continue;
 
-    const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),\s*S\/N:\s*([^)]+)\)/ig;
-    let diskMatch;
-    while ((diskMatch = diskRegex.exec(shelfText)) !== null) {
-      const sizeGB = parseSizeToGB(diskMatch[3]);
-      shelf.disks.push({
-        slot: parseInt(diskMatch[1]),
-        model: diskMatch[2],
-        sizeStr: diskMatch[3],
-        sizeGB: sizeGB,
-        type: diskMatch[4].trim(),
-        serial: diskMatch[5].trim()
-      });
-    }
+     const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),(?:\s*FW:\s*([^,\s)]+),)?\s*S\/N:\s*([^)]+)\)/ig;
+     let diskMatch;
+     while ((diskMatch = diskRegex.exec(shelfText)) !== null) {
+       const sizeGB = parseSizeToGB(diskMatch[3]);
+       shelf.disks.push({
+         slot: parseInt(diskMatch[1]),
+         model: diskMatch[2],
+         sizeStr: diskMatch[3],
+         sizeGB: sizeGB,
+         type: diskMatch[4].trim(),
+         firmware: diskMatch[5] ? diskMatch[5].trim() : "NA01",
+         serial: diskMatch[6].trim()
+       });
+     }
   }
 
   // If no shelves were parsed, let's search for any disks anywhere in the document
   if (data.shelves.length === 0) {
     const looseDisks = [];
-    const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),\s*S\/N:\s*([^)]+)\)/ig;
+    
+    // 1. Try parentheses format: Disk 0: NETAPP Model (Size, Type, FW: Rev, S/N: SN)
+    const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),(?:\s*FW:\s*([^,\s)]+),)?\s*S\/N:\s*([^)]+)\)/ig;
     let diskMatch;
     while ((diskMatch = diskRegex.exec(combinedText)) !== null) {
       const sizeGB = parseSizeToGB(diskMatch[3]);
@@ -2101,8 +2104,29 @@ function parseASUP(files) {
         sizeStr: diskMatch[3],
         sizeGB: sizeGB,
         type: diskMatch[4].trim(),
-        serial: diskMatch[5].trim()
+        firmware: diskMatch[5] ? diskMatch[5].trim() : "NA01",
+        serial: diskMatch[6].trim()
       });
+    }
+
+    // 2. Try sysconfig -a format: 0a.10   NETAPP   X343_S163A960ATE NA01 960.0GB S/N: SN
+    if (looseDisks.length === 0) {
+      const sysconfigRegex = /(\d+[a-z]+)\.(\d+)\s+NETAPP\s+([^\s]+)\s+([^\s]+)\s+([\d.]+)(GB|TB|MB)\s+.*S\/N:\s*([^\s\r\n]+)/ig;
+      let sysMatch;
+      while ((sysMatch = sysconfigRegex.exec(combinedText)) !== null) {
+        const sizeVal = sysMatch[5] + sysMatch[6];
+        const sizeGB = parseSizeToGB(sizeVal);
+        const type = sysMatch[3].includes("X371") || sysMatch[3].includes("X343") || sysMatch[3].includes("NVMe") ? "NVMe SSD" : "SAS HDD";
+        looseDisks.push({
+          slot: parseInt(sysMatch[2]),
+          model: sysMatch[3],
+          sizeStr: sizeVal,
+          sizeGB: sizeGB,
+          type: type,
+          firmware: sysMatch[4].trim(),
+          serial: sysMatch[7].trim()
+        });
+      }
     }
 
     if (looseDisks.length > 0) {
@@ -5513,6 +5537,7 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
         sizeStr: diskSizeStr,
         sizeGB: diskSizeGB,
         type: diskType,
+        firmware: "NA01",
         serial: `BS-${diskSerialIndex++}`
       }))
     });
@@ -6502,12 +6527,13 @@ function renderStorageInventory(state) {
     const diskGroups = {};
     const disks = shelf.disks || [];
     disks.forEach(d => {
-      const key = `${d.model}_${d.sizeStr}_${d.type}`;
+      const key = `${d.model}_${d.sizeStr}_${d.type}_${d.firmware || "NA01"}`;
       if (!diskGroups[key]) {
         diskGroups[key] = {
           model: d.model,
           sizeStr: d.sizeStr,
           type: d.type,
+          firmware: d.firmware || "NA01",
           count: 0
         };
       }
@@ -6550,7 +6576,7 @@ function renderStorageInventory(state) {
           <li style="margin-bottom: 4px;">
             <strong>${group.count}x</strong> drives of 
             <span style="font-family: var(--font-mono); font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 1px 4px; border-radius: 2px; color: #9ca3af;">${group.model}</span> 
-            (Size: <strong>${group.sizeStr}</strong>, Type: <span style="color: ${mediaBadgeColor}; font-weight: 500;">${group.type}</span>)
+            (Size: <strong>${group.sizeStr}</strong>, Type: <span style="color: ${mediaBadgeColor}; font-weight: 500;">${group.type}</span>, Fw: <strong style="color: #34d399; font-family: var(--font-mono);">${group.firmware || "NA01"}</strong>)
           </li>
         `;
       });
@@ -6677,12 +6703,13 @@ function generateReportStorageInventoryHtml(state) {
     const diskGroups = {};
     const disks = shelf.disks || [];
     disks.forEach(d => {
-      const key = `${d.model}_${d.sizeStr}_${d.type}`;
+      const key = `${d.model}_${d.sizeStr}_${d.type}_${d.firmware || "NA01"}`;
       if (!diskGroups[key]) {
         diskGroups[key] = {
           model: d.model,
           sizeStr: d.sizeStr,
           type: d.type,
+          firmware: d.firmware || "NA01",
           count: 0
         };
       }
@@ -6691,7 +6718,7 @@ function generateReportStorageInventoryHtml(state) {
 
     let diskItems = "";
     Object.values(diskGroups).forEach(group => {
-      diskItems += `• <strong>${group.count}x</strong> ${group.sizeStr} ${group.type} (Model: ${group.model})<br>`;
+      diskItems += `• <strong>${group.count}x</strong> ${group.sizeStr} ${group.type} (Model: ${group.model}, Fw: ${group.firmware})<br>`;
     });
 
     html += `
@@ -7712,6 +7739,7 @@ function updateCapacityImpactDetails() {
         sizeStr: diskSizeStr,
         sizeGB: diskGB,
         type: spec.mediaType,
+        firmware: "NA01",
         serial: `EXP-${diskSerialIndex++}`
       }))
     });
@@ -7875,6 +7903,7 @@ function runModelingCalculations() {
             sizeStr: diskSizeStr,
             sizeGB: diskGB,
             type: spec.mediaType,
+            firmware: "NA01",
             serial: `EXP-${diskSerialIndex}-A`
           }))
         });
@@ -7893,6 +7922,7 @@ function runModelingCalculations() {
             sizeStr: diskSizeStr,
             sizeGB: diskGB,
             type: spec.mediaType,
+            firmware: "NA01",
             serial: `EXP-${diskSerialIndex++}-B`
           }))
         });
@@ -8042,6 +8072,7 @@ function runModelingCalculations() {
             sizeStr: diskSizeStr,
             sizeGB: diskGB,
             type: spec.mediaType,
+            firmware: "NA01",
             serial: `EXP-${diskSerialIndex++}`
           }))
         });

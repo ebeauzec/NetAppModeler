@@ -1329,6 +1329,7 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
         sizeStr: diskSizeStr,
         sizeGB: diskSizeGB,
         type: diskType,
+        firmware: "NA01",
         serial: `BS-${diskSerialIndex++}`
       }))
     });
@@ -2318,12 +2319,13 @@ function renderStorageInventory(state) {
     const diskGroups = {};
     const disks = shelf.disks || [];
     disks.forEach(d => {
-      const key = `${d.model}_${d.sizeStr}_${d.type}`;
+      const key = `${d.model}_${d.sizeStr}_${d.type}_${d.firmware || "NA01"}`;
       if (!diskGroups[key]) {
         diskGroups[key] = {
           model: d.model,
           sizeStr: d.sizeStr,
           type: d.type,
+          firmware: d.firmware || "NA01",
           count: 0
         };
       }
@@ -2366,7 +2368,7 @@ function renderStorageInventory(state) {
           <li style="margin-bottom: 4px;">
             <strong>${group.count}x</strong> drives of 
             <span style="font-family: var(--font-mono); font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 1px 4px; border-radius: 2px; color: #9ca3af;">${group.model}</span> 
-            (Size: <strong>${group.sizeStr}</strong>, Type: <span style="color: ${mediaBadgeColor}; font-weight: 500;">${group.type}</span>)
+            (Size: <strong>${group.sizeStr}</strong>, Type: <span style="color: ${mediaBadgeColor}; font-weight: 500;">${group.type}</span>, Fw: <strong style="color: #34d399; font-family: var(--font-mono);">${group.firmware || "NA01"}</strong>)
           </li>
         `;
       });
@@ -2493,12 +2495,13 @@ function generateReportStorageInventoryHtml(state) {
     const diskGroups = {};
     const disks = shelf.disks || [];
     disks.forEach(d => {
-      const key = `${d.model}_${d.sizeStr}_${d.type}`;
+      const key = `${d.model}_${d.sizeStr}_${d.type}_${d.firmware || "NA01"}`;
       if (!diskGroups[key]) {
         diskGroups[key] = {
           model: d.model,
           sizeStr: d.sizeStr,
           type: d.type,
+          firmware: d.firmware || "NA01",
           count: 0
         };
       }
@@ -2507,7 +2510,7 @@ function generateReportStorageInventoryHtml(state) {
 
     let diskItems = "";
     Object.values(diskGroups).forEach(group => {
-      diskItems += `• <strong>${group.count}x</strong> ${group.sizeStr} ${group.type} (Model: ${group.model})<br>`;
+      diskItems += `• <strong>${group.count}x</strong> ${group.sizeStr} ${group.type} (Model: ${group.model}, Fw: ${group.firmware})<br>`;
     });
 
     html += `
@@ -3528,6 +3531,7 @@ function updateCapacityImpactDetails() {
         sizeStr: diskSizeStr,
         sizeGB: diskGB,
         type: spec.mediaType,
+        firmware: "NA01",
         serial: `EXP-${diskSerialIndex++}`
       }))
     });
@@ -3691,6 +3695,7 @@ function runModelingCalculations() {
             sizeStr: diskSizeStr,
             sizeGB: diskGB,
             type: spec.mediaType,
+            firmware: "NA01",
             serial: `EXP-${diskSerialIndex}-A`
           }))
         });
@@ -3709,6 +3714,7 @@ function runModelingCalculations() {
             sizeStr: diskSizeStr,
             sizeGB: diskGB,
             type: spec.mediaType,
+            firmware: "NA01",
             serial: `EXP-${diskSerialIndex++}-B`
           }))
         });
@@ -3858,6 +3864,7 @@ function runModelingCalculations() {
             sizeStr: diskSizeStr,
             sizeGB: diskGB,
             type: spec.mediaType,
+            firmware: "NA01",
             serial: `EXP-${diskSerialIndex++}`
           }))
         });

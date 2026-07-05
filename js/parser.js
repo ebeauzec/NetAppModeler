@@ -157,25 +157,28 @@ export function parseASUP(files) {
     const shelf = shelfMap.get(shelfId);
     if (!shelf) continue;
 
-    const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),\s*S\/N:\s*([^)]+)\)/ig;
-    let diskMatch;
-    while ((diskMatch = diskRegex.exec(shelfText)) !== null) {
-      const sizeGB = parseSizeToGB(diskMatch[3]);
-      shelf.disks.push({
-        slot: parseInt(diskMatch[1]),
-        model: diskMatch[2],
-        sizeStr: diskMatch[3],
-        sizeGB: sizeGB,
-        type: diskMatch[4].trim(),
-        serial: diskMatch[5].trim()
-      });
-    }
+     const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),(?:\s*FW:\s*([^,\s)]+),)?\s*S\/N:\s*([^)]+)\)/ig;
+     let diskMatch;
+     while ((diskMatch = diskRegex.exec(shelfText)) !== null) {
+       const sizeGB = parseSizeToGB(diskMatch[3]);
+       shelf.disks.push({
+         slot: parseInt(diskMatch[1]),
+         model: diskMatch[2],
+         sizeStr: diskMatch[3],
+         sizeGB: sizeGB,
+         type: diskMatch[4].trim(),
+         firmware: diskMatch[5] ? diskMatch[5].trim() : "NA01",
+         serial: diskMatch[6].trim()
+       });
+     }
   }
 
   // If no shelves were parsed, let's search for any disks anywhere in the document
   if (data.shelves.length === 0) {
     const looseDisks = [];
-    const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),\s*S\/N:\s*([^)]+)\)/ig;
+    
+    // 1. Try parentheses format: Disk 0: NETAPP Model (Size, Type, FW: Rev, S/N: SN)
+    const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),(?:\s*FW:\s*([^,\s)]+),)?\s*S\/N:\s*([^)]+)\)/ig;
     let diskMatch;
     while ((diskMatch = diskRegex.exec(combinedText)) !== null) {
       const sizeGB = parseSizeToGB(diskMatch[3]);
@@ -185,8 +188,29 @@ export function parseASUP(files) {
         sizeStr: diskMatch[3],
         sizeGB: sizeGB,
         type: diskMatch[4].trim(),
-        serial: diskMatch[5].trim()
+        firmware: diskMatch[5] ? diskMatch[5].trim() : "NA01",
+        serial: diskMatch[6].trim()
       });
+    }
+
+    // 2. Try sysconfig -a format: 0a.10   NETAPP   X343_S163A960ATE NA01 960.0GB S/N: SN
+    if (looseDisks.length === 0) {
+      const sysconfigRegex = /(\d+[a-z]+)\.(\d+)\s+NETAPP\s+([^\s]+)\s+([^\s]+)\s+([\d.]+)(GB|TB|MB)\s+.*S\/N:\s*([^\s\r\n]+)/ig;
+      let sysMatch;
+      while ((sysMatch = sysconfigRegex.exec(combinedText)) !== null) {
+        const sizeVal = sysMatch[5] + sysMatch[6];
+        const sizeGB = parseSizeToGB(sizeVal);
+        const type = sysMatch[3].includes("X371") || sysMatch[3].includes("X343") || sysMatch[3].includes("NVMe") ? "NVMe SSD" : "SAS HDD";
+        looseDisks.push({
+          slot: parseInt(sysMatch[2]),
+          model: sysMatch[3],
+          sizeStr: sizeVal,
+          sizeGB: sizeGB,
+          type: type,
+          firmware: sysMatch[4].trim(),
+          serial: sysMatch[7].trim()
+        });
+      }
     }
 
     if (looseDisks.length > 0) {
