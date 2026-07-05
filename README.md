@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.6)
+# NetApp AutoSupport Analyzer & Modeler (v2.7)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,13 +6,10 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.6)
-* **Multi-Format Implementation Plan Exports:** Click the **Export Plan / Report** button on Step 6 to access the new premium exports dialog:
-  - 📄 **Print / Download PDF Report:** Generates a print-ready technical document.
-  - 📝 **Download Markdown Plan (.md):** Downloads a clean, structured documentation file suitable for wiki pages or technical reviews.
-  - 💻 **Download ONTAP CLI Script (.txt):** Downloads a plain-text shell script containing ONLY the sequenced CLI commands for execution.
-  - ⚙️ **Save Modeler Configuration (.json):** Serializes the entire configuration to restore later.
-* **Save/Load Configurations (v2.5):** Save/load the entire workspace state to local files.
+## 🆕 New in this Version (v2.7)
+* **Before / After Physical Footprint Comparison:** Real-time physical metrics (Rack Space, Power Consumption, and Thermal Output) are now calculated and displayed as a side-by-side transition (Before ➔ After) during the Step 4 Sizing phase, in the Step 5 Comparison View table, and in the Step 6 Technical Report table, representing both the baseline and proposed cluster layouts.
+* **Multi-Format Implementation Plan Exports (v2.6):** Access PDF, Markdown (.md), and ONTAP CLI Command Script (.txt) files.
+* **Save/Load Configurations (v2.5):** Save/load the entire workspace state to local JSON files.
 * **Disk-level Firmware Parsing (v2.4):** Extracts disk firmware versions from logs.
 * **ONTAP Drive Size Compatibility audits (v2.3):** Enforces ONTAP release requirements for large capacity SSDs.
 

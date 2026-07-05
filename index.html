@@ -37,7 +37,7 @@
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.6</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.7</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -560,24 +560,53 @@
 
           <!-- Physical and Capacity Overhead Output -->
           <div>
-            <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--color-muted);">Estimated Physical Impact</h3>
-            <div class="system-details" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-              <div class="detail-card">
-                <div class="detail-label">Rack Space (RU)</div>
-                <div id="impact-ru" class="detail-value">0 U</div>
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--color-muted);">Estimated Physical Footprint (Before / After)</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+              
+              <!-- RU -->
+              <div class="detail-card" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem;">
+                <div class="detail-label" style="margin: 0;">Cabinet Rack Space (RU)</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">
+                  <span id="footprint-ru-before" style="color: var(--color-muted);">0 U</span>
+                  <span style="color: var(--color-primary); margin: 0 6px;">➔</span>
+                  <span id="footprint-ru-after">0 U</span>
+                  <span id="footprint-ru-diff" style="font-size: 0.8rem; color: #34d399; margin-left: 6px; font-weight: 500;">(+0 U)</span>
+                </div>
               </div>
-              <div class="detail-card">
-                <div class="detail-label">Power Consumption</div>
-                <div id="impact-watts" class="detail-value">0 W</div>
+
+              <!-- Power -->
+              <div class="detail-card" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem;">
+                <div class="detail-label" style="margin: 0;">Power Consumption</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">
+                  <span id="footprint-watts-before" style="color: var(--color-muted);">0 W</span>
+                  <span style="color: var(--color-primary); margin: 0 6px;">➔</span>
+                  <span id="footprint-watts-after">0 W</span>
+                  <span id="footprint-watts-diff" style="font-size: 0.8rem; color: #34d399; margin-left: 6px; font-weight: 500;">(+0 W)</span>
+                </div>
               </div>
-              <div class="detail-card">
-                <div class="detail-label">Thermal Output</div>
-                <div id="impact-btu" class="detail-value">0 BTU/hr</div>
+
+              <!-- Thermal -->
+              <div class="detail-card" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem;">
+                <div class="detail-label" style="margin: 0;">Thermal Output</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">
+                  <span id="footprint-btu-before" style="color: var(--color-muted);">0 BTU/hr</span>
+                  <span style="color: var(--color-primary); margin: 0 6px;">➔</span>
+                  <span id="footprint-btu-after">0 BTU/hr</span>
+                  <span id="footprint-btu-diff" style="font-size: 0.8rem; color: #34d399; margin-left: 6px; font-weight: 500;">(+0 BTU/hr)</span>
+                </div>
               </div>
-              <div class="detail-card">
-                <div class="detail-label">Raw Space Added</div>
-                <div id="impact-raw-capacity" class="detail-value">0 GB</div>
+
+              <!-- Raw Capacity -->
+              <div class="detail-card" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem;">
+                <div class="detail-label" style="margin: 0;">Total Raw Capacity</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">
+                  <span id="footprint-cap-before" style="color: var(--color-muted);">0 GB</span>
+                  <span style="color: var(--color-primary); margin: 0 6px;">➔</span>
+                  <span id="footprint-cap-after">0 GB</span>
+                  <span id="footprint-cap-diff" style="font-size: 0.8rem; color: #34d399; margin-left: 6px; font-weight: 500;">(+0 GB)</span>
+                </div>
               </div>
+
             </div>
             <div id="shelf-notes" class="detail-card" style="font-size: 0.85rem; color: var(--color-muted);">
               Select a shelf model to simulate power, cooling, shelf height, and loop speed changes.

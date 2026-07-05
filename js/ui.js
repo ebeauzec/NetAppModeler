@@ -3657,65 +3657,162 @@ function initStep4Inputs() {
   updateCapacityImpactDetails();
 }
 
+function getPlatformSpecs(model) {
+  const m = model ? model.toUpperCase() : "";
+  let ru = 2;
+  let power = 600; // watts for HA controller pair
+
+  if (m.includes("A1K") || m.includes("9500") || m.includes("9000") || m.includes("A900")) {
+    ru = 4;
+    power = 1200;
+  } else if (m.includes("A70") || m.includes("A90")) {
+    ru = 4;
+    power = 1000;
+  } else if (m.includes("A800") || m.includes("A400") || m.includes("8700") || m.includes("8300") || m.includes("C400") || m.includes("C800")) {
+    ru = 4;
+    power = 850;
+  } else if (m.includes("A250") || m.includes("A20") || m.includes("2820") || m.includes("2750") || m.includes("2720") || m.includes("A150")) {
+    ru = 2;
+    power = 500;
+  }
+  return { ru, power };
+}
+
+function getSystemPhysicalFootprint(state) {
+  if (!state) return { ru: 0, watts: 0, btu: 0 };
+  
+  const isMetroCluster = state.metrocluster && state.metrocluster !== "none";
+  const mult = isMetroCluster ? 2 : 1;
+
+  // 1. Controller baseline
+  const ctrl = getPlatformSpecs(state.version.model);
+  let totalRu = ctrl.ru * mult;
+  let totalWatts = ctrl.power * mult;
+
+  // 2. Shelves
+  (state.shelves || []).forEach(shelf => {
+    const sType = (shelf.model || "").toLowerCase();
+    const spec = SHELF_SPEC_MAP[sType] || { ru: 2, power: 300 };
+    totalRu += spec.ru;
+    totalWatts += spec.power;
+  });
+
+  // 3. Cards
+  (state.expansionCards || []).forEach(c => {
+    const cKey = typeof c === 'string' ? c : c.cardKey;
+    const cardSpec = EXP_CARDS_CATALOG[cKey] || { power: 15 };
+    const nodes = state.nodes || [];
+    const count = nodes.length || 2;
+    totalWatts += cardSpec.power * count;
+  });
+
+  const totalBtu = Math.round(totalWatts * 3.412);
+  return { ru: totalRu, watts: totalWatts, btu: totalBtu };
+}
+
 function updateCapacityImpactDetails() {
   const type = document.getElementById("shelf-type").value;
   const nextBtn = document.getElementById("next-btn");
-  
-  const ruNode = document.getElementById("impact-ru");
-  const wattsNode = document.getElementById("impact-watts");
-  const btuNode = document.getElementById("impact-btu");
-  const capNode = document.getElementById("impact-raw-capacity");
   const notesNode = document.getElementById("shelf-notes");
 
   nextBtn.disabled = false;
   nextBtn.style.opacity = "1";
 
-  // Calculate PCIe power/cool cards deltas
-  let cardWatts = 0;
-  const cards = currentState.expansionCards || [];
-  cards.forEach(c => {
-    const cKey = typeof c === 'string' ? c : c.cardKey;
-    cardWatts += EXP_CARDS_CATALOG[cKey].power;
+  // Calculate baseline (Before)
+  const footprintBefore = getSystemPhysicalFootprint(currentState);
+  let rawCapBeforeGB = 0;
+  (currentState.shelves || []).forEach(s => {
+    (s.disks || []).forEach(d => {
+      rawCapBeforeGB += (d.sizeGB || 0);
+    });
   });
 
+  // Calculate target (After)
+  const isMetroCluster = currentState.metrocluster && currentState.metrocluster !== "none";
+  const mult = isMetroCluster ? 2 : 1;
+  
+  let shelfCount = 0;
+  let rawCapAddedGB = 0;
+  let spec = null;
+  let diskCount = 0;
+  let diskSizeStr = "";
+  let diskGB = 0;
+
+  if (type !== "none") {
+    spec = SHELF_SPEC_MAP[type];
+    diskCount = parseInt(document.getElementById("disk-count").value) || 0;
+    diskSizeStr = document.getElementById("disk-size").value;
+    
+    const match = diskSizeStr.match(/([\d.]+)\s*([GT])B?/i);
+    if (match) {
+      const val = parseFloat(match[1]);
+      diskGB = match[2].toUpperCase() === 'T' ? val * 1000 : val;
+    }
+
+    shelfCount = Math.ceil(diskCount / spec.maxCount);
+    rawCapAddedGB = diskGB * diskCount * mult;
+
+    const hintNode = document.getElementById("disk-count-hint");
+    if (hintNode) {
+      hintNode.innerHTML = `Requires <strong>${shelfCount}</strong> shelf/shelves (${spec.maxCount} drives max per shelf).`;
+    }
+  }
+
+  // Create temporary state for auto-allocated cards calculation
+  const tempState = JSON.parse(JSON.stringify(currentState));
+  if (type !== "none") {
+    for (let s = 0; s < shelfCount * mult; s++) {
+      tempState.shelves.push({
+        id: `NEW-${s + 1}`,
+        model: type,
+        disks: Array.from({ length: Math.min(spec.maxCount, diskCount) }, () => ({ type: spec.mediaType }))
+      });
+    }
+  }
+  allocateHBACardsForState(tempState);
+  
+  const footprintAfter = getSystemPhysicalFootprint(tempState);
+  const rawCapAfterGB = rawCapBeforeGB + rawCapAddedGB;
+
+  const ruDiff = footprintAfter.ru - footprintBefore.ru;
+  const wattsDiff = footprintAfter.watts - footprintBefore.watts;
+  const btuDiff = footprintAfter.btu - footprintBefore.btu;
+  const capDiff = rawCapAddedGB;
+
+  // Render to DOM
+  const setEl = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+
+  setEl("footprint-ru-before", `${footprintBefore.ru} U`);
+  setEl("footprint-ru-after", `${footprintAfter.ru} U`);
+  setEl("footprint-ru-diff", `(+${ruDiff} U)`);
+
+  setEl("footprint-watts-before", `${footprintBefore.watts} W`);
+  setEl("footprint-watts-after", `${footprintAfter.watts} W`);
+  setEl("footprint-watts-diff", `(+${wattsDiff} W)`);
+
+  setEl("footprint-btu-before", `${footprintBefore.btu} BTU/hr`);
+  setEl("footprint-btu-after", `${footprintAfter.btu} BTU/hr`);
+  setEl("footprint-btu-diff", `(+${btuDiff} BTU/hr)`);
+
+  setEl("footprint-cap-before", formatGB(rawCapBeforeGB));
+  setEl("footprint-cap-after", formatGB(rawCapAfterGB));
+  setEl("footprint-cap-diff", `(+${formatGB(capDiff)})`);
+
   if (type === "none") {
-    ruNode.textContent = "0 U";
-    wattsNode.textContent = `${cardWatts} W`;
-    btuNode.textContent = `${Math.round(cardWatts * 3.412)} BTU/hr`;
-    capNode.textContent = "0 GB";
+    let cardWatts = 0;
+    const cards = currentState.expansionCards || [];
+    cards.forEach(c => {
+      const cKey = typeof c === 'string' ? c : c.cardKey;
+      cardWatts += EXP_CARDS_CATALOG[cKey].power;
+    });
     notesNode.innerHTML = `Model expansion PCIe cards or select a disk shelf stack to simulate system physical limits. Installed cards are adding ${cardWatts}W power draw.`;
     notesNode.style.background = "";
     notesNode.style.border = "";
     return;
   }
-
-  const spec = SHELF_SPEC_MAP[type];
-  const diskCount = parseInt(document.getElementById("disk-count").value) || 0;
-  const diskSizeStr = document.getElementById("disk-size").value;
-  
-  let diskGB = 0;
-  const match = diskSizeStr.match(/([\d.]+)\s*([GT])B?/i);
-  if (match) {
-    const val = parseFloat(match[1]);
-    diskGB = match[2].toUpperCase() === 'T' ? val * 1000 : val;
-  }
-
-  // Calculate shelf count dynamically based on drives
-  const shelfCount = Math.ceil(diskCount / spec.maxCount);
-  const hintNode = document.getElementById("disk-count-hint");
-  if (hintNode) {
-    hintNode.innerHTML = `Requires <strong>${shelfCount}</strong> shelf/shelves (${spec.maxCount} drives max per shelf).`;
-  }
-
-  const rawCapGB = diskGB * diskCount;
-  const ru = spec.ru * shelfCount;
-  const totalWatts = (spec.power * shelfCount) + cardWatts;
-  const totalBtu = Math.round(totalWatts * 3.412);
-
-  ruNode.textContent = `${ru} U`;
-  wattsNode.textContent = `${totalWatts} W`;
-  btuNode.textContent = `${totalBtu} BTU/hr`;
-  capNode.textContent = formatGB(rawCapGB);
 
   const profile = getPlatformProfile(currentState.version.model);
   const targetOntap = document.getElementById("target-ontap").value || currentState.version.ontap;
@@ -3745,7 +3842,6 @@ function updateCapacityImpactDetails() {
   }
 
   // Validate platform supports MetroCluster if MC is checked
-  const isMetroCluster = currentState.metrocluster && currentState.metrocluster !== "none";
   let mcNoticeHtml = "";
   if (isMetroCluster) {
     if (!profile.supportedLicenses.includes("MetroCluster")) {
@@ -4863,13 +4959,18 @@ function populateStateTable(state, bodyId) {
     ? `${state.aggregates.length} aggregates`
     : "No aggregates detected";
 
+  const footprint = getSystemPhysicalFootprint(state);
+
   const rows = [
     { label: "Storage Shelves", val: `${shelfCount} shelves` },
     { label: "Cabling Redundancy", val: cablingStatus },
     { label: "Disk Tiers / Sizes", val: diskTypeSummary },
     { label: "Active Spare Drives", val: `${totalSpares} drives` },
     { label: "Logical Aggregates", val: aggregateSummary },
-    { label: "Expired Licenses", val: state.licenses.filter(l => l.status === "expired").length + " licenses" }
+    { label: "Expired Licenses", val: state.licenses.filter(l => l.status === "expired").length + " licenses" },
+    { label: "Rack Footprint (RU)", val: `${footprint.ru} U` },
+    { label: "Power Budget (Watts)", val: `${footprint.watts} W` },
+    { label: "Thermal Output (BTU/hr)", val: `${footprint.btu} BTU/hr` }
   ];
 
   rows.forEach(r => {
@@ -4954,6 +5055,23 @@ function generateReport() {
   };
   const capBefore = getTotals(currentState);
   const capAfter = getTotals(modeledState);
+
+  const footprintBefore = getSystemPhysicalFootprint(currentState);
+  const footprintAfter = getSystemPhysicalFootprint(modeledState);
+  
+  let rawCapBeforeGB = 0;
+  (currentState.shelves || []).forEach(s => {
+    (s.disks || []).forEach(d => {
+      rawCapBeforeGB += (d.sizeGB || 0);
+    });
+  });
+  
+  let rawCapAfterGB = 0;
+  (modeledState.shelves || []).forEach(s => {
+    (s.disks || []).forEach(d => {
+      rawCapAfterGB += (d.sizeGB || 0);
+    });
+  });
 
   const isMetroCluster = currentState.metrocluster && currentState.metrocluster !== "none";
   const mult = isMetroCluster ? 2 : 1;
@@ -5377,33 +5495,45 @@ function generateReport() {
     <div class="report-section">
       <h3>2. Sizing & Power Considerations</h3>
       <p style="margin-bottom: 1rem; color:#e5e7eb;">The physical implementation details of the modeling additions are captured below:</p>
-      <table class="compare-table" style="max-width:600px; margin-bottom: 1.5rem; font-size:0.85rem;">
+      <table class="compare-table" style="width:100%; margin-bottom: 1.5rem; font-size:0.85rem;">
         <thead>
           <tr>
             <th>Specification Metric</th>
-            <th>Value Added / Delta</th>
+            <th>Existing (Before)</th>
+            <th>Proposed (After)</th>
+            <th>Delta (Change)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>Cabinet Rack Space (RU)</td>
-            <td style="font-weight:600; color:#fff;">+ ${ruAdded} U ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
+            <td>${footprintBefore.ru} U</td>
+            <td>${footprintAfter.ru} U</td>
+            <td style="font-weight:600; color:#34d399;">+${footprintAfter.ru - footprintBefore.ru} U ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
           </tr>
           <tr>
-            <td>Power Budget Increase (Watts)</td>
-            <td style="font-weight:600; color:#fff;">+ ${wattsAdded} W ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
+            <td>Power Budget (Watts)</td>
+            <td>${footprintBefore.watts} W</td>
+            <td>${footprintAfter.watts} W</td>
+            <td style="font-weight:600; color:#34d399;">+${footprintAfter.watts - footprintBefore.watts} W ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
           </tr>
           <tr>
-            <td>Thermal Output Addition</td>
-            <td style="font-weight:600; color:#fff;">+ ${btuAdded} BTU/hr ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
+            <td>Thermal Output (BTU/hr)</td>
+            <td>${footprintBefore.btu} BTU/hr</td>
+            <td>${footprintAfter.btu} BTU/hr</td>
+            <td style="font-weight:600; color:#34d399;">+${footprintAfter.btu - footprintBefore.btu} BTU/hr ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
           </tr>
           <tr>
-            <td>Raw Shelf Disk Volume</td>
-            <td style="font-weight:600; color:#fff;">+ ${formatGB(rawCapAddedGB)} Raw ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
+            <td>Raw Capacity Volume</td>
+            <td>${formatGB(rawCapBeforeGB)}</td>
+            <td>${formatGB(rawCapAfterGB)}</td>
+            <td style="font-weight:600; color:#34d399;">+${formatGB(rawCapAfterGB - rawCapBeforeGB)} ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
           </tr>
           <tr>
-            <td>PCIe Expansion Slots Sized</td>
-            <td style="font-weight:600; color:#fff;">${cards.length} cards installed</td>
+            <td>PCIe Expansion Cards</td>
+            <td>-</td>
+            <td>${cards.length} cards installed</td>
+            <td style="font-weight:600; color:#fff;">Sized Symmetrically</td>
           </tr>
         </tbody>
       </table>
