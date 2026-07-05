@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.2)
+# NetApp AutoSupport Analyzer & Modeler (v2.3)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -16,6 +16,7 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
   * **Disk Sparing Compliance:** Verifies that correct spare counts are maintained per loop/pool.
   * **License Expirations:** Audits installed software features for expired or missing entitlements.
   * **Controller System Firmware Checks (New):** Compares motherboard/BIOS versions against platform baselines and prints update command guidelines.
+  * **Disk Size & ONTAP Compatibility Audits (New):** Validates SSD drive capacities (e.g. 15.3TB and 30.6TB) against target ONTAP version requirements to prevent software support conflicts.
 * **Interactive Sizing Modeler:** A scenario planning tool to model:
   * **Best-Practice Greenfield Baselines (New):** Initializes manual platform selections in a Greenfield state configured perfectly in compliance with best practices (optimal drive sizing solver, default spares, correct licenses, no SPOFs).
   * **Intelligent HBA Card Auto-Allocation (New):** Automatically determines, slots, and cables necessary SAS or RoCE HBA expansion cards when adding shelves based on slot optimization/compliance rules.
