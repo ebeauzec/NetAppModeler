@@ -937,7 +937,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.5</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.6</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -1667,6 +1667,56 @@ svg.cabling-graph {
         <svg style="width: 18px; height: 18px; fill: #fff;" viewBox="0 0 24 24">
           <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
         </svg>
+    </div>
+  </div>
+
+  <!-- Export Options Modal Overlay -->
+  <div id="export-modal" class="modal-overlay hidden no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px);">
+    <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2rem; width: 450px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); position: relative;">
+      <h3 style="margin-top: 0; color: #fff; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; font-size: 1.2rem;">
+        <svg style="width:24px; height:24px; fill:var(--color-primary);" viewBox="0 0 24 24">
+          <path d="M14,2L20,8V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V4A2,2 0 0,1 6,2H14M18,20V9H13V4H6V20H18M12,18L7,13H10V10H14V13H17L12,18Z" />
+        </svg>
+        Export Sizing Plan / Report
+      </h3>
+      <p style="color: var(--color-muted); font-size: 0.88rem; margin-bottom: 1.5rem;">Select your preferred output format to share the technical implementation details with your team.</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="export-pdf-opt" class="btn-primary" style="justify-content: flex-start; text-align: left; padding: 12px 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 12px; width: 100%;">
+          <span style="font-size: 1.25rem;">📄</span>
+          <div>
+            <strong style="display: block; color: #fff;">Print / Download PDF Report</strong>
+            <span style="font-size: 0.75rem; color: rgba(255,255,255,0.7); font-weight: normal;">Generate a print-ready PDF containing charts and audits.</span>
+          </div>
+        </button>
+
+        <button id="export-md-opt" class="btn-secondary" style="justify-content: flex-start; text-align: left; padding: 12px 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 12px; width: 100%; border: 1px solid var(--border-color);">
+          <span style="font-size: 1.25rem;">📝</span>
+          <div>
+            <strong style="display: block; color: #fff;">Download Markdown Plan (.md)</strong>
+            <span style="font-size: 0.75rem; color: var(--color-muted);">Download a structured Markdown document for documentation/wikis.</span>
+          </div>
+        </button>
+
+        <button id="export-cli-opt" class="btn-secondary" style="justify-content: flex-start; text-align: left; padding: 12px 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 12px; width: 100%; border: 1px solid var(--border-color);">
+          <span style="font-size: 1.25rem;">💻</span>
+          <div>
+            <strong style="display: block; color: #fff;">Download ONTAP CLI Script (.txt)</strong>
+            <span style="font-size: 0.75rem; color: var(--color-muted);">Get a plain text file containing only the execution commands.</span>
+          </div>
+        </button>
+
+        <button id="export-json-opt" class="btn-secondary" style="justify-content: flex-start; text-align: left; padding: 12px 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 12px; width: 100%; border: 1px solid var(--border-color);">
+          <span style="font-size: 1.25rem;">⚙️</span>
+          <div>
+            <strong style="display: block; color: #fff;">Save Modeler Configuration (.json)</strong>
+            <span style="font-size: 0.75rem; color: var(--color-muted);">Export configuration to restore it in the modeler later.</span>
+          </div>
+        </button>
+      </div>
+
+      <button id="close-export-modal-btn" class="btn-secondary" style="margin-top: 1.5rem; width: 100%; justify-content: center; padding: 10px;">
+        Cancel
       </button>
     </div>
   </div>
@@ -4646,6 +4696,238 @@ function loadConfiguration(configObj) {
   }
 }
 
+function exportMarkdownPlan() {
+  if (!currentState || !modeledState) {
+    alert("No active model state. Please complete the sizing first.");
+    return;
+  }
+
+  const isMetroCluster = currentState.metrocluster && currentState.metrocluster !== "none";
+  const targetOntap = document.getElementById("target-ontap").value;
+  const curVer = currentState.version.ontap;
+  const baseCur = resolveBaseVersionKey(curVer);
+  const hops = ONTAP_HOPS[baseCur] ? ONTAP_HOPS[baseCur][targetOntap] : [];
+  const hopList = hops.length > 0 ? hops.join(" -> ") : "No upgrade required";
+
+  let md = `# NetApp Storage Upgrade & Implementation Plan\n\n`;
+  md += `**Date:** ${new Date().toLocaleDateString()}\n`;
+  md += `**Platform Model:** ${currentState.version.model}\n`;
+  md += `**Current ONTAP Release:** ${currentState.version.ontap}\n`;
+  md += `**Target ONTAP Release:** ${targetOntap}\n`;
+  md += `**Upgrade Path:** ${currentState.version.ontap} ➔ ${hopList}\n\n`;
+
+  md += `## 1. Scope of Work\n`;
+  md += `- Remediate SAS/NVMe loop cabling single-points-of-failure (SPOF) to achieve Multipath HA.\n`;
+  md += `- Upgrade controller BIOS/system firmware and shelf/drive firmware.\n`;
+  if (currentState.expansionCards && currentState.expansionCards.length > 0) {
+    md += `- Install PCIe expansion HBA/NIC cards to support target ports requirements.\n`;
+  }
+  const shelfType = document.getElementById("shelf-type").value;
+  if (shelfType !== "none") {
+    md += `- Rack, cable, and provision additional storage shelf capacity (${shelfType.toUpperCase()}).\n`;
+  }
+  md += `- Perform non-disruptive ONTAP rolling operating system upgrades.\n\n`;
+
+  md += `## 2. Technical Execution Steps & CLI Commands\n\n`;
+  
+  let step = 1;
+  
+  // Phase 1
+  md += `### Step ${step++}: Pre-Upgrade Diagnostic Baseline\n`;
+  md += `Execute cluster health validation commands and capture a configuration backup:\n`;
+  md += `\`\`\`bash\n`;
+  md += `cluster show\n`;
+  md += `storage failover show\n`;
+  if (isMetroCluster) {
+    md += `metrocluster check run\n`;
+    md += `metrocluster check show\n`;
+  }
+  md += `system configuration backup create -node * -backup-name pre_upgrade_baseline\n`;
+  md += `\`\`\`\n\n`;
+
+  // Phase 2: Cabling
+  const originalHadSPOF = currentState.shelves.some(s => s.cabling && (s.cabling.toLowerCase().includes("single-path") || !s.cabling.toLowerCase().includes("multipath")));
+  if (originalHadSPOF) {
+    md += `### Step ${step++}: Cabling Loop Remediation (SPOF Removal)\n`;
+    md += `Connect redundant path loop cables to transition the storage shelves to a Multipath HA cabling layout:\n`;
+    md += `\`\`\`bash\n`;
+    md += `storage cabling show\n`;
+    md += `storage cabinet show\n`;
+    md += `\`\`\`\n\n`;
+  }
+
+  // Phase 3: Firmware
+  md += `### Step ${step++}: Controller BIOS & Device Firmware Upgrades\n`;
+  md += `Apply system and shelf firmware packages to ensure hardware currency:\n`;
+  md += `\`\`\`bash\n`;
+  md += `system node firmware update -node * -package-url http://webserver/fw_package\n`;
+  md += `storage shelf firmware update\n`;
+  md += `storage disk firmware update\n`;
+  md += `\`\`\`\n\n`;
+
+  // Phase 4: Cards
+  const cards = currentState.expansionCards || [];
+  if (cards.length > 0) {
+    md += `### Step ${step++}: PCIe Adapter Expansion Card Mounting\n`;
+    md += `Sequentially failover each controller and physically insert PCIe cards:\n`;
+    cards.forEach(c => {
+      const cKey = typeof c === 'string' ? c : c.cardKey;
+      const slotNum = typeof c === 'string' ? '?' : c.slot;
+      md += `- Slot ${slotNum}: ${EXP_CARDS_CATALOG[cKey].name}\n`;
+    });
+    md += `\n\`\`\`bash\n`;
+    md += `storage failover takeover -ofnode <node_name>\n`;
+    md += `# Power down node, install PCIe card, boot node\n`;
+    md += `sysconfig -card\n`;
+    md += `storage failover giveback -ofnode <node_name>\n`;
+    md += `\`\`\`\n\n`;
+  }
+
+  // Phase 5: Hops
+  if (hops.length > 0) {
+    md += `### Step ${step++}: Execute ONTAP Upgrade Hops\n`;
+    md += `Upgrade the operating system using a rolling, non-disruptive sequence:\n`;
+    md += `\`\`\`bash\n`;
+    if (isMetroCluster) {
+      md += `metrocluster switchover -controller-replacement true\n`;
+    }
+    md += `cluster image package get -url http://webserver/ontap_image.tgz\n`;
+    md += `cluster image validate -version <target_version>\n`;
+    md += `cluster image update\n`;
+    if (isMetroCluster) {
+      md += `metrocluster switchback\n`;
+    }
+    md += `\`\`\`\n\n`;
+  }
+
+  // Phase 6: Shelf Additions
+  if (shelfType !== "none") {
+    md += `### Step ${step++}: Mount & Cable Storage Shelf Expansion\n`;
+    md += `Mount the new shelves in the rack. Cable loop paths symmetrically to Node A and Node B storage ports:\n`;
+    md += `\`\`\`bash\n`;
+    md += `storage shelf show\n`;
+    md += `storage cabling show\n`;
+    md += `\`\`\`\n\n`;
+  }
+
+  // Phase 7: Logical Provisioning
+  md += `### Step ${step++}: Logical Aggregates & Spares Provisioning\n`;
+  md += `Create aggregates and assign spare disks according to sizing recommendations:\n`;
+  md += `\`\`\`bash\n`;
+  modeledState.aggregates.forEach(a => {
+    if (a.name.startsWith("aggr0")) return;
+    md += `storage aggregate create -aggregate ${a.name} -diskcount ${a.disksCount} -raidtype ${a.raidType || "raid_dp"}\n`;
+  });
+  md += `storage disk show -container-type spare\n`;
+  md += `\`\`\`\n\n`;
+
+  md += `## 3. Risks & Mitigations\n`;
+  md += `| Risk | Severity | Mitigation Plan |\n`;
+  md += `| :--- | :--- | :--- |\n`;
+  md += `| **Controller failover failure during PCIe mounting** | High | Run SFO diagnostics beforehand and verify LIF migrations. |\n`;
+  md += `| **Disk capacity ONTAP compatibility error** | Medium | Keep target ONTAP version >= 9.9.1 to support 30.6TB SSDs. |\n`;
+  md += `| **Symmetric cabling misalignment** | Medium | Double check loop cabling paths using cabling diagram svg views. |\n`;
+
+  const blob = new Blob([md], { type: "text/markdown;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `netapp_upgrade_plan_${currentState.version.model.replace(/\s+/g, "_")}.md`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportCliScript() {
+  if (!currentState || !modeledState) {
+    alert("No active model state. Please complete the sizing first.");
+    return;
+  }
+
+  const isMetroCluster = currentState.metrocluster && currentState.metrocluster !== "none";
+  const targetOntap = document.getElementById("target-ontap").value;
+  const curVer = currentState.version.ontap;
+  const baseCur = resolveBaseVersionKey(curVer);
+  const hops = ONTAP_HOPS[baseCur] ? ONTAP_HOPS[baseCur][targetOntap] : [];
+
+  let script = `#!/bin/bash\n`;
+  script += `# ==========================================================================\n`;
+  script += `# NetApp ONTAP Upgrade & Sizing Implementation Commands Script\n`;
+  script += `# Platform: ${currentState.version.model}\n`;
+  script += `# Target ONTAP: ${targetOntap}\n`;
+  script += `# Generated: ${new Date().toLocaleDateString()}\n`;
+  script += `# ==========================================================================\n\n`;
+
+  script += `# --- Step 1: Pre-Upgrade Diagnostic Baseline ---\n`;
+  script += `cluster show\n`;
+  script += `storage failover show\n`;
+  if (isMetroCluster) {
+    script += `metrocluster check run\n`;
+    script += `metrocluster check show\n`;
+  }
+  script += `system configuration backup create -node * -backup-name pre_upgrade_baseline\n\n`;
+
+  const originalHadSPOF = currentState.shelves.some(s => s.cabling && (s.cabling.toLowerCase().includes("single-path") || !s.cabling.toLowerCase().includes("multipath")));
+  if (originalHadSPOF) {
+    script += `# --- Step 2: Cabling Loop Remediation (SPOF Removal) ---\n`;
+    script += `storage cabling show\n`;
+    script += `storage cabinet show\n\n`;
+  }
+
+  script += `# --- Step 3: Controller BIOS & Device Firmware Upgrades ---\n`;
+  script += `system node firmware update -node * -package-url http://webserver/fw_package\n`;
+  script += `storage shelf firmware update\n`;
+  script += `storage disk firmware update\n\n`;
+
+  const cards = currentState.expansionCards || [];
+  if (cards.length > 0) {
+    script += `# --- Step 4: PCIe Adapter Expansion Card Mounting ---\n`;
+    script += `# Run on controller console sequentially during maintenance window:\n`;
+    script += `# storage failover takeover -ofnode <node_name>\n`;
+    script += `# sysconfig -card\n`;
+    script += `# storage failover giveback -ofnode <node_name>\n\n`;
+  }
+
+  if (hops.length > 0) {
+    script += `# --- Step 5: Execute ONTAP Upgrade hops ---\n`;
+    if (isMetroCluster) {
+      script += `# metrocluster switchover -controller-replacement true\n`;
+    }
+    script += `cluster image package get -url http://webserver/ontap_image.tgz\n`;
+    script += `cluster image validate -version <target_version>\n`;
+    script += `cluster image update\n`;
+    if (isMetroCluster) {
+      script += `# metrocluster switchback\n`;
+    }
+    script += `\n`;
+  }
+
+  const shelfType = document.getElementById("shelf-type").value;
+  if (shelfType !== "none") {
+    script += `# --- Step 6: Mount & Cable Storage Shelf Expansion ---\n`;
+    script += `storage shelf show\n`;
+    script += `storage cabling show\n\n`;
+  }
+
+  script += `# --- Step 7: Logical Aggregates & Spares Provisioning ---\n`;
+  modeledState.aggregates.forEach(a => {
+    if (a.name.startsWith("aggr0")) return;
+    script += `storage aggregate create -aggregate ${a.name} -diskcount ${a.disksCount} -raidtype ${a.raidType || "raid_dp"}\n`;
+  });
+  script += `storage disk show -container-type spare\n`;
+
+  const blob = new Blob([script], { type: "text/plain;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `netapp_execution_script_${currentState.version.model.replace(/\s+/g, "_")}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 // --- Wizard Logic ---
 function showPanel(step) {
   for (let i = 1; i <= 6; i++) {
@@ -4669,12 +4951,13 @@ function showPanel(step) {
     
     if (step === 6) {
       nextBtn.innerHTML = `
-        Export Completed
-        <svg style="width: 18px; height: 18px; fill: #fff;" viewBox="0 0 24 24">
-          <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
+        Export Plan / Report
+        <svg style="width: 18px; height: 18px; fill: #fff; margin-left: 6px;" viewBox="0 0 24 24">
+          <path d="M14,2L20,8V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V4A2,2 0 0,1 6,2H14M18,20V9H13V4H6V20H18M12,18L7,13H10V10H14V13H17L12,18Z" />
         </svg>
       `;
-      nextBtn.disabled = true;
+      nextBtn.disabled = false;
+      nextBtn.style.opacity = "1";
     } else {
       nextBtn.innerHTML = `
         Next
@@ -4795,6 +5078,13 @@ function setupWizardListeners() {
   });
 
   nextBtn.addEventListener("click", () => {
+    if (activeStep === 6) {
+      const modal = document.getElementById("export-modal");
+      if (modal) {
+        modal.classList.remove("hidden");
+      }
+      return;
+    }
     if (activeStep < 6) {
       try {
         if (activeStep === 2) {
@@ -4817,6 +5107,46 @@ function setupWizardListeners() {
       }
     }
   });
+
+  // Export options modal listeners
+  const closeExportModalBtn = document.getElementById("close-export-modal-btn");
+  if (closeExportModalBtn) {
+    closeExportModalBtn.addEventListener("click", () => {
+      document.getElementById("export-modal").classList.add("hidden");
+    });
+  }
+
+  const exportPdfOpt = document.getElementById("export-pdf-opt");
+  if (exportPdfOpt) {
+    exportPdfOpt.addEventListener("click", () => {
+      document.getElementById("export-modal").classList.add("hidden");
+      window.print();
+    });
+  }
+
+  const exportMdOpt = document.getElementById("export-md-opt");
+  if (exportMdOpt) {
+    exportMdOpt.addEventListener("click", () => {
+      document.getElementById("export-modal").classList.add("hidden");
+      exportMarkdownPlan();
+    });
+  }
+
+  const exportCliOpt = document.getElementById("export-cli-opt");
+  if (exportCliOpt) {
+    exportCliOpt.addEventListener("click", () => {
+      document.getElementById("export-modal").classList.add("hidden");
+      exportCliScript();
+    });
+  }
+
+  const exportJsonOpt = document.getElementById("export-json-opt");
+  if (exportJsonOpt) {
+    exportJsonOpt.addEventListener("click", () => {
+      document.getElementById("export-modal").classList.add("hidden");
+      saveConfiguration();
+    });
+  }
 
   if (saveConfigBtn) {
     saveConfigBtn.addEventListener("click", () => {

@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.5)
+# NetApp AutoSupport Analyzer & Modeler (v2.6)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,10 +6,15 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.5)
-* **Save/Load Configurations:** Save your active modeling session (including parsed baseline system data, custom PCIe expansion cards, and target aggregate/shelf choices) directly as a JSON file using the **Save Config** button. Restore your session instantly at any time by clicking the **Load Config** button, which loads the file and re-establishes the exact step and inputs.
-* **Disk-level Firmware Parsing (v2.4):** Extracts drive firmware versions directly from AutoSupport logs (supporting parentheses formats and raw `sysconfig -a` listings) and displays them in the inventory views and cabling tables.
-* **ONTAP Drive Size Compatibility audits (v2.3):** Enforces ONTAP release prerequisites for large capacity SSDs (e.g. 15.3TB and 30.6TB).
+## 🆕 New in this Version (v2.6)
+* **Multi-Format Implementation Plan Exports:** Click the **Export Plan / Report** button on Step 6 to access the new premium exports dialog:
+  - 📄 **Print / Download PDF Report:** Generates a print-ready technical document.
+  - 📝 **Download Markdown Plan (.md):** Downloads a clean, structured documentation file suitable for wiki pages or technical reviews.
+  - 💻 **Download ONTAP CLI Script (.txt):** Downloads a plain-text shell script containing ONLY the sequenced CLI commands for execution.
+  - ⚙️ **Save Modeler Configuration (.json):** Serializes the entire configuration to restore later.
+* **Save/Load Configurations (v2.5):** Save/load the entire workspace state to local files.
+* **Disk-level Firmware Parsing (v2.4):** Extracts disk firmware versions from logs.
+* **ONTAP Drive Size Compatibility audits (v2.3):** Enforces ONTAP release requirements for large capacity SSDs.
 
 ---
 

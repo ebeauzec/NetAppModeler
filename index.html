@@ -37,7 +37,7 @@
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.5</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.6</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -767,6 +767,56 @@
         <svg style="width: 18px; height: 18px; fill: #fff;" viewBox="0 0 24 24">
           <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
         </svg>
+    </div>
+  </div>
+
+  <!-- Export Options Modal Overlay -->
+  <div id="export-modal" class="modal-overlay hidden no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px);">
+    <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2rem; width: 450px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); position: relative;">
+      <h3 style="margin-top: 0; color: #fff; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; font-size: 1.2rem;">
+        <svg style="width:24px; height:24px; fill:var(--color-primary);" viewBox="0 0 24 24">
+          <path d="M14,2L20,8V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V4A2,2 0 0,1 6,2H14M18,20V9H13V4H6V20H18M12,18L7,13H10V10H14V13H17L12,18Z" />
+        </svg>
+        Export Sizing Plan / Report
+      </h3>
+      <p style="color: var(--color-muted); font-size: 0.88rem; margin-bottom: 1.5rem;">Select your preferred output format to share the technical implementation details with your team.</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="export-pdf-opt" class="btn-primary" style="justify-content: flex-start; text-align: left; padding: 12px 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 12px; width: 100%;">
+          <span style="font-size: 1.25rem;">📄</span>
+          <div>
+            <strong style="display: block; color: #fff;">Print / Download PDF Report</strong>
+            <span style="font-size: 0.75rem; color: rgba(255,255,255,0.7); font-weight: normal;">Generate a print-ready PDF containing charts and audits.</span>
+          </div>
+        </button>
+
+        <button id="export-md-opt" class="btn-secondary" style="justify-content: flex-start; text-align: left; padding: 12px 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 12px; width: 100%; border: 1px solid var(--border-color);">
+          <span style="font-size: 1.25rem;">📝</span>
+          <div>
+            <strong style="display: block; color: #fff;">Download Markdown Plan (.md)</strong>
+            <span style="font-size: 0.75rem; color: var(--color-muted);">Download a structured Markdown document for documentation/wikis.</span>
+          </div>
+        </button>
+
+        <button id="export-cli-opt" class="btn-secondary" style="justify-content: flex-start; text-align: left; padding: 12px 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 12px; width: 100%; border: 1px solid var(--border-color);">
+          <span style="font-size: 1.25rem;">💻</span>
+          <div>
+            <strong style="display: block; color: #fff;">Download ONTAP CLI Script (.txt)</strong>
+            <span style="font-size: 0.75rem; color: var(--color-muted);">Get a plain text file containing only the execution commands.</span>
+          </div>
+        </button>
+
+        <button id="export-json-opt" class="btn-secondary" style="justify-content: flex-start; text-align: left; padding: 12px 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 12px; width: 100%; border: 1px solid var(--border-color);">
+          <span style="font-size: 1.25rem;">⚙️</span>
+          <div>
+            <strong style="display: block; color: #fff;">Save Modeler Configuration (.json)</strong>
+            <span style="font-size: 0.75rem; color: var(--color-muted);">Export configuration to restore it in the modeler later.</span>
+          </div>
+        </button>
+      </div>
+
+      <button id="close-export-modal-btn" class="btn-secondary" style="margin-top: 1.5rem; width: 100%; justify-content: center; padding: 10px;">
+        Cancel
       </button>
     </div>
   </div>
