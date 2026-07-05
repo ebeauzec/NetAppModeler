@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.1)
+# NetApp AutoSupport Analyzer & Modeler (v2.2)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -52,34 +52,33 @@ NetAppModeler/
 
 ---
 
-## 💻 How to Run Locally
+## 💻 How to Run the App (No Server Required)
 
-### Option A: Development Mode (For Code Edits)
-To work on the modular source files, serve the project using any local HTTP server (to resolve ES6 module CORS policies):
+The easiest and recommended way to run this application is by using the compiled, self-contained standalone file. This requires **no web servers, command lines, or dependencies**.
 
-**Using Python:**
-```bash
-python -m http.server 8000
-```
-Then navigate to `http://localhost:8000` in your web browser.
-
-**Using VS Code:**
-Install the **Live Server** extension, open the directory, and click **Go Live** in the status bar.
+### Direct File Access Mode (For Admins / Dark Sites)
+1. Locate the file **`standalone_netapp_modeler.html`** in this directory.
+2. **Double-click** the file (or drag and drop it into any modern web browser: Chrome, Edge, Firefox, Safari).
+3. The application will load and execute 100% locally from your system (using the `file://` protocol) with full functionality. No data is sent to external servers, and it does not require an internet connection, making it ideal for restricted corporate dark sites and secure workstations.
 
 ---
 
-## 📦 How to Compile the Standalone Offline Bundle
+## 🛠️ How to Compile the Standalone Bundle (For Developers)
 
-For field deployments and dark sites (disconnected environments), you can bundle all modular HTML, CSS, and JS files into a single, self-contained HTML file.
+If you are modifying the source code (`index.html`, `app.css`, or JavaScript files in `js/`) and wish to compile a new standalone HTML file:
 
+### 1. Development Mode (Serving Modular Files)
+To work on modular source files, you must serve them using a local HTTP server to satisfy browser CORS security policies for ES6 modules:
+* **Using Python:** Run `python -m http.server 8000` in this directory, then navigate to `http://localhost:8000`.
+* **Using VS Code:** Install the **Live Server** extension, open this directory, and click **Go Live**.
+
+### 2. Bundling the Standalone File
 Run the build script using Python:
 ```bash
 python build_standalone.py
 ```
-This compiles the application and outputs the file to:
+This compiles all files and assets into:
 * **`standalone_netapp_modeler.html`**
-
-You can double-click this file to open and run the entire app in any browser without needing a local web server or internet connection.
 
 ---
 
