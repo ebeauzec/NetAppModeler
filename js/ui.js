@@ -4011,15 +4011,10 @@ function updateCapacityImpactDetails() {
     `;
   }
 
-  // If MetroCluster, double the footprint deltas since it's symmetrical
-  const ruMultiplier = isMetroCluster ? 2 : 1;
-  const wattsMultiplier = isMetroCluster ? 2 : 1;
-  const btuMultiplier = isMetroCluster ? 2 : 1;
-
   notesNode.innerHTML = `
     <strong>Physical Footprint Summary:</strong><br>
-    - Rack Space Required: <strong>${ru * ruMultiplier} Rack Units</strong> (${isMetroCluster ? 'Symmetrical Site A+B' : 'Single Site'}) [${shelfCount * ruMultiplier} shelf/shelves].<br>
-    - Thermal Dissipation: <strong>${totalBtu * btuMultiplier} BTU/hr</strong> (Includes shelves + cards).<br>
+    - Rack Space Required: <strong>${ruDiff} Rack Units</strong> (${isMetroCluster ? 'Symmetrical Site A+B' : 'Single Site'}) [${shelfCount * mult} shelf/shelves].<br>
+    - Thermal Dissipation: <strong>${btuDiff} BTU/hr</strong> (Includes shelves + cards).<br>
     - Loop Cabling: <strong>${shelfCount * 2}x ${type === 'ns224' ? 'NVMe-oF RoCE 100G' : (type === 'ds2246' ? '6Gb SAS' : '12Gb SAS')} Connections</strong> per controller stack.
     ${mcNoticeHtml}
     ${statusHtml}

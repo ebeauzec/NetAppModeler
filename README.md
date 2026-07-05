@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.7)
+# NetApp AutoSupport Analyzer & Modeler (v2.8)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,12 +6,12 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.7)
-* **Before / After Physical Footprint Comparison:** Real-time physical metrics (Rack Space, Power Consumption, and Thermal Output) are now calculated and displayed as a side-by-side transition (Before ➔ After) during the Step 4 Sizing phase, in the Step 5 Comparison View table, and in the Step 6 Technical Report table, representing both the baseline and proposed cluster layouts.
+## 🆕 New in this Version (v2.8)
+* **Greenfield Support Bugfix:** Resolved a JavaScript ReferenceError (`ru is not defined`) that occurred when configuring new physical shelf sizing during Greenfield deployments.
+* **Before / After Physical Footprint Comparison (v2.7):** Side-by-side transition (Before ➔ After) of Cabinet Rack Space (RU), Power Consumption (W), Thermal Output (BTU/hr), and Total Raw Capacity (GB/TB).
 * **Multi-Format Implementation Plan Exports (v2.6):** Access PDF, Markdown (.md), and ONTAP CLI Command Script (.txt) files.
 * **Save/Load Configurations (v2.5):** Save/load the entire workspace state to local JSON files.
 * **Disk-level Firmware Parsing (v2.4):** Extracts disk firmware versions from logs.
-* **ONTAP Drive Size Compatibility audits (v2.3):** Enforces ONTAP release requirements for large capacity SSDs.
 
 ---
 

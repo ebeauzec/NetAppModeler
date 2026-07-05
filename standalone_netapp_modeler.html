@@ -937,7 +937,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.7</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.8</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -8311,15 +8311,10 @@ function updateCapacityImpactDetails() {
     `;
   }
 
-  // If MetroCluster, double the footprint deltas since it's symmetrical
-  const ruMultiplier = isMetroCluster ? 2 : 1;
-  const wattsMultiplier = isMetroCluster ? 2 : 1;
-  const btuMultiplier = isMetroCluster ? 2 : 1;
-
   notesNode.innerHTML = `
     <strong>Physical Footprint Summary:</strong><br>
-    - Rack Space Required: <strong>${ru * ruMultiplier} Rack Units</strong> (${isMetroCluster ? 'Symmetrical Site A+B' : 'Single Site'}) [${shelfCount * ruMultiplier} shelf/shelves].<br>
-    - Thermal Dissipation: <strong>${totalBtu * btuMultiplier} BTU/hr</strong> (Includes shelves + cards).<br>
+    - Rack Space Required: <strong>${ruDiff} Rack Units</strong> (${isMetroCluster ? 'Symmetrical Site A+B' : 'Single Site'}) [${shelfCount * mult} shelf/shelves].<br>
+    - Thermal Dissipation: <strong>${btuDiff} BTU/hr</strong> (Includes shelves + cards).<br>
     - Loop Cabling: <strong>${shelfCount * 2}x ${type === 'ns224' ? 'NVMe-oF RoCE 100G' : (type === 'ds2246' ? '6Gb SAS' : '12Gb SAS')} Connections</strong> per controller stack.
     ${mcNoticeHtml}
     ${statusHtml}
