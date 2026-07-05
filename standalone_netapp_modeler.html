@@ -4121,6 +4121,41 @@ function runAudit(systemState) {
     );
   }
 
+  // --- Rule 14: Disk Size & ONTAP Version Compatibility ---
+  let driveSizeWarnings = [];
+  systemState.shelves.forEach(shelf => {
+    (shelf.disks || []).forEach(disk => {
+      const sizeStr = disk.sizeStr || "";
+      if (sizeStr.includes("30.6TB") && compareVersions(baseVer, "9.9.1") < 0) {
+        driveSizeWarnings.push(`Disk in shelf ${shelf.id} has size ${sizeStr} which requires ONTAP version >= 9.9.1 (current version is ${systemState.version.ontap}).`);
+      } else if (sizeStr.includes("15.3TB") && compareVersions(baseVer, "9.1") < 0) {
+        driveSizeWarnings.push(`Disk in shelf ${shelf.id} has size ${sizeStr} which requires ONTAP version >= 9.1 (current version is ${systemState.version.ontap}).`);
+      }
+    });
+  });
+
+  if (driveSizeWarnings.length > 0) {
+    addReport(
+      "BP_DISK_ONTAP_COMPAT",
+      "Disk Size & ONTAP Version Compatibility",
+      "Software",
+      "warning",
+      driveSizeWarnings.join("\n"),
+      "Upgrade the cluster to a supported ONTAP version (ONTAP 9.9.1 or higher) to support very large capacity SSDs, or replace the large SSDs with smaller sizes.",
+      "Perform ONTAP upgrade to at least 9.9.1, or replace large capacity SSDs with supported sizes."
+    );
+  } else {
+    addReport(
+      "BP_DISK_ONTAP_COMPAT",
+      "Disk Size & ONTAP Version Compatibility",
+      "Software",
+      "compliant",
+      "All disk drive capacities are compatible with the current ONTAP software version.",
+      "None required.",
+      ""
+    );
+  }
+
   return reports;
 }
 
@@ -4292,7 +4327,7 @@ const SHELF_SPEC_MAP = {
     name: "NS224 (2U NVMe SSD Shelf)",
     ru: 2,
     power: 400,
-    sizes: ["1.9TB NVMe SSD", "3.8TB NVMe SSD", "7.6TB NVMe SSD", "15.3TB NVMe SSD"],
+    sizes: ["1.9TB NVMe SSD", "3.8TB NVMe SSD", "7.6TB NVMe SSD", "15.3TB NVMe SSD", "30.6TB NVMe SSD"],
     defaultCount: 24,
     maxCount: 24,
     mediaType: "NVMe SSD"
@@ -4301,7 +4336,7 @@ const SHELF_SPEC_MAP = {
     name: "DS224C (2U 12G SAS Shelf)",
     ru: 2,
     power: 300,
-    sizes: ["960GB SAS SSD", "1.2TB SAS HDD", "1.8TB SAS HDD"],
+    sizes: ["960GB SAS SSD", "3.8TB SAS SSD", "7.6TB SAS SSD", "15.3TB SAS SSD", "30.6TB SAS SSD", "1.2TB SAS HDD", "1.8TB SAS HDD"],
     defaultCount: 24,
     maxCount: 24,
     mediaType: "SAS SSD"
@@ -7463,6 +7498,17 @@ function updateCapacityImpactDetails() {
   } else if (type === "ds2246" && compareVersions(targetOntap, "9.15.1") >= 0) {
     errorMsg = `Legacy 6G SAS shelf (DS2246) is EOL and not supported on target ONTAP version ${targetOntap}.`;
     isSupported = false;
+  }
+
+  // Validate disk size version compatibility
+  if (!errorMsg) {
+    if (diskSizeStr.includes("30.6TB") && compareVersions(targetOntap, "9.9.1") < 0) {
+      errorMsg = `ONTAP Compatibility Warning: 30.6TB SSDs require target ONTAP version 9.9.1 or higher (Current target: ${targetOntap}).`;
+      isSupported = false;
+    } else if (diskSizeStr.includes("15.3TB") && compareVersions(targetOntap, "9.1") < 0) {
+      errorMsg = `ONTAP Compatibility Warning: 15.3TB SSDs require target ONTAP version 9.1 or higher (Current target: ${targetOntap}).`;
+      isSupported = false;
+    }
   }
 
   // Validate platform supports MetroCluster if MC is checked

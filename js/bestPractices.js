@@ -617,6 +617,41 @@ export function runAudit(systemState) {
     );
   }
 
+  // --- Rule 14: Disk Size & ONTAP Version Compatibility ---
+  let driveSizeWarnings = [];
+  systemState.shelves.forEach(shelf => {
+    (shelf.disks || []).forEach(disk => {
+      const sizeStr = disk.sizeStr || "";
+      if (sizeStr.includes("30.6TB") && compareVersions(baseVer, "9.9.1") < 0) {
+        driveSizeWarnings.push(`Disk in shelf ${shelf.id} has size ${sizeStr} which requires ONTAP version >= 9.9.1 (current version is ${systemState.version.ontap}).`);
+      } else if (sizeStr.includes("15.3TB") && compareVersions(baseVer, "9.1") < 0) {
+        driveSizeWarnings.push(`Disk in shelf ${shelf.id} has size ${sizeStr} which requires ONTAP version >= 9.1 (current version is ${systemState.version.ontap}).`);
+      }
+    });
+  });
+
+  if (driveSizeWarnings.length > 0) {
+    addReport(
+      "BP_DISK_ONTAP_COMPAT",
+      "Disk Size & ONTAP Version Compatibility",
+      "Software",
+      "warning",
+      driveSizeWarnings.join("\n"),
+      "Upgrade the cluster to a supported ONTAP version (ONTAP 9.9.1 or higher) to support very large capacity SSDs, or replace the large SSDs with smaller sizes.",
+      "Perform ONTAP upgrade to at least 9.9.1, or replace large capacity SSDs with supported sizes."
+    );
+  } else {
+    addReport(
+      "BP_DISK_ONTAP_COMPAT",
+      "Disk Size & ONTAP Version Compatibility",
+      "Software",
+      "compliant",
+      "All disk drive capacities are compatible with the current ONTAP software version.",
+      "None required.",
+      ""
+    );
+  }
+
   return reports;
 }
 
