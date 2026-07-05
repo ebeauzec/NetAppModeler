@@ -1366,13 +1366,9 @@ svg.cabling-graph {
               <label for="shelf-type" style="font-weight: 600;">Add Disk Shelf Expansion Stack</label>
               <select id="shelf-type" class="form-control">
                 <option value="none">-- No Shelf Added --</option>
-                <option value="ns224">NS224 (2U, NVMe SSD Disk Shelf)</option>
-                <option value="ds224c">DS224C (2U, 12G SAS SFF SSD/HDD Shelf)</option>
-                <option value="ds212c">DS212C (2U, 12G SAS LFF HDD Shelf)</option>
-                <option value="ds460c">DS460C (4U, 12G High-Density SAS HDD Shelf)</option>
-                <option value="ds2246">DS2246 (Legacy 2U, 6G SAS HDD Shelf - EOL)</option>
               </select>
             </div>
+            <div id="unsupported-shelves-info" style="margin-top: 0.5rem; margin-bottom: 1rem;"></div>
 
             <div id="shelf-expansion-details" class="hidden">
               <div class="form-group">
@@ -4152,6 +4148,14 @@ let modeledState = null;
 let activeStep = 1;
 let uploadedFiles = {};
 let isGreenfieldMode = false;
+
+const ALL_SHELVES_CATALOG = {
+  "ns224": "NS224 (2U, NVMe SSD Disk Shelf)",
+  "ds224c": "DS224C (2U, 12G SAS SFF SSD/HDD Shelf)",
+  "ds212c": "DS212C (2U, 12G SAS LFF HDD Shelf)",
+  "ds460c": "DS460C (4U, 12G High-Density SAS HDD Shelf)",
+  "ds2246": "DS2246 (Legacy 2U, 6G SAS HDD Shelf - EOL)"
+};
 
 function getCardPorts(cardKey, slot) {
   const cSpec = EXP_CARDS_CATALOG[cardKey];
@@ -7163,9 +7167,14 @@ function setupModelerListeners() {
 
     renderCurrentAuditDashboard();
   });
+
+  // Card Select Change Listener to update slot recommendations dynamically
+  document.getElementById("add-pcie-card").addEventListener("change", (e) => {
+    populatePcieSlotDropdown(e.target.value);
+  });
 }
 
-function populatePcieSlotDropdown() {
+function populatePcieSlotDropdown(selectedCardKey) {
   const slotSelect = document.getElementById("add-pcie-slot");
   if (!slotSelect) return;
   slotSelect.innerHTML = "<option value='none'>-- Target Slot --</option>";
@@ -7173,12 +7182,45 @@ function populatePcieSlotDropdown() {
   const slots = getPlatformSlots(currentState.version.model);
   const occupiedSlots = new Set((currentState.expansionCards || []).map(c => c.slot));
   
+  const resolvedCardKey = selectedCardKey || document.getElementById("add-pcie-card").value || "none";
+  const cardSpec = resolvedCardKey !== "none" ? EXP_CARDS_CATALOG[resolvedCardKey] : null;
+  const is100G = cardSpec && cardSpec.speed && cardSpec.speed.includes("100G");
+  const cardType = cardSpec ? cardSpec.type : null;
+  
   slots.forEach(slot => {
     const isOccupied = occupiedSlots.has(slot.num);
     const opt = document.createElement("option");
     opt.value = slot.num;
-    opt.disabled = isOccupied;
-    opt.textContent = `Slot ${slot.num} (${slot.type})` + (isOccupied ? " [Occupied]" : "");
+    
+    let labelSuffix = "";
+    if (isOccupied) {
+      opt.disabled = true;
+      labelSuffix = " [Occupied]";
+    } else if (cardSpec) {
+      // 1. PCIe Bottleneck Check (100G cards require x16 slots)
+      const isX8Bottleneck = is100G && slot.type.includes("x8");
+      if (isX8Bottleneck) {
+        opt.disabled = true;
+        labelSuffix = " [Unsupported: x8 Slot Bottleneck]";
+      } else {
+        // 2. Slot Type Recommendation Alignment check
+        const isTypeMatch = slot.recType === "any" || slot.recType === cardType;
+        if (!isTypeMatch) {
+          // If there is an idle/free slot optimized specifically for this card type, disable this sub-optimal slot
+          const hasBetterSlotFree = slots.some(s => !occupiedSlots.has(s.num) && s.recType === cardType && !(is100G && s.type.includes("x8")));
+          if (hasBetterSlotFree) {
+            opt.disabled = true;
+            labelSuffix = ` [Sub-optimal: Use Slot ${slots.find(s => !occupiedSlots.has(s.num) && s.recType === cardType).num}]`;
+          } else {
+            labelSuffix = " (Sub-optimal slot)";
+          }
+        } else {
+          labelSuffix = " (Recommended slot)";
+        }
+      }
+    }
+    
+    opt.textContent = `Slot ${slot.num} (${slot.type})${labelSuffix}`;
     slotSelect.appendChild(opt);
   });
 }
@@ -7273,17 +7315,50 @@ function initStep4Inputs() {
   const shelfSelect = document.getElementById("shelf-type");
   const profile = getPlatformProfile(currentState.version.model);
   
-  Array.from(shelfSelect.options).forEach(opt => {
-    const val = opt.value;
-    if (val === "none") return;
-    const isSupported = profile.supportedShelves.includes(val);
-    const errorMsg = profile.shelfErrors[val];
-    
-    opt.textContent = opt.textContent.replace(" (Unsupported)", "");
-    if (errorMsg) {
-      opt.textContent += " (Unsupported)";
+  // Clear and dynamically populate supported shelves only
+  shelfSelect.innerHTML = "<option value='none'>-- No Shelf Added --</option>";
+  profile.supportedShelves.forEach(shelfKey => {
+    if (ALL_SHELVES_CATALOG[shelfKey]) {
+      const opt = document.createElement("option");
+      opt.value = shelfKey;
+      opt.textContent = ALL_SHELVES_CATALOG[shelfKey];
+      shelfSelect.appendChild(opt);
     }
   });
+
+  // Populate unsupported shelf explanatory help panel
+  const unsupportedInfo = document.getElementById("unsupported-shelves-info");
+  if (unsupportedInfo) {
+    unsupportedInfo.innerHTML = "";
+    const unsupportedShelves = Object.keys(ALL_SHELVES_CATALOG).filter(s => !profile.supportedShelves.includes(s));
+    if (unsupportedShelves.length > 0) {
+      let html = `
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.3); padding: 0.75rem; border-radius: var(--radius-md); font-size: 0.8rem; line-height: 1.4; color: var(--color-text);">
+          <strong style="color: #fde047; display: block; margin-bottom: 0.4rem; font-size: 0.85rem;">⚠️ Platform Shelf Compatibility Notes:</strong>
+          <ul style="margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.35rem;">
+      `;
+      unsupportedShelves.forEach(shelf => {
+        const name = ALL_SHELVES_CATALOG[shelf].split(" (")[0];
+        let reason = profile.shelfErrors[shelf] || profile.shelfWarnings[shelf] || `Platform ${currentState.version.model} does not support ${name} shelves.`;
+        let optionsTip = "";
+        if (shelf === "ns224") {
+          optionsTip = " To add NVMe-oF SSD capacity, switch to an NVMe-native platform (e.g. AFF A-series).";
+        } else {
+          optionsTip = " To add SAS SSD/HDD capacity, utilize compatible SAS storage HBA adapters on compatible controllers.";
+        }
+        html += `<li><strong>${name}:</strong> ${reason}${optionsTip}</li>`;
+      });
+      const supportedNames = profile.supportedShelves.map(s => ALL_SHELVES_CATALOG[s] ? ALL_SHELVES_CATALOG[s].split(" (")[0] : s).join(", ");
+      html += `
+          </ul>
+          <div style="margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px solid rgba(245, 158, 11, 0.15); font-weight: 500; color: #8ec5fc;">
+            ✅ Recommended Capacity Options: Utilize [ ${supportedNames || 'None'} ] shelf types.
+          </div>
+        </div>
+      `;
+      unsupportedInfo.innerHTML = html;
+    }
+  }
 
   // Populate PCIe Expansion Dropdown
   const cardSelect = document.getElementById("add-pcie-card");
