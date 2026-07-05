@@ -4038,7 +4038,7 @@ function runAudit(systemState) {
       const type = (p.type || "").toLowerCase();
       
       const isRoce = (name.startsWith("e0") || name.startsWith("e1")) && (speed.includes("100g") || speed.includes("roce") || type.includes("storage"));
-      const isSas = (name.startsWith("0") || type.includes("storage")) && (speed.includes("sas") || speed.includes("6g") || speed.includes("12g") || (!speed && (name.startsWith("0a") || name.startsWith("0b") || name.startsWith("0c") || name.startsWith("0d"))));
+      const isSas = (name.startsWith("0") || type.includes("storage")) && (speed.includes("sas") || (speed.includes("6g") && !speed.includes("16g")) || speed.includes("12g") || (!speed && (name.startsWith("0a") || name.startsWith("0b") || name.startsWith("0c") || name.startsWith("0d"))));
       
       if (isRoce) availableRocePorts++;
       else if (isSas) availableSasPorts++;
@@ -4049,16 +4049,26 @@ function runAudit(systemState) {
     const requiredSasPorts = Math.ceil(sasShelvesCount / 4) * 2;
 
     if (nvmeShelvesCount > 0 && availableRocePorts < requiredRocePorts) {
-      storageWarnings.push(`Storage Port Exhaustion (NVMe-oF RoCE): Required ports per controller is ${requiredRocePorts} (for ${nvmeShelvesCount} NVMe shelves), but only ${availableRocePorts} 100GbE RoCE ports are available on Node A. Please add a RoCE HBA adapter card.`);
+      storageWarnings.push(`Storage Port Exhaustion (NVMe-oF RoCE): Required ports per controller is ${requiredRocePorts} (for ${nvmeShelvesCount} NVMe shelves), but only ${availableRocePorts} 100GbE RoCE ports are available on Node A. 
+👉 Resolution Options:
+1. Increase disk drive size (e.g. 15.3TB or 30.6TB) to reduce total shelf count and loops.
+2. Manually add a Dual-port 100GbE RoCE HBA card (roce_hba_100g_2port) in Step 4. If slots are full, remove a less critical NIC or FC expansion card first.
+3. Upgrade platform model to a mid/high-end system that provides more slots and onboard storage ports.`);
     }
     if (sasShelvesCount > 0 && availableSasPorts < requiredSasPorts) {
-      storageWarnings.push(`Storage Port Exhaustion (SAS): Required SAS ports per controller is ${requiredSasPorts} (for ${sasShelvesCount} SAS shelves), but only ${availableSasPorts} SAS ports are available on Node A. Please add a SAS HBA adapter card.`);
+      storageWarnings.push(`Storage Port Exhaustion (SAS): Required SAS ports per controller is ${requiredSasPorts} (for ${sasShelvesCount} SAS shelves), but only ${availableSasPorts} SAS ports are available on Node A.
+👉 Resolution Options:
+1. Increase disk drive size (e.g. 15.3TB or 30.6TB) to reduce total shelf count and loops.
+2. Manually add a Quad-port SAS HBA card (sas_hba_12g_4port) in Step 4. If slots are full, remove a less critical NIC or FC expansion card first.
+3. Upgrade platform model to a system with more slots.`);
     }
 
     if (nvmeShelvesCount > 1 && !isHighEnd) {
-      storageWarnings.push(`Daisy-Chaining Not Supported: NVMe shelf daisy-chaining is not supported on platform ${systemState.version.model}. Each of the ${nvmeShelvesCount} NS224 shelves requires a dedicated direct connection pair.`);
+      storageWarnings.push(`Daisy-Chaining Not Supported: NVMe shelf daisy-chaining is not supported on platform ${systemState.version.model}. Each of the ${nvmeShelvesCount} NS224 shelves requires a dedicated direct connection pair.
+👉 Resolution: Select larger SSD drive capacities (e.g. 15.3TB or 30.6TB) to keep the shelf count to 1.`);
     } else if (nvmeShelvesCount > 2 && isHighEnd) {
-      storageWarnings.push(`Daisy-Chain Limit Exceeded: NS224 NVMe shelves support a maximum daisy-chain stack depth of 2 shelves per loop. Current configuration has ${nvmeShelvesCount} shelves.`);
+      storageWarnings.push(`Daisy-Chain Limit Exceeded: NS224 NVMe shelves support a maximum daisy-chain stack depth of 2 shelves per loop. Current configuration has ${nvmeShelvesCount} shelves.
+👉 Resolution: Select larger SSD drive capacities (e.g. 15.3TB or 30.6TB) to reduce total shelves and keep stack depth <= 2 per loop.`);
     }
   }
 
