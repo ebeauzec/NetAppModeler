@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.0)
+# NetApp AutoSupport Analyzer & Modeler (v2.1)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -8,17 +8,21 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ## 🚀 Key Features
 
-* **Resilient ASUP Parser:** Drag-and-drop or import raw NetApp AutoSupport text logs. The parser extracts cluster models, ONTAP versions, node IDs, shelf structures, disk inventories, spares, aggregates, and license keys.
+* **Resilient ASUP Parser:** Drag-and-drop or import raw NetApp AutoSupport text logs. The parser extracts cluster models, ONTAP versions, node IDs, shelf structures, disk inventories, spares, aggregates, system firmware/BIOS versions, and license keys.
 * **Best Practice Audit Engine:** Evaluates cluster compliance against NetApp storage design guidelines:
   * **ONTAP Lifecycle Support:** Checks if your ONTAP release is in active support, limited support, or has reached End of Support.
   * **Cabling Integrity:** Identifies single-path HA cabling risks (Single Points of Failure) and reports multipath HA compliance.
   * **Aggregate Sizing & Capacity Limits:** Audits active aggregate sizes against system maximums and warns at 80%/90% capacity thresholds.
   * **Disk Sparing Compliance:** Verifies that correct spare counts are maintained per loop/pool.
   * **License Expirations:** Audits installed software features for expired or missing entitlements.
+  * **Controller System Firmware Checks (New):** Compares motherboard/BIOS versions against platform baselines and prints update command guidelines.
 * **Interactive Sizing Modeler:** A scenario planning tool to model:
+  * **Best-Practice Greenfield Baselines (New):** Initializes manual platform selections in a Greenfield state configured perfectly in compliance with best practices (optimal drive sizing solver, default spares, correct licenses, no SPOFs).
+  * **Intelligent HBA Card Auto-Allocation (New):** Automatically determines, slots, and cables necessary SAS or RoCE HBA expansion cards when adding shelves based on slot optimization/compliance rules.
   * Node additions and platform upgrades (e.g., FAS to All-Flash AFF).
   * Aggregate configurations (RAID group sizes, disk layout, RAID-DP/RAID-TEC).
   * Storage efficiency gains (Deduplication, Compression, Pattern Detection) with real-time usable capacity forecasting.
+* **Advanced MetroCluster Cabling Visualizer (New):** Fully renders dual-site split topologies, dynamically drawing local storage loops, DR replication paths, and expansion HBA cards.
 * **100% Client-Side & Secure:** All parsing and calculations run locally in the browser. No data is sent to external servers, making it compliant with strict enterprise data privacy requirements.
 * **Single-File Portability:** Compile the entire project (HTML, CSS, JS, libraries) into a single, offline-executable HTML bundle for field use in dark sites.
 
