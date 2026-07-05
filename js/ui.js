@@ -213,6 +213,9 @@ const fileInput = document.getElementById("file-input");
 const prevBtn = document.getElementById("prev-btn");
 const nextBtn = document.getElementById("next-btn");
 const resetBtn = document.getElementById("reset-btn");
+const saveConfigBtn = document.getElementById("save-config-btn");
+const loadConfigBtn = document.getElementById("load-config-btn");
+const loadConfigInput = document.getElementById("load-config-input");
 
 // Steps UI nodes
 const stepNodes = document.querySelectorAll(".step-node");
@@ -319,6 +322,106 @@ function resetState() {
   if (mcCheckbox) {
     mcCheckbox.checked = false;
     document.getElementById("metrocluster-type").style.display = "none";
+  }
+}
+
+function saveConfiguration() {
+  if (!currentState) {
+    alert("No active configuration to save. Please parse an ASUP file or configure a system first.");
+    return;
+  }
+
+  const inputs = {
+    targetOntap: document.getElementById("target-ontap")?.value || "",
+    shelfType: document.getElementById("shelf-type")?.value || "",
+    diskCount: document.getElementById("disk-count")?.value || "",
+    diskSize: document.getElementById("disk-size")?.value || "",
+    diskAllocation: document.getElementById("disk-allocation")?.value || "",
+    newAggrName: document.getElementById("new-aggr-name")?.value || "",
+    newAggrRaid: document.getElementById("new-aggr-raid")?.value || "",
+    newAggrRgsize: document.getElementById("new-aggr-rgsize")?.value || ""
+  };
+
+  const configObj = {
+    version: "v2.5",
+    isGreenfieldMode: isGreenfieldMode,
+    activeStep: activeStep,
+    currentState: currentState,
+    modeledState: modeledState,
+    inputs: inputs
+  };
+
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(configObj, null, 2));
+  const downloadAnchor = document.createElement("a");
+  const fileName = `netapp_modeler_config_${currentState.version.model.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0,10)}.json`;
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", fileName);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+}
+
+function loadConfiguration(configObj) {
+  try {
+    if (!configObj || !configObj.currentState) {
+      throw new Error("Invalid configuration file format.");
+    }
+
+    isGreenfieldMode = configObj.isGreenfieldMode;
+    currentState = configObj.currentState;
+    modeledState = configObj.modeledState || null;
+
+    // Refresh display
+    renderCurrentAuditDashboard();
+
+    // Call init inputs to populate option list dropdowns
+    if (!isGreenfieldMode) {
+      initStep3Inputs();
+    }
+    initStep4Inputs();
+
+    // Restore UI Inputs if they exist
+    if (configObj.inputs) {
+      const inputs = configObj.inputs;
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val !== undefined) {
+          el.value = val;
+          el.dispatchEvent(new Event("change"));
+        }
+      };
+      
+      setVal("target-ontap", inputs.targetOntap);
+      setVal("shelf-type", inputs.shelfType);
+      setVal("disk-count", inputs.diskCount);
+      setVal("disk-size", inputs.diskSize);
+      setVal("disk-allocation", inputs.diskAllocation);
+      setVal("new-aggr-name", inputs.newAggrName);
+      setVal("new-aggr-raid", inputs.newAggrRaid);
+      setVal("new-aggr-rgsize", inputs.newAggrRgsize);
+    }
+
+    const targetStep = configObj.activeStep || (isGreenfieldMode ? 4 : 2);
+    activeStep = targetStep;
+    
+    if (activeStep >= 5) {
+      runModelingCalculations();
+      renderCompareView();
+    }
+    if (activeStep >= 6) {
+      generateReport();
+    }
+
+    showPanel(activeStep);
+    updateWizardProgress();
+    
+    prevBtn.classList.remove("hidden");
+    nextBtn.classList.remove("hidden");
+
+    alert("Configuration loaded successfully!");
+  } catch (error) {
+    console.error(error);
+    alert(`Error loading configuration: ${error.message}`);
   }
 }
 
@@ -494,11 +597,42 @@ function setupWizardListeners() {
     }
   });
 
-  resetBtn.addEventListener("click", () => {
-    if (confirm("Are you sure you want to reset the current modeling workspace?")) {
-      resetState();
-    }
-  });
+  if (saveConfigBtn) {
+    saveConfigBtn.addEventListener("click", () => {
+      saveConfiguration();
+    });
+  }
+
+  if (loadConfigBtn && loadConfigInput) {
+    loadConfigBtn.addEventListener("click", () => {
+      loadConfigInput.click();
+    });
+
+    loadConfigInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          loadConfiguration(parsed);
+        } catch (err) {
+          alert("Error reading configuration file: " + err.message);
+        }
+        loadConfigInput.value = "";
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      if (confirm("Are you sure you want to reset the current modeling workspace?")) {
+        resetState();
+      }
+    });
+  }
 
   stepNodes.forEach(node => {
     node.addEventListener("click", () => {
