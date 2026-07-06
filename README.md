@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.8)
+# NetApp AutoSupport Analyzer & Modeler (v2.9)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,12 +6,12 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.8)
-* **Greenfield Support Bugfix:** Resolved a JavaScript ReferenceError (`ru is not defined`) that occurred when configuring new physical shelf sizing during Greenfield deployments.
+## 🆕 New in this Version (v2.9)
+* **Comprehensive Legal Disclaimer & Indemnification:** Updated the LICENSE file and added warning indicators to the main web app header, the Step 6 Technical Report, and all generated Markdown plan exports to ensure the author/creator is completely legally indemnified and held harmless from any use or misuse of the tool's estimated recommendations.
+* **Greenfield Support Bugfix (v2.8):** Resolved a JavaScript ReferenceError (`ru is not defined`) during physical shelf sizing.
 * **Before / After Physical Footprint Comparison (v2.7):** Side-by-side transition (Before ➔ After) of Cabinet Rack Space (RU), Power Consumption (W), Thermal Output (BTU/hr), and Total Raw Capacity (GB/TB).
 * **Multi-Format Implementation Plan Exports (v2.6):** Access PDF, Markdown (.md), and ONTAP CLI Command Script (.txt) files.
 * **Save/Load Configurations (v2.5):** Save/load the entire workspace state to local JSON files.
-* **Disk-level Firmware Parsing (v2.4):** Extracts disk firmware versions from logs.
 
 ---
 
@@ -103,6 +103,11 @@ Contributions are welcome! Please ensure that:
 
 ---
 
-## 📄 License
+## ⚖️ License & Legal Disclaimer
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the terms of the Disclaimer, Indemnification, and Limitation of Liability License - see the [LICENSE](LICENSE) file for details.
+
+### ⚠️ IMPORTANT LEGAL NOTICE:
+**BY USING THIS SOFTWARE, YOU FULLY INDEMNIFY, DEFEND, AND HOLD HARMLESS THE AUTHORS AND CONTRIBUTORS FROM ANY LIABILITY, DATA LOSS, HARDWARE DAMAGE, SYSTEM DOWNTIME, OR SERVICE DISRUPTION.** 
+
+This tool is a configuration simulator/auditing helper only. All recommendations, CLI scripts, and cabling topologies must be validated by certified systems engineers against official NetApp hardware guides and ONTAP release notes before real-world execution. The author assumes no responsibility for any system configuration actions performed by users.

@@ -937,7 +937,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.8</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.9</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -956,6 +956,14 @@ svg.cabling-graph {
         <button id="reset-btn" class="btn-secondary" style="padding: 8px 16px;">Reset Tool</button>
       </div>
     </header>
+
+    <!-- Legal Disclaimer Notice Bar -->
+    <div class="no-print" style="background: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding: 0.5rem 1.5rem; font-size: 0.78rem; color: #fca5a5; display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; line-height: 1.4;">
+      <svg style="width:16px; height:16px; fill:#f87171; flex-shrink:0;" viewBox="0 0 24 24">
+        <path d="M12,2L1,21H23L12,2M12,6L19.53,19H4.47L12,6M11,10V14H13V10H11M11,16V18H13V16H11Z"/>
+      </svg>
+      <strong>Legal Disclaimer & Notice:</strong> This application is a configuration estimator and auditing helper only. Outputs are not certified designs. By using this tool, the user accepts full responsibility and holds the authors entirely harmless and indemnified from all liability, damages, and downtime. Validate all configurations with certified engineers before deployment.
+    </div>
 
     <!-- Wizard Steps Indicator -->
     <div class="wizard-steps no-print">
@@ -4855,7 +4863,11 @@ function exportMarkdownPlan() {
   md += `| :--- | :--- | :--- |\n`;
   md += `| **Controller failover failure during PCIe mounting** | High | Run SFO diagnostics beforehand and verify LIF migrations. |\n`;
   md += `| **Disk capacity ONTAP compatibility error** | Medium | Keep target ONTAP version >= 9.9.1 to support 30.6TB SSDs. |\n`;
-  md += `| **Symmetric cabling misalignment** | Medium | Double check loop cabling paths using cabling diagram svg views. |\n`;
+  md += `| **Symmetric cabling misalignment** | Medium | Double check loop cabling paths using cabling diagram svg views. |\n\n`;
+
+  md += `## 4. Legal Disclaimer & Indemnification\n`;
+  md += `**BY USING THIS REPORT, YOU FULLY INDEMNIFY, DEFEND, AND HOLD HARMLESS THE AUTHORS AND CONTRIBUTORS FROM ANY LIABILITY, DATA LOSS, HARDWARE DAMAGE, SYSTEM DOWNTIME, OR SERVICE DISRUPTION.**\n\n`;
+  md += `This document is a configuration estimator/auditing helper only. All recommendations, CLI scripts, and cabling topologies must be validated by certified systems engineers against official NetApp hardware guides and ONTAP release notes before real-world execution. The author assumes no responsibility for any system configuration actions performed by users.\n`;
 
   const blob = new Blob([md], { type: "text/markdown;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -9896,6 +9908,22 @@ function generateReport() {
       ${cablingSectionHeader}
       <p style="margin-bottom: 1rem; color:#e5e7eb;">The physical port-to-port connections for all storage shelf loops in the modeled target configuration are detailed below:</p>
       ${generateCablingTableHtml(modeledState)}
+    </div>
+
+    <!-- Legal Disclaimer and Indemnification Agreement -->
+    <div class="report-section" style="border-top: 2px solid var(--border-color); padding-top: 1.5rem; margin-top: 2rem; page-break-inside: avoid;">
+      <h3 style="color:#f87171; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+        <svg style="width:20px; height:20px; fill:#f87171;" viewBox="0 0 24 24">
+          <path d="M12,2L1,21H23L12,2M12,6L19.53,19H4.47L12,6M11,10V14H13V10H11M11,16V18H13V16H11Z"/>
+        </svg>
+        9. Legal Disclaimer & Indemnification Notice
+      </h3>
+      <p style="font-size: 0.8rem; color: #e5e7eb; line-height: 1.5; margin-bottom: 0.5rem;">
+        <strong>NOTICE TO USER:</strong> THIS REPORT IS AN AUTOMATED ESTIMATION AND PROPOSAL AND IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. BY PRINTING, DOWNLOADING, SHARING, OR EXECUTING THIS PLAN, YOU ACKNOWLEDGE AND AGREE TO FULLY INDEMNIFY, DEFEND, AND HOLD HARMLESS THE AUTHORS, CREATORS, AND DISTRIBUTORS OF THIS TOOL FROM ANY AND ALL CLAIMS, LIABILITIES, DAMAGES, COSTS, LOSS OF DATA, DOWNTIME, OR SYSTEM FAILURE RESULTING FROM THE USE OR MISUSE OF THIS MATERIAL.
+      </p>
+      <p style="font-size: 0.8rem; color: var(--color-muted); line-height: 1.5;">
+        All physical rack installations, cable topologies, card slots, aggregate layouts, and ONTAP firmware updates must be manually reviewed and approved by certified NetApp professionals against official hardware and platform documentation.
+      </p>
     </div>
   `;
 
