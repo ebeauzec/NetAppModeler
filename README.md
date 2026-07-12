@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.9)
+# NetApp AutoSupport Analyzer & Modeler (v2.10)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,12 +6,11 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.9)
-* **Comprehensive Legal Disclaimer & Indemnification:** Updated the LICENSE file and added warning indicators to the main web app header, the Step 6 Technical Report, and all generated Markdown plan exports to ensure the author/creator is completely legally indemnified and held harmless from any use or misuse of the tool's estimated recommendations.
-* **Greenfield Support Bugfix (v2.8):** Resolved a JavaScript ReferenceError (`ru is not defined`) during physical shelf sizing.
-* **Before / After Physical Footprint Comparison (v2.7):** Side-by-side transition (Before ➔ After) of Cabinet Rack Space (RU), Power Consumption (W), Thermal Output (BTU/hr), and Total Raw Capacity (GB/TB).
-* **Multi-Format Implementation Plan Exports (v2.6):** Access PDF, Markdown (.md), and ONTAP CLI Command Script (.txt) files.
-* **Save/Load Configurations (v2.5):** Save/load the entire workspace state to local JSON files.
+## 🆕 New in this Version (v2.10)
+* **Ownership & Independent Development Legal Terms:** Added a comprehensive legal notice outlining Eugene Beauzec's sole and exclusive intellectual property rights, his independent development status, and the strictly reserved rights concerning the software to both the LICENSE file and README documentation.
+* **Comprehensive Legal Disclaimer & Indemnification (v2.9):** Added legal disclaimer notices to the app header, Technical Report, and Markdown exports to fully indemnify the authors.
+* **Greenfield Support Bugfix (v2.8):** Resolved a JavaScript ReferenceError during physical shelf sizing.
+* **Before / After Physical Footprint Comparison (v2.7):** Side-by-side transition of Cabinet Rack Space (RU), Power Consumption (W), Thermal Output (BTU/hr), and Total Raw Capacity (GB/TB).
 
 ---
 
@@ -103,11 +102,19 @@ Contributions are welcome! Please ensure that:
 
 ---
 
-## ⚖️ License & Legal Disclaimer
+## ⚖️ Ownership, Intellectual Property & License Agreement
 
-This project is licensed under the terms of the Disclaimer, Indemnification, and Limitation of Liability License - see the [LICENSE](LICENSE) file for details.
+This project is the sole and exclusive intellectual property of **Eugene Beauzec**. It is protected by copyright and intellectual property laws. See the [LICENSE](LICENSE) file for the full legal text.
 
-### ⚠️ IMPORTANT LEGAL NOTICE:
-**BY USING THIS SOFTWARE, YOU FULLY INDEMNIFY, DEFEND, AND HOLD HARMLESS THE AUTHORS AND CONTRIBUTORS FROM ANY LIABILITY, DATA LOSS, HARDWARE DAMAGE, SYSTEM DOWNTIME, OR SERVICE DISRUPTION.** 
+### 🔒 Proprietary Ownership & Independent Development Notice:
+* **Exclusive Ownership:** All rights, title, and interest in and to this software application (NetApp ASUP Analyzer & Modeler), including source code, specs, workflows, configurations, and user interfaces, remain exclusively vested in **Eugene Beauzec**.
+* **Independent Concept:** This application was independently conceived, authored, and assembled by Eugene Beauzec on his own time and using independent resources. It was not created as a work-for-hire, commissioned work, or contractual obligation for any employer, client, or sponsor.
+* **Exclusion of Third-Party/Employer IP:** The software does not contain, derive from, or rely upon any confidential information, proprietary material, trade secrets, or non-public systems belonging to any employer, client, or third party.
+* **Reservation of Rights:** All rights not expressly granted in writing by Eugene Beauzec are strictly reserved. No person or entity may copy, modify, distribute, or reverse engineer this software without express written authorisation.
 
-This tool is a configuration simulator/auditing helper only. All recommendations, CLI scripts, and cabling topologies must be validated by certified systems engineers against official NetApp hardware guides and ONTAP release notes before real-world execution. The author assumes no responsibility for any system configuration actions performed by users.
+### ⚠️ Liability & Hold-Harmless Terms:
+**BY USING THIS SOFTWARE, YOU AGREE TO FULLY INDEMNIFY, DEFEND, AND HOLD HARMLESS EUGENE BEAUZEC AND CONTRIBUTORS FROM ANY AND ALL CLAIMS, LIABILITY, DATA LOSS, HARDWARE DAMAGE, SYSTEM DOWNTIME, OR SERVICE DISRUPTION.**
+
+This tool is a configuration estimator/auditing helper only. All hardware topologies, firmware upgrades, and CLI scripts must be validated by certified systems engineers against official NetApp guides before execution. The author assumes no responsibility for actions taken based on this tool's outputs.
+
+Copyright © 2026 Eugene Beauzec. All Rights Reserved.

@@ -1,20 +1,54 @@
-DISCLAIMER, INDEMNIFICATION, AND LIMITATION OF LIABILITY LICENSE
+NETAPP ASUP ANALYZER & MODELER - INTELLECTUAL PROPERTY & LICENSE AGREEMENT
 
-Copyright (c) 2026 ebeauzec
+Copyright © 2026 Eugene Beauzec. All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software to furnish the Software, subject to the following conditions:
+================================================================================
+PART 1: OWNERSHIP, INTELLECTUAL PROPERTY RIGHTS AND INDEPENDENT DEVELOPMENT
+================================================================================
 
-1. The above copyright notice, this disclaimer, and the indemnification terms below shall be included in all copies or substantial portions of the Software.
+1.1 Ownership & Exclusive Rights:
+This software application (NetApp ASUP Analyzer & Modeler), including without limitation its source code, object code, documentation, technical specifications, architecture, designs, workflows, configurations, prompts, scripts, build materials, databases, user interfaces, and all related materials, content, and developments, whether existing now or created in the future, is the sole and exclusive intellectual property of Eugene Beauzec.
 
-2. PROFESSIONAL VALIDATION DISCLAIMER:
+All rights, title, and interest in and to the software, including all copyright, economic rights, moral rights to the extent applicable, neighbouring rights, database rights, know-how, trade secrets, inventions, improvements, derivative works, updates, enhancements, and all other intellectual property rights, are and shall remain exclusively vested in Eugene Beauzec, unless expressly transferred by him under a separate written agreement signed by him.
+
+1.2 Independent Development:
+The software was independently conceived, authored, developed, tested, and assembled by Eugene Beauzec on his own time and using independent tools, resources, and development environments. The software was not created as a work-for-hire, commissioned work, employment deliverable, client assignment, internal project, sponsored project, or contractual obligation for any employer, former employer, client, sponsor, platform provider, user, contributor, or third party.
+
+No employer, former employer, client, sponsor, platform provider, user, contributor, or third party shall acquire any ownership interest, licence, royalty, profit-share, assignment right, benefit, claim, control, or other right in or to the software by reason of Eugene Beauzec’s past or present employment, sponsorship, administrative status, visa status, immigration status, professional relationship, access to the software, use of the software, feedback, contribution, or use of independent development tools.
+
+1.3 Exclusion of Proprietary Information:
+The software does not contain, incorporate, derive from, or rely upon any confidential information, proprietary material, customer data, trade secrets, private repositories, internal systems, credentials, unpublished documentation, business plans, source code, technical materials, employer-provided resources, or non-public information belonging to any employer, former employer, client, sponsor, platform provider, user, contributor, or third party.
+
+1.4 Assisted Development Tools:
+Any use of third-party tools, including generative-AI assisted development tools, was carried out solely as an independent development aid under Eugene Beauzec’s personal direction, review, testing, selection, and control. No confidential, proprietary, customer, internal, employer-owned, client-owned, or trade-secret information of any employer, former employer, client, sponsor, platform provider, user, contributor, or third party was submitted to, uploaded into, disclosed to, or used with such tools in connection with the development of the software.
+
+1.5 Copying, Modification, and Redistribution Restrictions:
+All rights not expressly granted in writing by Eugene Beauzec are strictly reserved. No person or entity may copy, reproduce, modify, adapt, translate, publish, distribute, commercialise, sublicense, sell, assign, transfer, pledge, reverse engineer, remove attribution from, or claim authorship or ownership of the software, in whole or in part, except as expressly authorised in writing by Eugene Beauzec.
+
+Any permitted use of the software is subject to the licence terms expressly stated by Eugene Beauzec. Nothing in this notice shall be interpreted as granting any implied licence, ownership right, commercial right, assignment, waiver, consent, or permission beyond what is expressly granted in writing.
+
+1.6 Remediations & Third-Party References:
+If any third-party proprietary material is credibly identified as having been inadvertently included in the software, Eugene Beauzec reserves the right to remove, replace, or remediate such material promptly, without admission of liability and without prejudice to his ownership of the remaining software.
+
+Any references to third-party products, services, companies, platforms, trademarks, technologies, or tools are made solely for identification, compatibility, interoperability, technical, or documentation purposes. Such references do not imply any affiliation, sponsorship, endorsement, approval, authorisation, partnership, licence, or commercial relationship with the relevant third-party owner. All third-party trademarks, product names, company names, and service names remain the property of their respective owners.
+
+================================================================================
+PART 2: LICENSING TERMS, INDEMNIFICATION, AND LIMITATION OF LIABILITY
+================================================================================
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software under the conditions that:
+
+2.1 The above copyright notice, the IP notice in Part 1, the disclaimers, and the indemnification terms below shall be included in all copies or substantial portions of the Software.
+
+2.2 PROFESSIONAL VALIDATION DISCLAIMER:
 THE SOFTWARE IS AN AUDITING AND SIZING ESTIMATOR ONLY. THE OUTPUTS, RECOMMENDATIONS, SCHEMATICS, AND COMMANDS PRODUCED BY THE SOFTWARE DO NOT CONSTITUTE PROFESSIONAL, CERTIFIED, OR BINDING TECHNICAL DESIGNS. IT IS THE SOLE RESPONSIBILITY OF THE USER TO INDEPENDENTLY CROSS-CHECK AND VALIDATE ALL CONFIGURATIONS, HARDWARE ADDITIONS, FIRMWARE REVISIONS, AND COMMAND SEQUENCES WITH OFFICIAL NETAPP DOCUMENTATION AND CERTIFIED NETAPP SYSTEMS ENGINEERS PRIOR TO EXECUTION.
 
-3. INDEMNIFICATION:
-BY USING THE SOFTWARE, YOU AGREE TO INDEMNIFY, DEFEND, AND HOLD HARMLESS THE COPYRIGHT HOLDER(S), AUTHOR(S), AND CONTRIBUTORS (THE "INDEMNIFIED PARTIES") FROM AND AGAINST ANY AND ALL CLAIMS, LIABILITY, LOSSES, ACTIONS, SUITS, COSTS, EXPENSES, OR DAMAGES (INCLUDING REASONABLE ATTORNEYS' FEES) ARISING OUT OF, RESULTING FROM, OR IN ANY WAY CONNECTED WITH:
+2.3 INDEMNIFICATION:
+BY USING THE SOFTWARE, YOU AGREE TO INDEMNIFY, DEFEND, AND HOLD HARMLESS EUGENE BEAUZEC, CONTRIBUTORS, AND INDEMNIFIED PARTIES FROM AND AGAINST ANY AND ALL CLAIMS, LIABILITY, LOSSES, ACTIONS, SUITS, COSTS, EXPENSES, OR DAMAGES (INCLUDING REASONABLE ATTORNEYS' FEES) ARISING OUT OF, RESULTING FROM, OR IN ANY WAY CONNECTED WITH:
 (A) YOUR USE, MISUSE, RELIANCE UPON, OR INABILITY TO USE THE SOFTWARE;
 (B) ANY MISUSE OF THE STORAGE CONFIGURATIONS, AGGREGATE SIZING, OR COMMANDS GENERATED BY THE SOFTWARE;
 (C) ANY LOSS OF DATA, DOWNTIME, HARDWARE DAMAGE, SYSTEM CORRUPTION, OR SERVICE DISRUPTION OCCURRING ON SYSTEMS ASSOCIATED WITH THE CONFIGURATIONS SIZED BY THE SOFTWARE;
 (D) YOUR VIOLATION OF THESE LICENSE TERMS.
 
-4. LIMITATION OF LIABILITY:
-IN NO EVENT SHALL THE INDEMNIFIED PARTIES BE LIABLE TO YOU OR ANY THIRD PARTY FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, LOSS OF USE, DATA, OR PROFITS; PRODUCT LIABILITY; RACK FAILURE; CABLE DAMAGE; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF OR INABILITY TO USE THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+2.4 LIMITATION OF LIABILITY:
+IN NO EVENT SHALL EUGENE BEAUZEC OR THE INDEMNIFIED PARTIES BE LIABLE TO YOU OR ANY THIRD PARTY FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, LOSS OF USE, DATA, OR PROFITS; PRODUCT LIABILITY; RACK FAILURE; CABLE DAMAGE; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF OR INABILITY TO USE THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
