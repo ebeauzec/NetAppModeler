@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.10)
+# NetApp AutoSupport Analyzer & Modeler (v2.11)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,11 +6,11 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.10)
-* **Ownership & Independent Development Legal Terms:** Added a comprehensive legal notice outlining Eugene Beauzec's sole and exclusive intellectual property rights, his independent development status, and the strictly reserved rights concerning the software to both the LICENSE file and README documentation.
-* **Comprehensive Legal Disclaimer & Indemnification (v2.9):** Added legal disclaimer notices to the app header, Technical Report, and Markdown exports to fully indemnify the authors.
-* **Greenfield Support Bugfix (v2.8):** Resolved a JavaScript ReferenceError during physical shelf sizing.
-* **Before / After Physical Footprint Comparison (v2.7):** Side-by-side transition of Cabinet Rack Space (RU), Power Consumption (W), Thermal Output (BTU/hr), and Total Raw Capacity (GB/TB).
+## 🆕 New in this Version (v2.11)
+* **Latest Hardware Platform & Disk Expansion:** Expanded the compatibility and hardware catalog to fully support new FAS models (**FAS50, FAS70, FAS90**), All-SAN Array (ASA) block-only models (**ASA A1K, A90, A70, A50, A30, A20, C30**), and ultra-high-density **61.2TB NVMe/SAS QLC SSD** drives.
+* **ASA SAN Licensing Compliance Audit (Rule 15):** Added architectural verification logic to audit and flag unauthorized NAS file licenses (NFS/CIFS) on SAN-optimized ASA arrays.
+* **High-Capacity QLC SSD Compatibility Audit (Rule 14):** Enforces minimum ONTAP 9.15.1 target software version requirements when sizing with 61.2TB SSD drives.
+* **Ownership & Independent Development Legal Terms (v2.10):** Added intellectual property notices highlighting Eugene Beauzec's sole authorship.
 
 ---
 

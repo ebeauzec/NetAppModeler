@@ -143,7 +143,7 @@ const SHELF_SPEC_MAP = {
     name: "NS224 (2U NVMe SSD Shelf)",
     ru: 2,
     power: 400,
-    sizes: ["1.9TB NVMe SSD", "3.8TB NVMe SSD", "7.6TB NVMe SSD", "15.3TB NVMe SSD", "30.6TB NVMe SSD"],
+    sizes: ["1.9TB NVMe SSD", "3.8TB NVMe SSD", "7.6TB NVMe SSD", "15.3TB NVMe SSD", "30.6TB NVMe SSD", "61.2TB NVMe SSD"],
     defaultCount: 24,
     maxCount: 24,
     mediaType: "NVMe SSD"
@@ -152,7 +152,7 @@ const SHELF_SPEC_MAP = {
     name: "DS224C (2U 12G SAS Shelf)",
     ru: 2,
     power: 300,
-    sizes: ["960GB SAS SSD", "3.8TB SAS SSD", "7.6TB SAS SSD", "15.3TB SAS SSD", "30.6TB SAS SSD", "1.2TB SAS HDD", "1.8TB SAS HDD"],
+    sizes: ["960GB SAS SSD", "3.8TB SAS SSD", "7.6TB SAS SSD", "15.3TB SAS SSD", "30.6TB SAS SSD", "61.2TB SAS SSD", "1.2TB SAS HDD", "1.8TB SAS HDD"],
     defaultCount: 24,
     maxCount: 24,
     mediaType: "SAS SSD"
@@ -1503,7 +1503,7 @@ function allocateHBACardsForState(state) {
 
 // Dynamic Disk Sizing helper
 function getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield) {
-  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || !profile.supportedShelves.includes("ds224c"));
+  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || model.toUpperCase().includes("ASA") || !profile.supportedShelves.includes("ds224c"));
   const maxDrives = getPlatformMaxDrives(model);
   
   const nvmeSizes = [
@@ -1511,7 +1511,8 @@ function getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield
     { label: "3.8TB", sizeGB: 3800, model: "X372_S16433T8ATE" },
     { label: "7.6TB", sizeGB: 7600, model: "X373_S16437T6ATE" },
     { label: "15.3TB", sizeGB: 15300, model: "X374_S164315TATE" },
-    { label: "30.6TB", sizeGB: 30600, model: "X375_S164330TATE" }
+    { label: "30.6TB", sizeGB: 30600, model: "X375_S164330TATE" },
+    { label: "61.2TB", sizeGB: 61200, model: "X376_S164361TATE" }
   ];
   
   const sasSizes = [
@@ -1519,7 +1520,8 @@ function getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield
     { label: "3.8TB", sizeGB: 3800, model: "X427_H3800G12G15K" },
     { label: "7.6TB", sizeGB: 7600, model: "X428_H7600G12G15K" },
     { label: "15.3TB", sizeGB: 15300, model: "X429_H15300G12G15K" },
-    { label: "30.6TB", sizeGB: 30600, model: "X430_H30600G12G15K" }
+    { label: "30.6TB", sizeGB: 30600, model: "X430_H30600G12G15K" },
+    { label: "61.2TB", sizeGB: 61200, model: "X431_H61200G12G15K" }
   ];
   
   const sizes = isAllNVMe ? nvmeSizes : sasSizes;
@@ -1673,7 +1675,7 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
     ontapSelect.value = startingOntap;
   }
 
-  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || !profile.supportedShelves.includes("ds224c"));
+  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || model.toUpperCase().includes("ASA") || !profile.supportedShelves.includes("ds224c"));
   const optDisk = getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield);
   const shelfModel = isAllNVMe ? "NS224" : "DS224C";
   const diskType = optDisk.diskType;

@@ -69,7 +69,14 @@ export function parseASUP(files) {
     data.version.model = modelMatch[1].trim();
   } else {
     // Guess based on keywords
-    if (lowerText.includes("a1k")) data.version.model = "AFF A1K";
+    if (lowerText.includes("asa a1k")) data.version.model = "ASA A1K";
+    else if (lowerText.includes("asa a90")) data.version.model = "ASA A90";
+    else if (lowerText.includes("asa a70")) data.version.model = "ASA A70";
+    else if (lowerText.includes("asa a50")) data.version.model = "ASA A50";
+    else if (lowerText.includes("asa a30")) data.version.model = "ASA A30";
+    else if (lowerText.includes("asa a20")) data.version.model = "ASA A20";
+    else if (lowerText.includes("asa c30")) data.version.model = "ASA C30";
+    else if (lowerText.includes("a1k")) data.version.model = "AFF A1K";
     else if (lowerText.includes("a90")) data.version.model = "AFF A90";
     else if (lowerText.includes("a70")) data.version.model = "AFF A70";
     else if (lowerText.includes("a50")) data.version.model = "AFF A50";
@@ -79,6 +86,9 @@ export function parseASUP(files) {
     else if (lowerText.includes("c60")) data.version.model = "AFF C60";
     else if (lowerText.includes("c30")) data.version.model = "AFF C30";
     else if (lowerText.includes("a400")) data.version.model = "AFF A400";
+    else if (lowerText.includes("fas90")) data.version.model = "FAS90";
+    else if (lowerText.includes("fas70")) data.version.model = "FAS70";
+    else if (lowerText.includes("fas50")) data.version.model = "FAS50";
     else if (lowerText.includes("8300")) data.version.model = "FAS8300";
     else if (lowerText.includes("a300")) data.version.model = "AFF A300";
     else if (lowerText.includes("a250")) data.version.model = "AFF A250";
@@ -215,9 +225,10 @@ export function parseASUP(files) {
 
     if (looseDisks.length > 0) {
       // Group loose disks under a default mock shelf
+      const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
       data.shelves.push({
         id: "1",
-        model: data.version.model.includes("AFF") ? "NS224" : "DS224C",
+        model: isAllFlash ? "NS224" : "DS224C",
         serial: "AUTO-DISCOVERED",
         firmware: "v0212",
         latestFirmware: "v0212",
@@ -226,11 +237,11 @@ export function parseASUP(files) {
       });
     } else {
       // Create a default shelf layout so the visualizer has something nice to render
-      const isAff = data.version.model.includes("AFF");
-      const diskType = isAff ? "NVMe SSD" : "SAS HDD";
-      const sizeStr = isAff ? "1.9TB" : "1.2TB";
-      const sizeGB = isAff ? 1900 : 1200;
-      const model = isAff ? "X371_S16431T9ATE" : "X425_H960G12G15K";
+      const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
+      const diskType = isAllFlash ? "NVMe SSD" : "SAS HDD";
+      const sizeStr = isAllFlash ? "1.9TB" : "1.2TB";
+      const sizeGB = isAllFlash ? 1900 : 1200;
+      const model = isAllFlash ? "X371_S16431T9ATE" : "X425_H960G12G15K";
 
       const defaultDisks = Array.from({ length: 24 }, (_, slot) => ({
         slot,
@@ -243,7 +254,7 @@ export function parseASUP(files) {
 
       data.shelves.push({
         id: "1",
-        model: isAff ? "NS224" : "DS224C",
+        model: isAllFlash ? "NS224" : "DS224C",
         serial: "MOCK-SHELF-001",
         firmware: "v0120",
         latestFirmware: "v0120",
@@ -326,9 +337,9 @@ export function parseASUP(files) {
 
   // Fallback aggregates if none parsed
   if (data.aggregates.length === 0) {
-    const isAff = data.version.model.includes("AFF");
-    const dType = isAff ? "NVMe SSD" : "SAS HDD";
-    const dSizeGB = isAff ? 1900 : 1200;
+    const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
+    const dType = isAllFlash ? "NVMe SSD" : "SAS HDD";
+    const dSizeGB = isAllFlash ? 1900 : 1200;
     
     data.aggregates.push({
       name: "aggr_data_a",
@@ -375,11 +386,11 @@ export function parseASUP(files) {
 
   // Fallback spares if none parsed
   if (data.spares.length === 0) {
-    const isAff = data.version.model.includes("AFF");
-    const dType = isAff ? "NVMe SSD" : "SAS HDD";
-    const dSizeStr = isAff ? "1.9TB" : "1.2TB";
-    const dSizeGB = isAff ? 1900 : 1200;
-    const model = isAff ? "X371_S16431T9ATE" : "X425_H960G12G15K";
+    const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
+    const dType = isAllFlash ? "NVMe SSD" : "SAS HDD";
+    const dSizeStr = isAllFlash ? "1.9TB" : "1.2TB";
+    const dSizeGB = isAllFlash ? 1900 : 1200;
+    const model = isAllFlash ? "X371_S16431T9ATE" : "X425_H960G12G15K";
 
     data.spares.push({ node: "node-a", model, sizeStr: dSizeStr, sizeGB: dSizeGB, type: dType, count: 1 });
     data.spares.push({ node: "node-b", model, sizeStr: dSizeStr, sizeGB: dSizeGB, type: dType, count: 1 });

@@ -19,17 +19,15 @@ export const ONTAP_LIFECYCLE = {
   "9.17.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.17.1 is in General Support (GA)." },
   "9.18.1": { status: "compliant", label: "Active Support (Latest Stable)", desc: "ONTAP 9.18.1 is in General Support (GA) and is a modern recommended baseline." },
   "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, delivering NVMe-oF and AI optimizations." },
-  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault and cyber resiliency features." },
-  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault and cyber resiliency features." },
-  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault and advanced file security controls." },
+  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault, cyber resiliency, and advanced file security controls." }
 };
 
 export function getPlatformMaxDrives(model) {
   const upper = (model || "").toUpperCase();
-  if (upper.includes("A1K") || upper.includes("9500") || upper.includes("9000") || upper.includes("A900")) return 1440;
-  if (upper.includes("8700") || upper.includes("8300") || upper.includes("C800") || upper.includes("A90") || upper.includes("A70")) return 720;
+  if (upper.includes("A1K") || upper.includes("9500") || upper.includes("9000") || upper.includes("A900") || upper.includes("FAS90") || upper.includes("FAS70")) return 1440;
+  if (upper.includes("8700") || upper.includes("8300") || upper.includes("C800") || upper.includes("A90") || upper.includes("A70") || upper.includes("C80")) return 720;
   if (upper.includes("A800") || upper.includes("C400")) return 720;
-  if (upper.includes("A400") || upper.includes("8200")) return 480;
+  if (upper.includes("A400") || upper.includes("8200") || upper.includes("FAS50")) return 480;
   if (upper.includes("A250") || upper.includes("C250") || upper.includes("A300") || upper.includes("A150")) return 240;
   if (upper.includes("A50") || upper.includes("A30") || upper.includes("C30") || upper.includes("C60") || upper.includes("2820") || upper.includes("2750") || upper.includes("2720")) return 144;
   return 144;
@@ -622,7 +620,9 @@ export function runAudit(systemState) {
   systemState.shelves.forEach(shelf => {
     (shelf.disks || []).forEach(disk => {
       const sizeStr = disk.sizeStr || "";
-      if (sizeStr.includes("30.6TB") && compareVersions(baseVer, "9.9.1") < 0) {
+      if (sizeStr.includes("61.2TB") && compareVersions(baseVer, "9.15.1") < 0) {
+        driveSizeWarnings.push(`Disk in shelf ${shelf.id} has size ${sizeStr} which requires ONTAP version >= 9.15.1 (current version is ${systemState.version.ontap}).`);
+      } else if (sizeStr.includes("30.6TB") && compareVersions(baseVer, "9.9.1") < 0) {
         driveSizeWarnings.push(`Disk in shelf ${shelf.id} has size ${sizeStr} which requires ONTAP version >= 9.9.1 (current version is ${systemState.version.ontap}).`);
       } else if (sizeStr.includes("15.3TB") && compareVersions(baseVer, "9.1") < 0) {
         driveSizeWarnings.push(`Disk in shelf ${shelf.id} has size ${sizeStr} which requires ONTAP version >= 9.1 (current version is ${systemState.version.ontap}).`);
@@ -637,8 +637,8 @@ export function runAudit(systemState) {
       "Software",
       "warning",
       driveSizeWarnings.join("\n"),
-      "Upgrade the cluster to a supported ONTAP version (ONTAP 9.9.1 or higher) to support very large capacity SSDs, or replace the large SSDs with smaller sizes.",
-      "Perform ONTAP upgrade to at least 9.9.1, or replace large capacity SSDs with supported sizes."
+      "Upgrade the cluster to a supported ONTAP version (ONTAP 9.15.1 or higher) to support very large capacity SSDs, or replace the large SSDs with smaller sizes.",
+      "Perform ONTAP upgrade to at least 9.15.1, or replace large capacity SSDs with supported sizes."
     );
   } else {
     addReport(
@@ -650,6 +650,32 @@ export function runAudit(systemState) {
       "None required.",
       ""
     );
+  }
+
+  // --- Rule 15: ASA SAN-Only Protocol Licensing Compliance ---
+  if (upperModel.includes("ASA")) {
+    const activeNasLicenses = systemState.licenses.filter(l => (l.name === "NFS" || l.name === "CIFS") && l.status === "active");
+    if (activeNasLicenses.length > 0) {
+      addReport(
+        "BP_ASA_SAN_ONLY",
+        "ASA SAN-Only Protocol Compliance",
+        "Licensing",
+        "critical",
+        `NetApp All-SAN Array (ASA) platforms support block protocols (iSCSI, FC, NVMe-oF) only. NAS protocols (${activeNasLicenses.map(l => l.name).join(", ")}) are active, which violates the ASA architectural configuration boundary.`,
+        "Disable NFS and CIFS protocol services, or transition to a standard AFF/FAS unified storage array if file protocols are required.",
+        "Remove active NFS/CIFS licenses or migrate to a unified AFF platform."
+      );
+    } else {
+      addReport(
+        "BP_ASA_SAN_ONLY",
+        "ASA SAN-Only Protocol Compliance",
+        "Licensing",
+        "compliant",
+        "ASA controller is running block-only protocols (FC, iSCSI, NVMe-oF) in compliance with All-SAN Array hardware specifications.",
+        "None required.",
+        ""
+      );
+    }
   }
 
   return reports;

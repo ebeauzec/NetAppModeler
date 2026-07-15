@@ -937,7 +937,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.10</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.11</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2085,7 +2085,14 @@ function parseASUP(files) {
     data.version.model = modelMatch[1].trim();
   } else {
     // Guess based on keywords
-    if (lowerText.includes("a1k")) data.version.model = "AFF A1K";
+    if (lowerText.includes("asa a1k")) data.version.model = "ASA A1K";
+    else if (lowerText.includes("asa a90")) data.version.model = "ASA A90";
+    else if (lowerText.includes("asa a70")) data.version.model = "ASA A70";
+    else if (lowerText.includes("asa a50")) data.version.model = "ASA A50";
+    else if (lowerText.includes("asa a30")) data.version.model = "ASA A30";
+    else if (lowerText.includes("asa a20")) data.version.model = "ASA A20";
+    else if (lowerText.includes("asa c30")) data.version.model = "ASA C30";
+    else if (lowerText.includes("a1k")) data.version.model = "AFF A1K";
     else if (lowerText.includes("a90")) data.version.model = "AFF A90";
     else if (lowerText.includes("a70")) data.version.model = "AFF A70";
     else if (lowerText.includes("a50")) data.version.model = "AFF A50";
@@ -2095,6 +2102,9 @@ function parseASUP(files) {
     else if (lowerText.includes("c60")) data.version.model = "AFF C60";
     else if (lowerText.includes("c30")) data.version.model = "AFF C30";
     else if (lowerText.includes("a400")) data.version.model = "AFF A400";
+    else if (lowerText.includes("fas90")) data.version.model = "FAS90";
+    else if (lowerText.includes("fas70")) data.version.model = "FAS70";
+    else if (lowerText.includes("fas50")) data.version.model = "FAS50";
     else if (lowerText.includes("8300")) data.version.model = "FAS8300";
     else if (lowerText.includes("a300")) data.version.model = "AFF A300";
     else if (lowerText.includes("a250")) data.version.model = "AFF A250";
@@ -2231,9 +2241,10 @@ function parseASUP(files) {
 
     if (looseDisks.length > 0) {
       // Group loose disks under a default mock shelf
+      const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
       data.shelves.push({
         id: "1",
-        model: data.version.model.includes("AFF") ? "NS224" : "DS224C",
+        model: isAllFlash ? "NS224" : "DS224C",
         serial: "AUTO-DISCOVERED",
         firmware: "v0212",
         latestFirmware: "v0212",
@@ -2242,11 +2253,11 @@ function parseASUP(files) {
       });
     } else {
       // Create a default shelf layout so the visualizer has something nice to render
-      const isAff = data.version.model.includes("AFF");
-      const diskType = isAff ? "NVMe SSD" : "SAS HDD";
-      const sizeStr = isAff ? "1.9TB" : "1.2TB";
-      const sizeGB = isAff ? 1900 : 1200;
-      const model = isAff ? "X371_S16431T9ATE" : "X425_H960G12G15K";
+      const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
+      const diskType = isAllFlash ? "NVMe SSD" : "SAS HDD";
+      const sizeStr = isAllFlash ? "1.9TB" : "1.2TB";
+      const sizeGB = isAllFlash ? 1900 : 1200;
+      const model = isAllFlash ? "X371_S16431T9ATE" : "X425_H960G12G15K";
 
       const defaultDisks = Array.from({ length: 24 }, (_, slot) => ({
         slot,
@@ -2259,7 +2270,7 @@ function parseASUP(files) {
 
       data.shelves.push({
         id: "1",
-        model: isAff ? "NS224" : "DS224C",
+        model: isAllFlash ? "NS224" : "DS224C",
         serial: "MOCK-SHELF-001",
         firmware: "v0120",
         latestFirmware: "v0120",
@@ -2342,9 +2353,9 @@ function parseASUP(files) {
 
   // Fallback aggregates if none parsed
   if (data.aggregates.length === 0) {
-    const isAff = data.version.model.includes("AFF");
-    const dType = isAff ? "NVMe SSD" : "SAS HDD";
-    const dSizeGB = isAff ? 1900 : 1200;
+    const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
+    const dType = isAllFlash ? "NVMe SSD" : "SAS HDD";
+    const dSizeGB = isAllFlash ? 1900 : 1200;
     
     data.aggregates.push({
       name: "aggr_data_a",
@@ -2391,11 +2402,11 @@ function parseASUP(files) {
 
   // Fallback spares if none parsed
   if (data.spares.length === 0) {
-    const isAff = data.version.model.includes("AFF");
-    const dType = isAff ? "NVMe SSD" : "SAS HDD";
-    const dSizeStr = isAff ? "1.9TB" : "1.2TB";
-    const dSizeGB = isAff ? 1900 : 1200;
-    const model = isAff ? "X371_S16431T9ATE" : "X425_H960G12G15K";
+    const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
+    const dType = isAllFlash ? "NVMe SSD" : "SAS HDD";
+    const dSizeStr = isAllFlash ? "1.9TB" : "1.2TB";
+    const dSizeGB = isAllFlash ? 1900 : 1200;
+    const model = isAllFlash ? "X371_S16431T9ATE" : "X425_H960G12G15K";
 
     data.spares.push({ node: "node-a", model, sizeStr: dSizeStr, sizeGB: dSizeGB, type: dType, count: 1 });
     data.spares.push({ node: "node-b", model, sizeStr: dSizeStr, sizeGB: dSizeGB, type: dType, count: 1 });
@@ -3408,6 +3419,237 @@ const NETAPP_PLATFORMS = {
     supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
     maxPcieSlots: 1
   },
+  "FAS90": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224", "ds224c", "ds212c", "ds460c"],
+    unsupportedShelves: ["ds2246"],
+    shelfWarnings: {
+      "ns224": "NS224 NVMe shelf is supported via PCIe adapter or on-board RoCE links.",
+      "ds224c": "DS224C SAS SSD/HDD shelf is fully supported natively."
+    },
+    shelfErrors: {
+      "ds2246": "Legacy 6G SAS shelves (DS2246) are not supported on FAS90."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v20.1",
+    description: "High-end Unified Hybrid Flash storage controller.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b", "e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
+    maxPcieSlots: 8
+  },
+  "FAS70": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224", "ds224c", "ds212c", "ds460c"],
+    unsupportedShelves: ["ds2246"],
+    shelfWarnings: {
+      "ns224": "NS224 NVMe shelf is supported.",
+      "ds224c": "DS224C SAS shelf is supported."
+    },
+    shelfErrors: {
+      "ds2246": "Legacy 6G SAS shelves (DS2246) are not supported on FAS70."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v20.0",
+    description: "Mid-range Unified Hybrid Flash storage controller.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b", "e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
+    maxPcieSlots: 6
+  },
+  "FAS50": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: {
+      "ds2246": "FAS50 supports DS2246 legacy SAS shelves under transition compliance."
+    },
+    shelfErrors: {
+      "ns224": "FAS50 does not support high-speed NVMe NS224 shelves."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v17.0",
+    description: "Entry-level Unified Hybrid Flash storage controller.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "nic_25g_4port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 2
+  },
+  "ASA A1K": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: {
+      "ns224": "NS224 NVMe shelf is fully supported natively using PCIe slots."
+    },
+    shelfErrors: {
+      "ds224c": "ASA A1K is a high-end all-NVMe controller and does not support SAS shelves (DS224C).",
+      "ds212c": "LFF HDD shelves are not supported on All-SAN arrays.",
+      "ds460c": "High-density SATA HDD shelves are not supported on All-SAN arrays.",
+      "ds2246": "Legacy 6G SAS shelves are not supported on ASA A1K."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v20.1",
+    description: "High-end SAN-Optimized All-Flash storage controller.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 8
+  },
+  "ASA A90": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 natively cabled to on-board RoCE ports." },
+    shelfErrors: {
+      "ds224c": "ASA A90 is NVMe-only; SAS shelves are unsupported.",
+      "ds212c": "HDD shelves not supported.",
+      "ds460c": "HDD shelves not supported.",
+      "ds2246": "Legacy SAS not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v20.0",
+    description: "Next-generation mid-range SAN-Optimized All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 6
+  },
+  "ASA A70": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
+    shelfErrors: {
+      "ds224c": "ASA A70 is NVMe-only; SAS shelves are unsupported.",
+      "ds212c": "HDD shelves not supported.",
+      "ds460c": "HDD shelves not supported.",
+      "ds2246": "Legacy SAS not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v20.0",
+    description: "Next-generation SAN-Optimized All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 6
+  },
+  "ASA A50": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
+    shelfErrors: {
+      "ds224c": "ASA A50 is NVMe-only; SAS shelves are unsupported.",
+      "ds212c": "HDD shelves not supported.",
+      "ds460c": "HDD shelves not supported.",
+      "ds2246": "Legacy SAS not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v17.0",
+    description: "Entry-to-mid SAN-Optimized All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 6
+  },
+  "ASA A30": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
+    shelfErrors: {
+      "ds224c": "ASA A30 is NVMe-only; SAS shelves are unsupported.",
+      "ds212c": "HDD shelves not supported.",
+      "ds460c": "HDD shelves not supported.",
+      "ds2246": "Legacy SAS not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v17.0",
+    description: "Entry SAN-Optimized All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 4
+  },
+  "ASA A20": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
+    shelfErrors: {
+      "ds224c": "ASA A20 is NVMe-only; SAS shelves are unsupported.",
+      "ds212c": "HDD shelves not supported.",
+      "ds460c": "HDD shelves not supported.",
+      "ds2246": "Legacy SAS not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v16.2",
+    description: "Entry-level SAN-Optimized All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 2
+  },
+  "ASA C30": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 QLC-SSD NVMe shelf supported." },
+    shelfErrors: {
+      "ds224c": "ASA C30 is NVMe-only; SAS shelves are unsupported.",
+      "ds212c": "HDD shelves not supported.",
+      "ds460c": "HDD shelves not supported.",
+      "ds2246": "Legacy SAS not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v17.2",
+    description: "Capacity-optimized SAN All-Flash Array (QLC SSD).",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 4
+  },
   "Default": {
     maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ns224"],
@@ -3435,6 +3677,20 @@ function getPlatformProfile(modelStr) {
   if (!modelStr) return NETAPP_PLATFORMS["Default"];
   
   const upper = modelStr.toUpperCase();
+  
+  // Match ASA models first to prevent incorrect AFF fallbacks
+  if (upper.includes("ASA A1K")) return NETAPP_PLATFORMS["ASA A1K"];
+  if (upper.includes("ASA A90")) return NETAPP_PLATFORMS["ASA A90"];
+  if (upper.includes("ASA A70")) return NETAPP_PLATFORMS["ASA A70"];
+  if (upper.includes("ASA A50")) return NETAPP_PLATFORMS["ASA A50"];
+  if (upper.includes("ASA A30")) return NETAPP_PLATFORMS["ASA A30"];
+  if (upper.includes("ASA A20")) return NETAPP_PLATFORMS["ASA A20"];
+  if (upper.includes("ASA C30")) return NETAPP_PLATFORMS["ASA C30"];
+  
+  // Match new FAS models
+  if (upper.includes("FAS90")) return NETAPP_PLATFORMS["FAS90"];
+  if (upper.includes("FAS70")) return NETAPP_PLATFORMS["FAS70"];
+  if (upper.includes("FAS50")) return NETAPP_PLATFORMS["FAS50"];
   
   // Match key patterns
   if (upper.includes("A1K")) return NETAPP_PLATFORMS["AFF A1K"];
@@ -3647,17 +3903,15 @@ const ONTAP_LIFECYCLE = {
   "9.17.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.17.1 is in General Support (GA)." },
   "9.18.1": { status: "compliant", label: "Active Support (Latest Stable)", desc: "ONTAP 9.18.1 is in General Support (GA) and is a modern recommended baseline." },
   "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, delivering NVMe-oF and AI optimizations." },
-  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault and cyber resiliency features." },
-  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault and cyber resiliency features." },
-  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault and advanced file security controls." },
+  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault, cyber resiliency, and advanced file security controls." }
 };
 
 function getPlatformMaxDrives(model) {
   const upper = (model || "").toUpperCase();
-  if (upper.includes("A1K") || upper.includes("9500") || upper.includes("9000") || upper.includes("A900")) return 1440;
-  if (upper.includes("8700") || upper.includes("8300") || upper.includes("C800") || upper.includes("A90") || upper.includes("A70")) return 720;
+  if (upper.includes("A1K") || upper.includes("9500") || upper.includes("9000") || upper.includes("A900") || upper.includes("FAS90") || upper.includes("FAS70")) return 1440;
+  if (upper.includes("8700") || upper.includes("8300") || upper.includes("C800") || upper.includes("A90") || upper.includes("A70") || upper.includes("C80")) return 720;
   if (upper.includes("A800") || upper.includes("C400")) return 720;
-  if (upper.includes("A400") || upper.includes("8200")) return 480;
+  if (upper.includes("A400") || upper.includes("8200") || upper.includes("FAS50")) return 480;
   if (upper.includes("A250") || upper.includes("C250") || upper.includes("A300") || upper.includes("A150")) return 240;
   if (upper.includes("A50") || upper.includes("A30") || upper.includes("C30") || upper.includes("C60") || upper.includes("2820") || upper.includes("2750") || upper.includes("2720")) return 144;
   return 144;
@@ -4250,7 +4504,9 @@ function runAudit(systemState) {
   systemState.shelves.forEach(shelf => {
     (shelf.disks || []).forEach(disk => {
       const sizeStr = disk.sizeStr || "";
-      if (sizeStr.includes("30.6TB") && compareVersions(baseVer, "9.9.1") < 0) {
+      if (sizeStr.includes("61.2TB") && compareVersions(baseVer, "9.15.1") < 0) {
+        driveSizeWarnings.push(`Disk in shelf ${shelf.id} has size ${sizeStr} which requires ONTAP version >= 9.15.1 (current version is ${systemState.version.ontap}).`);
+      } else if (sizeStr.includes("30.6TB") && compareVersions(baseVer, "9.9.1") < 0) {
         driveSizeWarnings.push(`Disk in shelf ${shelf.id} has size ${sizeStr} which requires ONTAP version >= 9.9.1 (current version is ${systemState.version.ontap}).`);
       } else if (sizeStr.includes("15.3TB") && compareVersions(baseVer, "9.1") < 0) {
         driveSizeWarnings.push(`Disk in shelf ${shelf.id} has size ${sizeStr} which requires ONTAP version >= 9.1 (current version is ${systemState.version.ontap}).`);
@@ -4265,8 +4521,8 @@ function runAudit(systemState) {
       "Software",
       "warning",
       driveSizeWarnings.join("\n"),
-      "Upgrade the cluster to a supported ONTAP version (ONTAP 9.9.1 or higher) to support very large capacity SSDs, or replace the large SSDs with smaller sizes.",
-      "Perform ONTAP upgrade to at least 9.9.1, or replace large capacity SSDs with supported sizes."
+      "Upgrade the cluster to a supported ONTAP version (ONTAP 9.15.1 or higher) to support very large capacity SSDs, or replace the large SSDs with smaller sizes.",
+      "Perform ONTAP upgrade to at least 9.15.1, or replace large capacity SSDs with supported sizes."
     );
   } else {
     addReport(
@@ -4278,6 +4534,32 @@ function runAudit(systemState) {
       "None required.",
       ""
     );
+  }
+
+  // --- Rule 15: ASA SAN-Only Protocol Licensing Compliance ---
+  if (upperModel.includes("ASA")) {
+    const activeNasLicenses = systemState.licenses.filter(l => (l.name === "NFS" || l.name === "CIFS") && l.status === "active");
+    if (activeNasLicenses.length > 0) {
+      addReport(
+        "BP_ASA_SAN_ONLY",
+        "ASA SAN-Only Protocol Compliance",
+        "Licensing",
+        "critical",
+        `NetApp All-SAN Array (ASA) platforms support block protocols (iSCSI, FC, NVMe-oF) only. NAS protocols (${activeNasLicenses.map(l => l.name).join(", ")}) are active, which violates the ASA architectural configuration boundary.`,
+        "Disable NFS and CIFS protocol services, or transition to a standard AFF/FAS unified storage array if file protocols are required.",
+        "Remove active NFS/CIFS licenses or migrate to a unified AFF platform."
+      );
+    } else {
+      addReport(
+        "BP_ASA_SAN_ONLY",
+        "ASA SAN-Only Protocol Compliance",
+        "Licensing",
+        "compliant",
+        "ASA controller is running block-only protocols (FC, iSCSI, NVMe-oF) in compliance with All-SAN Array hardware specifications.",
+        "None required.",
+        ""
+      );
+    }
   }
 
   return reports;
@@ -4451,7 +4733,7 @@ const SHELF_SPEC_MAP = {
     name: "NS224 (2U NVMe SSD Shelf)",
     ru: 2,
     power: 400,
-    sizes: ["1.9TB NVMe SSD", "3.8TB NVMe SSD", "7.6TB NVMe SSD", "15.3TB NVMe SSD", "30.6TB NVMe SSD"],
+    sizes: ["1.9TB NVMe SSD", "3.8TB NVMe SSD", "7.6TB NVMe SSD", "15.3TB NVMe SSD", "30.6TB NVMe SSD", "61.2TB NVMe SSD"],
     defaultCount: 24,
     maxCount: 24,
     mediaType: "NVMe SSD"
@@ -4460,7 +4742,7 @@ const SHELF_SPEC_MAP = {
     name: "DS224C (2U 12G SAS Shelf)",
     ru: 2,
     power: 300,
-    sizes: ["960GB SAS SSD", "3.8TB SAS SSD", "7.6TB SAS SSD", "15.3TB SAS SSD", "30.6TB SAS SSD", "1.2TB SAS HDD", "1.8TB SAS HDD"],
+    sizes: ["960GB SAS SSD", "3.8TB SAS SSD", "7.6TB SAS SSD", "15.3TB SAS SSD", "30.6TB SAS SSD", "61.2TB SAS SSD", "1.2TB SAS HDD", "1.8TB SAS HDD"],
     defaultCount: 24,
     maxCount: 24,
     mediaType: "SAS SSD"
@@ -5811,7 +6093,7 @@ function allocateHBACardsForState(state) {
 
 // Dynamic Disk Sizing helper
 function getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield) {
-  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || !profile.supportedShelves.includes("ds224c"));
+  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || model.toUpperCase().includes("ASA") || !profile.supportedShelves.includes("ds224c"));
   const maxDrives = getPlatformMaxDrives(model);
   
   const nvmeSizes = [
@@ -5819,7 +6101,8 @@ function getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield
     { label: "3.8TB", sizeGB: 3800, model: "X372_S16433T8ATE" },
     { label: "7.6TB", sizeGB: 7600, model: "X373_S16437T6ATE" },
     { label: "15.3TB", sizeGB: 15300, model: "X374_S164315TATE" },
-    { label: "30.6TB", sizeGB: 30600, model: "X375_S164330TATE" }
+    { label: "30.6TB", sizeGB: 30600, model: "X375_S164330TATE" },
+    { label: "61.2TB", sizeGB: 61200, model: "X376_S164361TATE" }
   ];
   
   const sasSizes = [
@@ -5827,7 +6110,8 @@ function getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield
     { label: "3.8TB", sizeGB: 3800, model: "X427_H3800G12G15K" },
     { label: "7.6TB", sizeGB: 7600, model: "X428_H7600G12G15K" },
     { label: "15.3TB", sizeGB: 15300, model: "X429_H15300G12G15K" },
-    { label: "30.6TB", sizeGB: 30600, model: "X430_H30600G12G15K" }
+    { label: "30.6TB", sizeGB: 30600, model: "X430_H30600G12G15K" },
+    { label: "61.2TB", sizeGB: 61200, model: "X431_H61200G12G15K" }
   ];
   
   const sizes = isAllNVMe ? nvmeSizes : sasSizes;
@@ -5981,7 +6265,7 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
     ontapSelect.value = startingOntap;
   }
 
-  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || !profile.supportedShelves.includes("ds224c"));
+  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || model.toUpperCase().includes("ASA") || !profile.supportedShelves.includes("ds224c"));
   const optDisk = getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield);
   const shelfModel = isAllNVMe ? "NS224" : "DS224C";
   const diskType = optDisk.diskType;
