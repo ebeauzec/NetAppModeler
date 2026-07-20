@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.11)
+# NetApp AutoSupport Analyzer & Modeler (v2.12)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,11 +6,12 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.11)
-* **Latest Hardware Platform & Disk Expansion:** Expanded the compatibility and hardware catalog to fully support new FAS models (**FAS50, FAS70, FAS90**), All-SAN Array (ASA) block-only models (**ASA A1K, A90, A70, A50, A30, A20, C30**), and ultra-high-density **61.2TB NVMe/SAS QLC SSD** drives.
-* **ASA SAN Licensing Compliance Audit (Rule 15):** Added architectural verification logic to audit and flag unauthorized NAS file licenses (NFS/CIFS) on SAN-optimized ASA arrays.
-* **High-Capacity QLC SSD Compatibility Audit (Rule 14):** Enforces minimum ONTAP 9.15.1 target software version requirements when sizing with 61.2TB SSD drives.
-* **Ownership & Independent Development Legal Terms (v2.10):** Added intellectual property notices highlighting Eugene Beauzec's sole authorship.
+## 🆕 New in this Version (v2.12)
+* **Parser Alert Fallback Sanitization:** Completely removed model name checks (`FAS8300`) from demo alert injection in `extractASUPAlerts()`. Real production FAS8300 AutoSupport logs without alerts now report 0 findings with 100% fidelity, eliminating false cabling SPOF and expired license alerts on healthy customer systems.
+* **Transparent Partial Parse Warnings:** Added explicit `parseWarnings` tracking and an Amber UI Banner in Step 2. If log regexes fail to extract specific sections (nodes, shelves, aggregates, spares, licenses, or switches) from custom or unusual ASUP formats, a prominent notice explicitly lists which sections are using fallback defaults.
+* **License Default Integrity:** Default fallback licenses for unparsed logs now default to `active` instead of injecting a false `expired` SnapMirror license.
+* **Cross-Platform Build Script Safety:** Wrapped optional local environment scratch path copies in `build_standalone.py` with safety checks (`os.path.exists`) and exception handling, preventing tracebacks for external contributors.
+* **Hardware & Disk Expansion (v2.11):** Added FAS50/70/90, ASA block arrays (ASA A1K-C30), and 61.2TB QLC SSDs.
 
 ---
 

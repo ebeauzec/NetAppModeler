@@ -63,14 +63,18 @@ def bundle():
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
 
-    # 8. Copy to scratch root for easy access
-    scratch_root_path = r"C:\Users\eugen\.gemini\antigravity\scratch\standalone_netapp_modeler.html"
-    with open(scratch_root_path, "w", encoding="utf-8") as f:
-        f.write(html)
-
-    print(f"Bundled successfully! Standalone file written to:")
+    print("Bundled successfully! Standalone file written to:")
     print(f"- {output_path}")
-    print(f"- {scratch_root_path}")
+
+    # 8. Optionally copy to local dev scratch root if path exists
+    scratch_root_path = r"C:\Users\eugen\.gemini\antigravity\scratch\standalone_netapp_modeler.html"
+    try:
+        if os.path.exists(os.path.dirname(scratch_root_path)):
+            with open(scratch_root_path, "w", encoding="utf-8") as f:
+                f.write(html)
+            print(f"- {scratch_root_path}")
+    except Exception:
+        pass
 
 if __name__ == "__main__":
     bundle()

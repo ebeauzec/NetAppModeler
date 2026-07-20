@@ -33,6 +33,8 @@ export function parseASUP(files) {
     combinedText = Object.values(files).join("\n\n");
   }
 
+  const isDemoMode = (typeof files === "object" && files !== null && !!files["DEMO_MODE"]) || combinedText.includes("SHFL-000001");
+
   const data = {
     version: {
       ontap: "9.7P12", // Default robust fallback
@@ -44,16 +46,21 @@ export function parseASUP(files) {
     shelves: [],
     aggregates: [],
     spares: [],
-    licenses: []
+    licenses: [],
+    parseWarnings: []
   };
 
   const lowerText = combinedText.toLowerCase();
 
   // --- 1. Parse Version ---
+  let isOntapParsed = false;
   const ontapMatch = combinedText.match(/NetApp Release ([\d\.\w_]+):/i) || 
                      combinedText.match(/ONTAP Version:\s*([\d\.\w_]+)/i) ||
                      combinedText.match(/Release\s+([\d\.\w_]+)/i);
-  if (ontapMatch) data.version.ontap = ontapMatch[1];
+  if (ontapMatch) {
+    data.version.ontap = ontapMatch[1];
+    isOntapParsed = true;
+  }
   
   const sysFirmwareMatch = combinedText.match(/System Firmware Version:\s*([^\r\n]+)/i) ||
                            combinedText.match(/BIOS Version:\s*([^\r\n]+)/i) ||
@@ -63,43 +70,52 @@ export function parseASUP(files) {
     data.version.systemFirmware = sysFirmwareMatch[1].trim();
   }
   
+  let isModelParsed = false;
   const modelMatch = combinedText.match(/Model Name:\s*([^\r\n]+)/i) ||
                      combinedText.match(/System Model:\s*([^\r\n]+)/i);
   if (modelMatch) {
     data.version.model = modelMatch[1].trim();
+    isModelParsed = true;
   } else {
     // Guess based on keywords
-    if (lowerText.includes("asa a1k")) data.version.model = "ASA A1K";
-    else if (lowerText.includes("asa a90")) data.version.model = "ASA A90";
-    else if (lowerText.includes("asa a70")) data.version.model = "ASA A70";
-    else if (lowerText.includes("asa a50")) data.version.model = "ASA A50";
-    else if (lowerText.includes("asa a30")) data.version.model = "ASA A30";
-    else if (lowerText.includes("asa a20")) data.version.model = "ASA A20";
-    else if (lowerText.includes("asa c30")) data.version.model = "ASA C30";
-    else if (lowerText.includes("a1k")) data.version.model = "AFF A1K";
-    else if (lowerText.includes("a90")) data.version.model = "AFF A90";
-    else if (lowerText.includes("a70")) data.version.model = "AFF A70";
-    else if (lowerText.includes("a50")) data.version.model = "AFF A50";
-    else if (lowerText.includes("a30")) data.version.model = "AFF A30";
-    else if (lowerText.includes("a20")) data.version.model = "AFF A20";
-    else if (lowerText.includes("c80")) data.version.model = "AFF C80";
-    else if (lowerText.includes("c60")) data.version.model = "AFF C60";
-    else if (lowerText.includes("c30")) data.version.model = "AFF C30";
-    else if (lowerText.includes("a400")) data.version.model = "AFF A400";
-    else if (lowerText.includes("fas90")) data.version.model = "FAS90";
-    else if (lowerText.includes("fas70")) data.version.model = "FAS70";
-    else if (lowerText.includes("fas50")) data.version.model = "FAS50";
-    else if (lowerText.includes("8300")) data.version.model = "FAS8300";
-    else if (lowerText.includes("a300")) data.version.model = "AFF A300";
-    else if (lowerText.includes("a250")) data.version.model = "AFF A250";
-    else if (lowerText.includes("c190")) data.version.model = "AFF C190";
+    if (lowerText.includes("asa a1k")) { data.version.model = "ASA A1K"; isModelParsed = true; }
+    else if (lowerText.includes("asa a90")) { data.version.model = "ASA A90"; isModelParsed = true; }
+    else if (lowerText.includes("asa a70")) { data.version.model = "ASA A70"; isModelParsed = true; }
+    else if (lowerText.includes("asa a50")) { data.version.model = "ASA A50"; isModelParsed = true; }
+    else if (lowerText.includes("asa a30")) { data.version.model = "ASA A30"; isModelParsed = true; }
+    else if (lowerText.includes("asa a20")) { data.version.model = "ASA A20"; isModelParsed = true; }
+    else if (lowerText.includes("asa c30")) { data.version.model = "ASA C30"; isModelParsed = true; }
+    else if (lowerText.includes("a1k")) { data.version.model = "AFF A1K"; isModelParsed = true; }
+    else if (lowerText.includes("a90")) { data.version.model = "AFF A90"; isModelParsed = true; }
+    else if (lowerText.includes("a70")) { data.version.model = "AFF A70"; isModelParsed = true; }
+    else if (lowerText.includes("a50")) { data.version.model = "AFF A50"; isModelParsed = true; }
+    else if (lowerText.includes("a30")) { data.version.model = "AFF A30"; isModelParsed = true; }
+    else if (lowerText.includes("a20")) { data.version.model = "AFF A20"; isModelParsed = true; }
+    else if (lowerText.includes("c80")) { data.version.model = "AFF C80"; isModelParsed = true; }
+    else if (lowerText.includes("c60")) { data.version.model = "AFF C60"; isModelParsed = true; }
+    else if (lowerText.includes("c30")) { data.version.model = "AFF C30"; isModelParsed = true; }
+    else if (lowerText.includes("a400")) { data.version.model = "AFF A400"; isModelParsed = true; }
+    else if (lowerText.includes("fas90")) { data.version.model = "FAS90"; isModelParsed = true; }
+    else if (lowerText.includes("fas70")) { data.version.model = "FAS70"; isModelParsed = true; }
+    else if (lowerText.includes("fas50")) { data.version.model = "FAS50"; isModelParsed = true; }
+    else if (lowerText.includes("8300")) { data.version.model = "FAS8300"; isModelParsed = true; }
+    else if (lowerText.includes("a300")) { data.version.model = "AFF A300"; isModelParsed = true; }
+    else if (lowerText.includes("a250")) { data.version.model = "AFF A250"; isModelParsed = true; }
+    else if (lowerText.includes("c190")) { data.version.model = "AFF C190"; isModelParsed = true; }
     else if (lowerText.includes("fas")) {
       const match = combinedText.match(/(FAS\d{4})/i);
-      if (match) data.version.model = match[1].toUpperCase();
+      if (match) { data.version.model = match[1].toUpperCase(); isModelParsed = true; }
     } else if (lowerText.includes("aff")) {
       const match = combinedText.match(/(AFF\s+[A-Z]?\d{2,3})/i);
-      if (match) data.version.model = match[1].toUpperCase();
+      if (match) { data.version.model = match[1].toUpperCase(); isModelParsed = true; }
     }
+  }
+
+  if (!isDemoMode && (!isOntapParsed || !isModelParsed)) {
+    data.parseWarnings.push({
+      section: "System Version & Model",
+      message: `System model or ONTAP release version could not be parsed; using default baseline (${data.version.model} / ONTAP ${data.version.ontap}).`
+    });
   }
   
   const serialMatch = combinedText.match(/System Serial Number:\s*([^\r\n]+)/i) ||
@@ -122,6 +138,12 @@ export function parseASUP(files) {
 
   // Fallback nodes if not found
   if (data.nodes.length === 0) {
+    if (!isDemoMode) {
+      data.parseWarnings.push({
+        section: "Node Topology",
+        message: "Controller System IDs and hostname mappings could not be parsed; using default HA pair topology (node-a, node-b)."
+      });
+    }
     data.nodes.push({ id: "536870912", name: "node-a", serial: data.version.serial });
     data.nodes.push({ id: "536870913", name: "node-b", serial: data.version.serial + "B" });
     nodeNames.push("node-a", "node-b");
@@ -225,6 +247,12 @@ export function parseASUP(files) {
 
     if (looseDisks.length > 0) {
       // Group loose disks under a default mock shelf
+      if (!isDemoMode) {
+        data.parseWarnings.push({
+          section: "Disk Shelves",
+          message: "Disk shelf headers could not be parsed; discovered drives grouped under default shelf layout."
+        });
+      }
       const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
       data.shelves.push({
         id: "1",
@@ -237,6 +265,12 @@ export function parseASUP(files) {
       });
     } else {
       // Create a default shelf layout so the visualizer has something nice to render
+      if (!isDemoMode) {
+        data.parseWarnings.push({
+          section: "Disk Shelves",
+          message: "Physical disk shelf inventory could not be parsed; using default shelf layout."
+        });
+      }
       const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
       const diskType = isAllFlash ? "NVMe SSD" : "SAS HDD";
       const sizeStr = isAllFlash ? "1.9TB" : "1.2TB";
@@ -337,6 +371,12 @@ export function parseASUP(files) {
 
   // Fallback aggregates if none parsed
   if (data.aggregates.length === 0) {
+    if (!isDemoMode) {
+      data.parseWarnings.push({
+        section: "Storage Aggregates",
+        message: "Aggregate layout could not be parsed; using default aggregate volumes (aggr_data_a, aggr_data_b)."
+      });
+    }
     const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
     const dType = isAllFlash ? "NVMe SSD" : "SAS HDD";
     const dSizeGB = isAllFlash ? 1900 : 1200;
@@ -386,6 +426,12 @@ export function parseASUP(files) {
 
   // Fallback spares if none parsed
   if (data.spares.length === 0) {
+    if (!isDemoMode) {
+      data.parseWarnings.push({
+        section: "Spare Drives",
+        message: "Spare drive counts could not be parsed; using default spare allocations."
+      });
+    }
     const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
     const dType = isAllFlash ? "NVMe SSD" : "SAS HDD";
     const dSizeStr = isAllFlash ? "1.9TB" : "1.2TB";
@@ -417,12 +463,18 @@ export function parseASUP(files) {
 
   // Default licensing if none parsed
   if (data.licenses.length === 0) {
+    if (!isDemoMode) {
+      data.parseWarnings.push({
+        section: "Software Licenses",
+        message: "Software feature licenses could not be parsed; using default active entitlement set."
+      });
+    }
     const defaultLic = ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"];
     defaultLic.forEach(name => {
       data.licenses.push({
         name,
-        status: name === "SnapMirror" ? "expired" : "active",
-        details: name === "SnapMirror" ? "Expired: 2023-10-10" : "",
+        status: "active",
+        details: "",
         serial: data.version.serial
       });
     });
@@ -487,6 +539,12 @@ export function parseASUP(files) {
 
   // Fallback to default cluster switches
   if (switches.length === 0) {
+    if (!isDemoMode) {
+      data.parseWarnings.push({
+        section: "Cluster Switches",
+        message: "Cluster interconnect switch model could not be parsed; using default switch profile."
+      });
+    }
     switches.push({ name: "CSW-BES-01", model: "BES-53248", version: "1.3.0.1", role: "cluster-switch" });
     switches.push({ name: "CSW-BES-02", model: "BES-53248", version: "1.3.0.1", role: "cluster-switch" });
   }
@@ -598,8 +656,9 @@ function extractASUPAlerts(combinedText, files) {
     }
   }
 
-  // If no alerts found, let's inject a few default alerts for the hybrid FAS8300 demo system to make it look realistic!
-  if (alerts.length === 0 && (combinedText.includes("FAS8300") || combinedText.includes("SHFL-000001"))) {
+  // Inject demo alerts ONLY when explicitly running in synthetic DEMO mode!
+  const isDemoMode = (typeof files === "object" && files !== null && !!files["DEMO_MODE"]) || combinedText.includes("SHFL-000001");
+  if (alerts.length === 0 && isDemoMode) {
     alerts.push({
       id: "ASUP_CABLE_SPOF_DEMO",
       component: "Cabling",

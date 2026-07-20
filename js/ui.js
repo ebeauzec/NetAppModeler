@@ -1841,6 +1841,20 @@ function renderCurrentAuditDashboard() {
   document.getElementById("cur-version").textContent = currentState.version.ontap;
   document.getElementById("cur-serial").textContent = currentState.version.serial;
 
+  // Render Partial ASUP Parse Warnings Banner
+  const warnBanner = document.getElementById("parse-warnings-banner");
+  const warnList = document.getElementById("parse-warnings-list");
+  if (warnBanner && warnList) {
+    if (currentState.parseWarnings && currentState.parseWarnings.length > 0) {
+      warnList.innerHTML = currentState.parseWarnings.map(w => 
+        `<li style="margin-bottom: 2px;"><strong>${w.section}:</strong> ${w.message}</li>`
+      ).join("");
+      warnBanner.classList.remove("hidden");
+    } else {
+      warnBanner.classList.add("hidden");
+    }
+  }
+
   // Node Count
   const curNodesElem = document.getElementById("cur-nodes");
   if (curNodesElem) {

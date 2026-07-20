@@ -37,7 +37,7 @@
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.11</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.12</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -193,6 +193,21 @@
 
       <!-- STEP 2: AUDIT & CURRENT VIEW PANEL -->
       <section id="step2" class="wizard-panel glass-panel hidden">
+        <!-- Partial ASUP Parse Warning Banner -->
+        <div id="parse-warnings-banner" class="hidden" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem; background: rgba(245, 158, 11, 0.12); border: 1px solid var(--color-warning); border-radius: var(--radius-lg); text-align: left;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: #fde047; margin-bottom: 0.5rem; font-size: 0.95rem;">
+            <svg style="width: 20px; height: 20px; fill: var(--color-warning);" viewBox="0 0 24 24">
+              <path d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
+            </svg>
+            <span>Notice: Partial AutoSupport Parse — Fallback Defaults Applied</span>
+          </div>
+          <p style="font-size: 0.82rem; color: #fef08a; margin: 0 0 0.5rem 0; line-height: 1.4;">
+            Some sections of your uploaded AutoSupport file could not be extracted by log regexes and are displaying default fallback placeholders:
+          </p>
+          <ul id="parse-warnings-list" style="margin: 0; padding-left: 1.25rem; font-size: 0.82rem; color: #fef08a; line-height: 1.5;">
+          </ul>
+        </div>
+
         <div class="dashboard-grid">
           
           <!-- Visual Cluster Diagram -->
