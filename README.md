@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.13)
+# NetApp AutoSupport Analyzer & Modeler (v2.14)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,11 +6,14 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.13)
-* **On-Site Production-Ready PCIe Slots Parser:** Added automated regex extraction to parse physical PCIe expansion cards directly from the `sysconfig -a` output inside real AutoSupport logs. It dynamically detects Fibre Channel (FC) HBAs, SAS adapters, and RoCE/Ethernet NICs, registering their respective ports under node objects.
-* **Rear Chassis PCIe Slots Layout Visualizer:** Renders an interactive, steel-textured rear controller chassis panel SVG, mapping each physical slot (including 10-slot and 11-slot configurations for high-end platforms like A900/FAS9500 and A1K). Occupied cards show detailed PCB colors (best-practice green, auto cyan, sub-optimal amber), gold connectors, and physical port links. Empty slots are clickable to select them in the modeler slot picker.
-* **Model Prefix Collision Fix:** Resolved a matching collision in `getPlatformProfile()` where legacy systems like the `FAS9000` were incorrectly detected as new `FAS90` platforms.
-* **Parser Alert Fallback Sanitization (v2.12):** Clean alert reports on real FAS8300 logs.
+## 🆕 New in this Version (v2.14)
+* **High-Fidelity Storage Shelf Visualizer:** Cabling topology diagram now renders exact visual profiles for specific disk shelves:
+  * **DS460C (4U 60-Bay):** Thicker 4U bezel, 5 sliding drawer layers with vertical lock indicators, and high-density disk slots.
+  * **DS212C (2U 12-Bay):** Horizontal LFF slots showing wide-form factor drive bays.
+  * **NS224 (2U 24-Bay NVMe):** Vertical slots with cyan NVMe drive highlights.
+  * **DS224C (2U 24-Bay SAS):** Vertical slots with amber SAS drive highlights.
+* **Variable Shelf Height Cabling:** Cabling lines dynamically center connection ports based on physical unit height.
+* **PCIe Slots Parser & Layout Visualizer (v2.13):** Automatic PCIe card extraction and interactive rear panel.
 
 ---
 

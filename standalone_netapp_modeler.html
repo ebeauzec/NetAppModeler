@@ -937,7 +937,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.13</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.14</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -6858,6 +6858,160 @@ function resolveStoragePorts(state, shelfType, totalShelvesCount) {
   return ports;
 }
 
+function getShelfHeight(model) {
+  if (!model) return 50;
+  const m = model.toLowerCase();
+  if (m.includes("ds460c")) return 90;
+  return 50;
+}
+
+function getShelfVisualSVG(shelfObj, x, y, width, height, isProposed) {
+  const model = (shelfObj.model || "").toLowerCase();
+  const borderStroke = isProposed ? "var(--color-primary)" : "rgba(255,255,255,0.15)";
+  const borderStrokeWidth = isProposed ? 2 : 1;
+  const opacity = isProposed ? 1 : 0.95;
+  const isNarrow = width < 300;
+
+  let html = `<!-- Shelf Visual: ${shelfObj.model} -->`;
+  
+  if (model.includes("ds460c")) {
+    // 4U 60-Drive Shelf (Thick, drawer-based)
+    html += `
+      <rect class="visual-shelf-bg" x="${x}" y="${y}" width="${width}" height="${height}" fill="#1e293b" stroke="${borderStroke}" stroke-width="${borderStrokeWidth}" rx="4" opacity="${opacity}"/>
+      <!-- Side Handles (4U Rack mount ears) -->
+      <rect x="${x}" y="${y}" width="6" height="${height}" fill="#475569" rx="1"/>
+      <rect x="${x + width - 6}" y="${y}" width="6" height="${height}" fill="#475569" rx="1"/>
+      <circle cx="${x + 3}" cy="${y + 15}" r="1.5" fill="#94a3b8"/>
+      <circle cx="${x + 3}" cy="${y + height - 15}" r="1.5" fill="#94a3b8"/>
+      <circle cx="${x + width - 3}" cy="${y + 15}" r="1.5" fill="#94a3b8"/>
+      <circle cx="${x + width - 3}" cy="${y + height - 15}" r="1.5" fill="#94a3b8"/>
+    `;
+    
+    // Draw 5 drawer fronts
+    for (let r = 0; r < 5; r++) {
+      const ry = y + 6 + r * 16;
+      html += `
+        <rect x="${x + 10}" y="${ry}" width="${width - 20}" height="13" fill="#0f172a" stroke="#334155" rx="1"/>
+        <line x1="${x + 14}" y1="${ry + 6}" x2="${x + 20}" y2="${ry + 6}" stroke="#475569" stroke-width="1.2"/> <!-- left latch -->
+        <line x1="${x + width - 20}" y1="${ry + 6}" x2="${x + width - 14}" y2="${ry + 6}" stroke="#475569" stroke-width="1.2"/> <!-- right latch -->
+      `;
+      
+      // Draw tiny drive slot indicators inside drawer
+      const maxDisksRow = 12;
+      const tDiskW = Math.floor((width - 50) / maxDisksRow) - 2;
+      const tDiskXStart = x + 25;
+      
+      for (let c = 0; c < maxDisksRow; c++) {
+        const tdx = tDiskXStart + c * (tDiskW + 2);
+        const diskIdx = r * 12 + c;
+        const curDisk = (shelfObj.disks || []).find(d => d.slot === diskIdx);
+        let dColor = "#1e293b";
+        if (curDisk) {
+          dColor = curDisk.type.toLowerCase().includes("ssd") ? "#0284c7" : "#d97706";
+        }
+        html += `<rect x="${tdx}" y="${ry + 2}" width="${tDiskW}" height="9" fill="${dColor}" rx="0.5"/>`;
+      }
+    }
+    
+    // Labels overlay
+    const labelFontSize = isNarrow ? 7 : 8.5;
+    html += `
+      <rect x="${x + 12}" y="${y + height - 18}" width="${isNarrow ? 120 : 180}" height="14" fill="rgba(15,23,42,0.85)" rx="2"/>
+      <text x="${x + 16}" y="${y + height - 8}" fill="#fff" font-size="${labelFontSize}" font-weight="700">${shelfObj.model.toUpperCase()} (4U 60-Bay)</text>
+    `;
+    
+  } else if (model.includes("ds212c")) {
+    // 2U 12-Drive LFF Shelf (horizontal drawers)
+    html += `
+      <rect class="visual-shelf-bg" x="${x}" y="${y}" width="${width}" height="${height}" fill="#1e293b" stroke="${borderStroke}" stroke-width="${borderStrokeWidth}" rx="4" opacity="${opacity}"/>
+      <!-- Symmetrical Bezel highlight -->
+      <rect x="${x + 8}" y="${y + 4}" width="${width - 16}" height="${height - 8}" fill="#0f172a" rx="2"/>
+    `;
+    
+    // Draw 12 large horizontal slots (4 columns of 3 rows)
+    const cols = 4;
+    const rows = 3;
+    const slotW = Math.floor((width - 30) / cols) - 4;
+    const slotH = Math.floor((height - 12) / rows) - 2;
+    const lffXStart = x + 12;
+    const lffYStart = y + 6;
+    
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const slotIdx = r * cols + c;
+        const curDisk = (shelfObj.disks || []).find(d => d.slot === slotIdx);
+        const sx = lffXStart + c * (slotW + 4);
+        const sy = lffYStart + r * (slotH + 2);
+        
+        let slotColor = "#1e293b";
+        let strokeColor = "#334155";
+        let labelText = `SLOT ${slotIdx}`;
+        if (curDisk) {
+          slotColor = "#334155";
+          strokeColor = "#94a3b8";
+          labelText = `${curDisk.sizeStr}`;
+        }
+        
+        html += `
+          <rect x="${sx}" y="${sy}" width="${slotW}" height="${slotH}" fill="${slotColor}" stroke="${strokeColor}" rx="1"/>
+          <text x="${sx + slotW/2}" y="${sy + slotH - 3}" fill="#64748b" font-size="5" text-anchor="middle">${labelText}</text>
+        `;
+      }
+    }
+    
+    // Labels overlay
+    html += `
+      <rect x="${x + 12}" y="${y + height - 16}" width="${isNarrow ? 90 : 130}" height="12" fill="rgba(15,23,42,0.9)" rx="2"/>
+      <text x="${x + 16}" y="${y + height - 7}" fill="#fff" font-size="7" font-weight="700">${shelfObj.model.toUpperCase()} LFF</text>
+    `;
+    
+  } else {
+    // 2U 24-Drive SFF Shelf (NS224 NVMe or DS224C/DS2246 SAS)
+    const isNVMe = model.includes("ns224");
+    const activeColor = isNVMe ? "rgba(6,182,212,0.15)" : "rgba(245,158,11,0.1)";
+    const highlightColor = isNVMe ? "var(--color-info)" : "var(--color-warning)";
+    
+    html += `
+      <rect class="visual-shelf-bg" x="${x}" y="${y}" width="${width}" height="${height}" fill="#1e293b" stroke="${borderStroke}" stroke-width="${borderStrokeWidth}" rx="4" opacity="${opacity}"/>
+      <!-- Outer Bezel accent -->
+      <rect x="${x + 8}" y="${y + 4}" width="${width - 16}" height="${height - 8}" fill="#0f172a" rx="2"/>
+    `;
+    
+    // Draw 24 SFF vertical slots in the middle
+    const maxDisks = 24;
+    const diskWidth = isNarrow ? 3 : 6;
+    const diskHeight = 32;
+    const diskXStart = isNarrow ? x + 55 : x + 180;
+    const diskGap = isNarrow ? 2 : 4;
+    const dy = y + 9;
+    
+    for (let d = 0; d < maxDisks; d++) {
+      const diskX = diskXStart + d * (diskWidth + diskGap);
+      const curDisk = (shelfObj.disks || []).find(disk => disk.slot === d);
+      
+      let dColor = "#1e293b";
+      let strokeColor = "#334155";
+      
+      if (curDisk) {
+        dColor = isNVMe ? "#0284c7" : "#d97706"; // NVMe Blue or SAS Amber
+        strokeColor = isNVMe ? "#38bdf8" : "#fbbf24";
+      }
+      
+      html += `
+        <rect x="${diskX}" y="${dy}" width="${diskWidth}" height="${diskHeight}" fill="${dColor}" stroke="${strokeColor}" rx="0.5"/>
+      `;
+    }
+    
+    // Labels overlay
+    html += `
+      <text x="${x + 18}" y="${y + 22}" fill="#fff" font-size="10" font-weight="700">${shelfObj.model.toUpperCase()}</text>
+      <text x="${x + 18}" y="${y + 34}" fill="var(--color-muted)" font-size="7">ID: ${shelfObj.id} | Fw: ${shelfObj.firmware}</text>
+    `;
+  }
+  
+  return html;
+}
+
 // Draw interactive SVG cabling diagram with MetroCluster support
 function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
   const container = document.getElementById(targetFrameId);
@@ -7044,9 +7198,18 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
       svgStr += `<path d="M 715,${portY} C 715,${switchY + 20} 440,${switchY + 5} 440,${switchY + 5}" stroke="var(--color-primary)" fill="none" stroke-width="1.5"/>`;
     }
 
-    // Shelves stacked
-    const shelfHeight = 50;
+    // Shelves stacked (MetroCluster)
     const shelfGap = 35;
+    
+    // Pre-calculate shelf y-positions for MetroCluster
+    const shelfYPositions = [];
+    let accY = shelfYStart;
+    for (let idx = 0; idx < totalShelvesCount; idx++) {
+      const isProposed = idx >= state.shelves.length;
+      const shelfObj = isProposed ? proposedShelvesArray[idx - state.shelves.length] : state.shelves[idx];
+      shelfYPositions.push(accY);
+      accY += getShelfHeight(shelfObj.model) + shelfGap;
+    }
 
     for (let sIdx = 0; sIdx < stacks.length; sIdx++) {
       const stack = stacks[sIdx];
@@ -7056,42 +7219,47 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         const shelfItem = stack[j];
         const i = shelfItem.index;
         const shelfObj = shelfItem.obj;
-        const y = shelfYStart + i * (shelfHeight + shelfGap);
+        const y = shelfYPositions[i];
+        const shelfHeight = getShelfHeight(shelfObj.model);
+        const cy = y + Math.floor(shelfHeight / 2);
         
         const isSinglePath = shelfObj.cabling && (shelfObj.cabling.toLowerCase().includes("single-path") || !shelfObj.cabling.toLowerCase().includes("multipath"));
         
         // Site A Shelf
-        const borderClass = shelfItem.isProposed ? "visual-shelf active" : "visual-shelf";
+        svgStr += getShelfVisualSVG(shelfObj, 15, y, 260, shelfHeight, shelfItem.isProposed);
         svgStr += `
-          <rect class="${borderClass}" x="15" y="${y}" width="260" height="${shelfHeight}" rx="3" />
-          <text x="70" y="${y + 20}" fill="#fff" font-size="9" font-weight="600">${shelfObj.model} (ID: ${shelfObj.id})</text>
-          <circle cx="25" cy="${y + 30}" r="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1"/>
-          <text x="25" y="${y + 38}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IOM-A</text>
+          <!-- Site A Cable Ports -->
+          <circle cx="25" cy="${cy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1.2"/>
+          <text x="25" y="${cy + 9}" fill="var(--color-muted)" font-size="5.5" text-anchor="middle">IOM-A</text>
           
-          <circle cx="265" cy="${y + 30}" r="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1"/>
-          <text x="265" y="${y + 38}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IOM-B</text>
+          <circle cx="265" cy="${cy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1.2"/>
+          <text x="265" y="${cy + 9}" fill="var(--color-muted)" font-size="5.5" text-anchor="middle">IOM-B</text>
         `;
 
         // Site B Shelf
+        svgStr += getShelfVisualSVG(shelfObj, 475, y, 260, shelfHeight, shelfItem.isProposed);
         svgStr += `
-          <rect class="${borderClass}" x="475" y="${y}" width="260" height="${shelfHeight}" rx="3" />
-          <text x="530" y="${y + 20}" fill="#fff" font-size="9" font-weight="600">${shelfObj.model} (ID: ${shelfObj.id}B)</text>
-          <circle cx="485" cy="${y + 30}" r="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1"/>
-          <text x="485" y="${y + 38}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IOM-A</text>
+          <!-- Site B Cable Ports -->
+          <circle cx="485" cy="${cy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1.2"/>
+          <text x="485" y="${cy + 9}" fill="var(--color-muted)" font-size="5.5" text-anchor="middle">IOM-A</text>
           
-          <circle cx="725" cy="${y + 30}" r="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1"/>
-          <text x="725" y="${y + 38}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IOM-B</text>
+          <circle cx="725" cy="${cy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1.2"/>
+          <text x="725" y="${cy + 9}" fill="var(--color-muted)" font-size="5.5" text-anchor="middle">IOM-B</text>
         `;
 
         // Daisy chains within the stack
         if (j > 0) {
-          const prevY = shelfYStart + (stack[j-1].index) * (shelfHeight + shelfGap);
+          const prevIndex = stack[j-1].index;
+          const prevY = shelfYPositions[prevIndex];
+          const prevHeight = getShelfHeight(stack[j-1].obj.model);
+          const prevCy = prevY + Math.floor(prevHeight / 2);
+          
           // Site A
-          svgStr += `<path d="M 25,${prevY + 30} L 25,${y + 30}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-          svgStr += `<path d="M 265,${prevY + 30} L 265,${y + 30}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M 25,${prevCy} L 25,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M 265,${prevCy} L 265,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
           // Site B
-          svgStr += `<path d="M 485,${prevY + 30} L 485,${y + 30}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-          svgStr += `<path d="M 725,${prevY + 30} L 725,${y + 30}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M 485,${prevCy} L 485,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M 725,${prevCy} L 725,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
         }
 
         // Local loop cabling to Node ports (first shelf in stack)
@@ -7110,8 +7278,8 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             const pBX = boxXB + 14 + pAIdx * 24;
             const portY = yNode + 50;
             
-            svgStr += `<path d="M ${pAX},${portY} C ${pAX},${yNode + 95} 25,${yNode + 110} 25,${y + 26}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-            svgStr += `<path d="M ${pBX},${portY} C ${pBX},${yNode + 95} 485,${yNode + 110} 485,${y + 26}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+            svgStr += `<path d="M ${pAX},${portY} C ${pAX},${yNode + 95} 25,${yNode + 110} 25,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+            svgStr += `<path d="M ${pBX},${portY} C ${pBX},${yNode + 95} 485,${yNode + 110} 485,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
           }
         }
 
@@ -7128,10 +7296,10 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             const repBX = boxXB + 14 + repAIdx * 24;
             const portY = yNode + 50;
 
-            svgStr += `<path d="M ${repAX},${portY} C ${repAX},${yNode + 120} 450,110 485,${y + 26}" class="${replicationClass}" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
+            svgStr += `<path d="M ${repAX},${portY} C ${repAX},${yNode + 120} 450,110 485,${cy}" class="${replicationClass}" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
 
             if (!isSinglePath) {
-              svgStr += `<path d="M ${repBX},${portY} C ${repBX},${yNode + 120} 300,110 265,${y + 26}" class="${replicationClass}" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
+              svgStr += `<path d="M ${repBX},${portY} C ${repBX},${yNode + 120} 300,110 265,${cy}" class="${replicationClass}" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
             } else {
               svgStr += `<path d="M ${repBX},${portY} C ${repBX},${yNode + 110} 380,105 380,120" class="${replicationClass}" stroke="var(--color-danger)" fill="none" stroke-dasharray="3 3" stroke-width="1.5"/>`;
               svgStr += `<circle cx="380" cy="120" r="4" fill="var(--color-danger)" />`;
@@ -7151,8 +7319,8 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             const rBX = boxXB + 14 + rAIdx * 24;
             const portY = yNode + 50;
             
-            svgStr += `<path d="M ${rAX},${portY} C ${rAX},${yNode + 110} 265,125 265,${y + 26}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
-            svgStr += `<path d="M ${rBX},${portY} C ${rBX},${yNode + 110} 725,125 725,${y + 26}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
+            svgStr += `<path d="M ${rAX},${portY} C ${rAX},${yNode + 110} 265,125 265,${cy}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
+            svgStr += `<path d="M ${rBX},${portY} C ${rBX},${yNode + 110} 725,125 725,${cy}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
           }
         }
       }
@@ -7355,10 +7523,19 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         svgStr += `<path d="M 480,${currentY + 48} C 480,${currentY - 30} 530,70 530,45" stroke="var(--color-warning)" stroke-width="1.2" stroke-dasharray="2 1" fill="none" />`;
       }
 
-      // Draw Shelves for this HA pair stacked below
+      // Draw Shelves for this HA pair stacked below (non-MetroCluster)
       const shelfYStart = currentY + 150;
-      const shelfHeight = 50;
       const shelfGap = 30;
+
+      // Pre-calculate shelf y-positions for this HA pair
+      const shelfYPositionsInPair = [];
+      let accY = shelfYStart;
+      pairStacks.forEach((stack) => {
+        stack.forEach((shelfItem) => {
+          shelfYPositionsInPair.push(accY);
+          accY += getShelfHeight(shelfItem.obj.model) + shelfGap;
+        });
+      });
 
       pairStacks.forEach((stack, pairStackIdx) => {
         const stackGlobalIdx = pairStackIndices[pairStackIdx];
@@ -7384,60 +7561,34 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             precedingShelvesCount += pairStacks[prevStackIdx].length;
           }
           const shelfIdxInPair = precedingShelvesCount + j;
-          const y = shelfYStart + shelfIdxInPair * (shelfHeight + shelfGap);
+          const y = shelfYPositionsInPair[shelfIdxInPair];
+          const shelfHeight = getShelfHeight(shelfObj.model);
+          const iomY = y + Math.floor((shelfHeight - 30) / 2);
+          const iomCy = iomY + 15;
 
-          const borderClass = shelfItem.isProposed ? "visual-shelf active" : "visual-shelf";
+          // Draw dynamic high-fidelity shelf visual
+          svgStr += getShelfVisualSVG(shelfObj, 60, y, 530, shelfHeight, shelfItem.isProposed);
 
+          // Draw cabling connector boxes overlay on top of high-fidelity bezel
           svgStr += `
-            <rect class="${borderClass}" x="60" y="${y}" width="530" height="${shelfHeight}" rx="4" />
-            <text x="125" y="${y + 20}" fill="#fff" font-size="10" font-weight="600">${shelfObj.model} (ID: ${shelfObj.id})</text>
-            <text x="125" y="${y + 35}" fill="var(--color-muted)" font-size="9">Fw: ${shelfObj.firmware}</text>
+            <!-- IOM-A port block -->
+            <rect x="70" y="${iomY}" width="45" height="30" fill="rgba(6,182,212,0.2)" stroke="var(--color-info)" stroke-width="1.2" rx="2"/>
+            <text x="92.5" y="${iomY + 10}" fill="var(--color-info)" font-size="7.5" text-anchor="middle" font-weight="700">IOM-A</text>
+            <circle cx="80" cy="${iomCy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1"/>
+            <text x="80" y="${iomCy + 9}" fill="var(--color-muted)" font-size="6" text-anchor="middle">IN</text>
+            <circle cx="105" cy="${iomCy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1"/>
+            <text x="105" y="${iomCy + 9}" fill="var(--color-muted)" font-size="6" text-anchor="middle">OUT</text>
           `;
 
           svgStr += `
-            <rect x="70" y="${y + 10}" width="45" height="30" fill="rgba(6,182,212,0.15)" stroke="var(--color-info)" rx="2"/>
-            <text x="92.5" y="${y + 20}" fill="var(--color-info)" font-size="7" text-anchor="middle" font-weight="700">IOM-A</text>
-            <circle cx="80" cy="${y + 30}" r="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1"/>
-            <text x="80" y="${y + 39}" fill="var(--color-muted)" font-size="6" text-anchor="middle">IN</text>
-            <circle cx="105" cy="${y + 30}" r="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1"/>
-            <text x="105" y="${y + 39}" fill="var(--color-muted)" font-size="6" text-anchor="middle">OUT</text>
+            <!-- IOM-B port block -->
+            <rect x="535" y="${iomY}" width="45" height="30" fill="rgba(236,72,153,0.2)" stroke="var(--color-warning)" stroke-width="1.2" rx="2"/>
+            <text x="557.5" y="${iomY + 10}" fill="var(--color-warning)" font-size="7.5" text-anchor="middle" font-weight="700">IOM-B</text>
+            <circle cx="545" cy="${iomCy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1"/>
+            <text x="545" y="${iomCy + 9}" fill="var(--color-muted)" font-size="6" text-anchor="middle">IN</text>
+            <circle cx="570" cy="${iomCy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1"/>
+            <text x="570" y="${iomCy + 9}" fill="var(--color-muted)" font-size="6" text-anchor="middle">OUT</text>
           `;
-
-          svgStr += `
-            <rect x="535" y="${y + 10}" width="45" height="30" fill="rgba(236,72,153,0.15)" stroke="var(--color-warning)" rx="2"/>
-            <text x="557.5" y="${y + 20}" fill="var(--color-warning)" font-size="7" text-anchor="middle" font-weight="700">IOM-B</text>
-            <circle cx="545" cy="${y + 30}" r="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1"/>
-            <text x="545" y="${y + 39}" fill="var(--color-muted)" font-size="6" text-anchor="middle">IN</text>
-            <circle cx="570" cy="${y + 30}" r="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1"/>
-            <text x="570" y="${y + 39}" fill="var(--color-muted)" font-size="6" text-anchor="middle">OUT</text>
-          `;
-
-          const disksToDraw = shelfObj.disks || [];
-          const maxDisks = 24;
-          const diskWidth = 6;
-          const diskHeight = 24;
-          const diskXStart = 190;
-          const diskGap = 4;
-
-          for (let d = 0; d < maxDisks; d++) {
-            const diskX = diskXStart + d * (diskWidth + diskGap);
-            const curDisk = disksToDraw.find(disk => disk.slot === d);
-            
-            let diskClass = "empty";
-            let diskTooltipText = `Slot ${d}: Empty`;
-
-            if (curDisk) {
-              diskTooltipText = `Slot ${d}: ${curDisk.type} (${curDisk.sizeStr})\nS/N: ${curDisk.serial}\nModel: ${curDisk.model}`;
-              const mType = curDisk.type.toLowerCase();
-              if (mType.includes("nvme")) diskClass = "nvme";
-              else if (mType.includes("ssd")) diskClass = "ssd";
-              else diskClass = "hdd";
-            }
-
-            svgStr += `
-              <rect class="visual-disk ${diskClass}" x="${diskX}" y="${y + 13}" width="${diskWidth}" height="${diskHeight}" rx="0.5" title="${diskTooltipText}" />
-            `;
-          }
 
           // Cabling connections
           const isSinglePath = shelfObj.cabling && (shelfObj.cabling.toLowerCase().includes("single-path") || !shelfObj.cabling.toLowerCase().includes("multipath"));
@@ -7448,52 +7599,63 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
           const srcY = currentY + 62;
           if (j === 0) {
             if (isPortExhausted) {
-              svgStr += `<path d="M 80,${y + 26} C 80,${y - 20} 100,${y - 30} 120,${y - 35}" stroke="var(--color-danger)" stroke-width="1.5" stroke-dasharray="3 3" fill="none"/>`;
+              svgStr += `<path d="M 80,${iomCy} C 80,${y - 20} 100,${y - 30} 120,${y - 35}" stroke="var(--color-danger)" stroke-width="1.5" stroke-dasharray="3 3" fill="none"/>`;
               svgStr += `<circle cx="120" cy="${y - 35}" r="4" fill="var(--color-danger)" />`;
               svgStr += `<text x="120" y="${y - 40}" fill="var(--color-danger)" font-size="7" font-weight="700">No Storage Port</text>`;
             } else {
-              svgStr += `<path d="M ${pAX},${srcY} C ${pAX},${currentY + 100} 80,${currentY + 120} 80,${y + 26}" class="${cableClassA}" stroke="var(--color-info)" fill="none" stroke-width="2"/>`;
+              svgStr += `<path d="M ${pAX},${srcY} C ${pAX},${currentY + 100} 80,${currentY + 120} 80,${iomCy}" class="${cableClassA}" stroke="var(--color-info)" fill="none" stroke-width="2"/>`;
             }
           } else {
             const prevShelfIdx = shelfIdxInPair - 1;
-            const prevY = shelfYStart + prevShelfIdx * (shelfHeight + shelfGap);
-            svgStr += `<path d="M 105,${prevY + 30} C 120,${prevY + 50} 60,${y + 10} 80,${y + 26}" class="${cableClassA}" stroke="var(--color-info)" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
+            const prevY = shelfYPositionsInPair[prevShelfIdx];
+            const prevHeight = getShelfHeight(stack[j-1].obj.model);
+            const prevCy = prevY + Math.floor((prevHeight - 30) / 2) + 15;
+            svgStr += `<path d="M 105,${prevCy} C 120,${prevCy + 20} 60,${iomY} 80,${iomCy}" class="${cableClassA}" stroke="var(--color-info)" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
           }
           
           // 2. Primary path B
           if (j === 0) {
             if (isPortExhausted) {
-              svgStr += `<circle cx="545" cy="${y + 30}" r="6" fill="var(--color-danger)" />`;
-              svgStr += `<text x="545" y="${y + 33}" fill="#fff" font-size="8" font-weight="700" text-anchor="middle">!</text>`;
+              svgStr += `<circle cx="545" cy="${iomCy}" r="6" fill="var(--color-danger)" />`;
+              svgStr += `<text x="545" y="${iomCy + 3}" fill="#fff" font-size="8" font-weight="700" text-anchor="middle">!</text>`;
             } else if (!isSinglePath || shelfItem.isProposed) {
-              svgStr += `<path d="M ${pBX},${srcY} C ${pBX},${currentY + 100} 545,${currentY + 120} 545,${y + 26}" class="${cableClassB}" stroke="var(--color-warning)" fill="none" stroke-width="2"/>`;
+              svgStr += `<path d="M ${pBX},${srcY} C ${pBX},${currentY + 100} 545,${currentY + 120} 545,${iomCy}" class="${cableClassB}" stroke="var(--color-warning)" fill="none" stroke-width="2"/>`;
             } else {
               svgStr += `<path d="M ${pBX},${srcY} C ${pBX},${currentY + 100} 470,${currentY + 110} 470,${currentY + 130}" class="${cableClassB}" stroke="var(--color-danger)" fill="none" stroke-dasharray="3 3" stroke-width="1.5"/>`;
               svgStr += `<circle cx="470" cy="${currentY + 130}" r="5" fill="var(--color-danger)" />`;
               svgStr += `<text x="470" y="${currentY + 127}" fill="var(--color-danger)" font-size="8" font-weight="700" text-anchor="middle">SPOF Link Dead</text>`;
-              svgStr += `<circle cx="545" cy="${y + 30}" r="6" fill="var(--color-danger)" />`;
-              svgStr += `<text x="545" y="${y + 33}" fill="#fff" font-size="8" font-weight="700" text-anchor="middle">!</text>`;
+              svgStr += `<circle cx="545" cy="${iomCy}" r="6" fill="var(--color-danger)" />`;
+              svgStr += `<text x="545" y="${iomCy + 3}" fill="#fff" font-size="8" font-weight="700" text-anchor="middle">!</text>`;
             }
           } else {
             const prevShelfIdx = shelfIdxInPair - 1;
-            const prevY = shelfYStart + prevShelfIdx * (shelfHeight + shelfGap);
+            const prevY = shelfYPositionsInPair[prevShelfIdx];
+            const prevHeight = getShelfHeight(stack[j-1].obj.model);
+            const prevCy = prevY + Math.floor((prevHeight - 30) / 2) + 15;
             if (!isSinglePath || shelfItem.isProposed) {
-              svgStr += `<path d="M 570,${prevY + 30} C 590,${prevY + 50} 520,${y + 10} 545,${y + 26}" class="${cableClassB}" stroke="var(--color-warning)" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
+              svgStr += `<path d="M 570,${prevCy} C 590,${prevCy + 20} 520,${iomY} 545,${iomCy}" class="${cableClassB}" stroke="var(--color-warning)" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
             }
           }
           
           // 3. Return path A & B
           if (j === stack.length - 1 && (!isSinglePath || shelfItem.isProposed)) {
             if (!isPortExhausted) {
-              svgStr += `<path d="M ${rAX},${srcY} C ${rAX},${currentY + 120} 590,${currentY + 120} 570,${y + 30}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
-              svgStr += `<path d="M ${rBX},${srcY} C ${rBX},${currentY + 120} 120,${currentY + 120} 105,${y + 30}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+              svgStr += `<path d="M ${rAX},${srcY} C ${rAX},${currentY + 120} 590,${currentY + 120} 570,${iomCy}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
+              svgStr += `<path d="M ${rBX},${srcY} C ${rBX},${currentY + 120} 120,${currentY + 120} 105,${iomCy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
             }
           }
         }
       });
 
-      const totalShelvesInPair = pairStacks.reduce((sum, stack) => sum + stack.length, 0);
-      const pairShelvesHeight = totalShelvesInPair > 0 ? (totalShelvesInPair * 80 - 30) : 0;
+      let pairShelvesHeight = 0;
+      pairStacks.forEach(stack => {
+        stack.forEach(shelfItem => {
+          pairShelvesHeight += getShelfHeight(shelfItem.obj.model) + shelfGap;
+        });
+      });
+      if (pairShelvesHeight > 0) {
+        pairShelvesHeight -= shelfGap;
+      }
       
       currentY += 150 + pairShelvesHeight + 70;
     }
