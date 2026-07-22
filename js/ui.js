@@ -229,6 +229,25 @@ function initApp() {
   populateManualPlatformDropdown();
   setupMetroClusterCheckbox();
   resetState();
+  setupSplashModal();
+}
+
+function setupSplashModal() {
+  const splashModal = document.getElementById("splash-modal");
+  const closeSplashBtn = document.getElementById("close-splash-btn");
+  if (!splashModal || !closeSplashBtn) return;
+  
+  const dismissedVersion = localStorage.getItem("splash-dismissed-v2.15");
+  if (dismissedVersion === "true") {
+    splashModal.classList.add("hidden");
+  } else {
+    splashModal.classList.remove("hidden");
+  }
+  
+  closeSplashBtn.addEventListener("click", () => {
+    splashModal.classList.add("hidden");
+    localStorage.setItem("splash-dismissed-v2.15", "true");
+  });
 }
 
 if (document.readyState === "loading") {

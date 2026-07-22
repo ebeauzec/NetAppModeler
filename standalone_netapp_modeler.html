@@ -957,14 +957,6 @@ svg.cabling-graph {
       </div>
     </header>
 
-    <!-- Legal Disclaimer Notice Bar -->
-    <div class="no-print" style="background: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding: 0.5rem 1.5rem; font-size: 0.78rem; color: #fca5a5; display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; line-height: 1.4;">
-      <svg style="width:16px; height:16px; fill:#f87171; flex-shrink:0;" viewBox="0 0 24 24">
-        <path d="M12,2L1,21H23L12,2M12,6L19.53,19H4.47L12,6M11,10V14H13V10H11M11,16V18H13V16H11Z"/>
-      </svg>
-      <strong>Legal Disclaimer & Notice:</strong> This application is a configuration estimator and auditing helper only. Outputs are not certified designs. By using this tool, the user accepts full responsibility and holds the authors entirely harmless and indemnified from all liability, damages, and downtime. Validate all configurations with certified engineers before deployment.
-    </div>
-
     <!-- Wizard Steps Indicator -->
     <div class="wizard-steps no-print">
       <div class="step-node active" data-step="1">
@@ -1784,6 +1776,75 @@ svg.cabling-graph {
       </button>
     </div>
   </div>
+
+  <!-- Splash Screen Modal Overlay (What's New in v2.15) -->
+  <div id="splash-modal" class="modal-overlay no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 11000; backdrop-filter: blur(8px);">
+    <div class="modal-content" style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(15,23,42,0.95) 100%); border: 1.5px solid var(--color-primary); border-radius: var(--radius-lg); padding: 2.5rem; width: 550px; box-shadow: 0 25px 50px -12px rgba(6,182,212,0.3); position: relative; max-height: 85vh; overflow-y: auto;">
+      
+      <!-- Top Title and Logo -->
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <div style="background: rgba(6,182,212,0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; border: 1.5px solid var(--color-primary);">
+          <svg style="width: 32px; height: 32px; fill: var(--color-primary);" viewBox="0 0 24 24">
+            <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
+          </svg>
+        </div>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.15</h2>
+        <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
+      </div>
+
+      <!-- Feature list -->
+      <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+        
+        <!-- Feature 1 -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🔗</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">MetroCluster Cabling Topology Fix</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              Restructured the dual-site layout with dedicated IN and OUT cable sockets on IOM panels. routed local loops and SyncMirror DR replication links using distinct, collision-free S-curves.
+            </span>
+          </div>
+        </div>
+
+        <!-- Feature 2 -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">💻</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Representative Rear Chassis Layouts</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              PCIe slots dynamically rearrange to match physical hardware profiles (Quad Horizontal for A400/FAS8300, Stacked for A250, Vertical for A1K/A90/A70). Includes an onboard Motherboard ports block and dual PSUs.
+            </span>
+          </div>
+        </div>
+
+        <!-- Feature 3 -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">💿</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">High-Fidelity Storage Shelves</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              Renders representative chassis profiles for DS460C (4U 60-Bay with sliding drawers), DS212C (2U 12-Bay LFF horizontal), NS224 (NVMe vertical), and DS224C (SAS vertical).
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Button -->
+      <button id="close-splash-btn" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
+        Get Started
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Legal Disclaimer & Notice Footer -->
+  <footer class="no-print" style="margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.08); background: rgba(15, 23, 42, 0.6); padding: 1.25rem 1.5rem; font-size: 0.75rem; color: var(--color-muted); display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; line-height: 1.4;">
+    <svg style="width:14px; height:14px; fill:#f87171; flex-shrink:0;" viewBox="0 0 24 24">
+      <path d="M12,2L1,21H23L12,2M12,6L19.53,19H4.47L12,6M11,10V14H13V10H11M11,16V18H13V16H11Z"/>
+    </svg>
+    <strong>Legal Disclaimer & Notice:</strong> This application is a configuration estimator and auditing helper only. Outputs are not certified designs. By using this tool, the user accepts full responsibility and holds the authors entirely harmless and indemnified from all liability, damages, and downtime. Validate all configurations with certified engineers before deployment.
+  </footer>
 
   <!-- JSZip archive utility library -->
   
@@ -4969,6 +5030,25 @@ function initApp() {
   populateManualPlatformDropdown();
   setupMetroClusterCheckbox();
   resetState();
+  setupSplashModal();
+}
+
+function setupSplashModal() {
+  const splashModal = document.getElementById("splash-modal");
+  const closeSplashBtn = document.getElementById("close-splash-btn");
+  if (!splashModal || !closeSplashBtn) return;
+  
+  const dismissedVersion = localStorage.getItem("splash-dismissed-v2.15");
+  if (dismissedVersion === "true") {
+    splashModal.classList.add("hidden");
+  } else {
+    splashModal.classList.remove("hidden");
+  }
+  
+  closeSplashBtn.addEventListener("click", () => {
+    splashModal.classList.add("hidden");
+    localStorage.setItem("splash-dismissed-v2.15", "true");
+  });
 }
 
 if (document.readyState === "loading") {
