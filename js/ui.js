@@ -237,7 +237,7 @@ function setupSplashModal() {
   const closeSplashBtn = document.getElementById("close-splash-btn");
   if (!splashModal || !closeSplashBtn) return;
   
-  const dismissedVersion = localStorage.getItem("splash-dismissed-v2.15");
+  const dismissedVersion = localStorage.getItem("splash-dismissed-v2.16");
   if (dismissedVersion === "true") {
     splashModal.classList.add("hidden");
   } else {
@@ -246,7 +246,7 @@ function setupSplashModal() {
   
   closeSplashBtn.addEventListener("click", () => {
     splashModal.classList.add("hidden");
-    localStorage.setItem("splash-dismissed-v2.15", "true");
+    localStorage.setItem("splash-dismissed-v2.16", "true");
   });
 }
 

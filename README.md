@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.15)
+# NetApp AutoSupport Analyzer & Modeler (v2.16)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,16 +6,11 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.15)
-* **MetroCluster Cabling Topology Fix:** Restructured MetroCluster dual-site cabling visuals:
-  * Injected dedicated **IN/OUT ports** for IOM modules on MetroCluster layout configurations.
-  * Re-routed local storage loops and SyncMirror DR replication links with zero-collision curves and exact IOM-A/B path separation.
-* **Representative Rear Chassis Slots Layouts:** Configured physical slot layout orientations matching the selected controller chassis:
-  * **Quad Horizontal Layout:** (e.g. AFF A400, FAS8300, FAS8700, FAS8200) draws 4 horizontal PCIe card bays grouped symmetrically.
-  * **Horizontal Stacked Layout:** (e.g. AFF A250, C250) stacked horizontal bays in the center.
-  * **Vertical Layout:** (e.g. AFF A1K, A90, A70, A50, A30) draws vertical slot plates side-by-side.
-  * **Onboard Motherboard Block:** Added onboard RJ-45 management (`e0M`), serial console (`CON`), cluster (`e0a`/`e0b`), and storage SAS (`0a`/`0b`) interfaces.
-  * **Dual PSUs:** Renders dual redundant PSUs (PSU 1 and PSU 2) on the left and right.
+## 🆕 New in this Version (v2.16)
+* **Interactive Startup Splash Screen:** Renders a premium, glassmorphic modal overlay on startup summarizing major platform updates, changes, and sizing additions. Users can dismiss it, saving states locally.
+* **Repositioned Legal Disclaimer Notice:** Relocated the legal disclaimer notice bar to a clean footer section at the bottom of the screen, preserving compliance while reducing screen intrusion.
+* **MetroCluster Cabling Topology Fix (v2.15):** Restructured MetroCluster dual-site cabling visuals with dedicated IN/OUT ports and collision-free curves.
+* **Representative Rear Chassis Slots Layouts (v2.15):** Physical slot arrangements (Quad Horizontal for A400, Stacked for A250, Vertical for A1K/A90/A70), dual PSUs, and onboard port blocks.
 
 ---
 
