@@ -7303,7 +7303,7 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         const shelfHeight = getShelfHeight(shelfObj.model);
         const cy = y + Math.floor(shelfHeight / 2);
         
-        const isSinglePath = shelfObj.cabling && (shelfObj.cabling.toLowerCase().includes("single-path") || !shelfObj.cabling.toLowerCase().includes("multipath"));
+        const isSinglePath = false; // MetroCluster storage loops always require multipath SAS/NVMe cabling
         
         // Site A Shelf
         svgStr += getShelfVisualSVG(shelfObj, 15, y, 260, shelfHeight, shelfItem.isProposed);
