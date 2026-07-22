@@ -2444,15 +2444,18 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
       });
 
       // Controller A Storage ports (dynamic)
-      const blockWidthA = Math.max(56, 8 + allStoragePortsA.length * 24);
-      const boxXA = 265 - blockWidthA;
-      svgStr += `<rect x="${boxXA}" y="${yNode + 40}" width="${blockWidthA}" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
-      svgStr += `<text x="${boxXA + blockWidthA/2}" y="${yNode + 37}" fill="var(--color-info)" font-size="6" text-anchor="middle">Storage Loop</text>`;
+      const numPortsA = allStoragePortsA.length;
+      const spacingA = numPortsA > 4 ? Math.floor(100 / numPortsA) : 24;
+      const portWA = numPortsA > 4 ? Math.max(8, spacingA - 2) : 20;
+      const startXA = 150 + 5 + Math.floor((100 - (numPortsA * spacingA)) / 2);
+
+      svgStr += `<rect x="150" y="${yNode + 40}" width="110" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
+      svgStr += `<text x="205" y="${yNode + 37}" fill="var(--color-info)" font-size="6" text-anchor="middle">Storage Loop</text>`;
       allStoragePortsA.forEach((port, idx) => {
-        const x = boxXA + 4 + idx * 24;
+        const x = startXA + idx * spacingA;
         svgStr += `
-          <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="20" height="12" rx="1"/>
-          <text x="${x + 10}" y="${yNode + 52}" fill="#fff" font-size="6" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
+          <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="${portWA}" height="12" rx="1"/>
+          <text x="${x + portWA/2}" y="${yNode + 52}" fill="#fff" font-size="${numPortsA > 6 ? 4 : 6}" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
         `;
       });
 
@@ -2463,16 +2466,19 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         <text x="605" y="${yNode + 29}" fill="var(--color-muted)" font-size="7" text-anchor="middle">S/N: ${serialB}</text>
       `;
 
-      // Controller B Storage ports (dynamic, placed left in Site B Controller)
-      const blockWidthB = Math.max(56, 8 + allStoragePortsB.length * 24);
-      const boxXB = 485;
-      svgStr += `<rect x="${boxXB}" y="${yNode + 40}" width="${blockWidthB}" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
-      svgStr += `<text x="${boxXB + blockWidthB/2}" y="${yNode + 37}" fill="var(--color-info)" font-size="6" text-anchor="middle">Storage Loop</text>`;
+      // Controller B Storage ports (dynamic)
+      const numPortsB = allStoragePortsB.length;
+      const spacingB = numPortsB > 4 ? Math.floor(100 / numPortsB) : 24;
+      const portWB = numPortsB > 4 ? Math.max(8, spacingB - 2) : 20;
+      const startXB = 485 + 5 + Math.floor((100 - (numPortsB * spacingB)) / 2);
+
+      svgStr += `<rect x="485" y="${yNode + 40}" width="110" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
+      svgStr += `<text x="540" y="${yNode + 37}" fill="var(--color-info)" font-size="6" text-anchor="middle">Storage Loop</text>`;
       allStoragePortsB.forEach((port, idx) => {
-        const x = boxXB + 4 + idx * 24;
+        const x = startXB + idx * spacingB;
         svgStr += `
-          <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="20" height="12" rx="1"/>
-          <text x="${x + 10}" y="${yNode + 52}" fill="#fff" font-size="6" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
+          <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="${portWB}" height="12" rx="1"/>
+          <text x="${x + portWB/2}" y="${yNode + 52}" fill="#fff" font-size="${numPortsB > 6 ? 4 : 6}" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
         `;
       });
 
@@ -2583,10 +2589,15 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         }
 
         // Local & Sync Mirror replication connections from/to controllers
-        const blockWidthA = Math.max(56, 8 + allStoragePortsA.length * 24);
-        const boxXA = 265 - blockWidthA;
-        const blockWidthB = Math.max(56, 8 + allStoragePortsB.length * 24);
-        const boxXB = 485;
+        const numPortsA = allStoragePortsA.length;
+        const spacingA = numPortsA > 4 ? Math.floor(100 / numPortsA) : 24;
+        const portWA = numPortsA > 4 ? Math.max(8, spacingA - 2) : 20;
+        const startXA = 150 + 5 + Math.floor((100 - (numPortsA * spacingA)) / 2);
+
+        const numPortsB = allStoragePortsB.length;
+        const spacingB = numPortsB > 4 ? Math.floor(100 / numPortsB) : 24;
+        const portWB = numPortsB > 4 ? Math.max(8, spacingB - 2) : 20;
+        const startXB = 485 + 5 + Math.floor((100 - (numPortsB * spacingB)) / 2);
 
         // 1. Outbound loops from first shelf in stack
         if (j === 0 && !isPortExhausted) {
@@ -2595,26 +2606,34 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
           const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
           const portY = yNode + 50;
 
-          const pAX = boxXA + 14 + localPortPairIdx * 24;
-          const pBX = boxXB + 14 + localPortPairIdx * 24;
-          const repAX = boxXA + 14 + (localPortPairIdx + 1) * 24;
-          const repBX = boxXB + 14 + (localPortPairIdx + 1) * 24;
+          const pAIdx = Math.min(localPortPairIdx, allStoragePortsA.length - 2);
+          const repAIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
+          const pBIdx = Math.min(localPortPairIdx, allStoragePortsB.length - 2);
+          const repBIdx = Math.min(localPortPairIdx + 1, allStoragePortsB.length - 1);
+
+          const pAX = startXA + pAIdx * spacingA + portWA / 2;
+          const pBX = startXB + pBIdx * spacingB + portWB / 2;
+          const repAX = startXA + repAIdx * spacingA + portWA / 2;
+          const repBX = startXB + repBIdx * spacingB + portWB / 2;
           
           const replicationClass = isSinglePath ? "visual-cable singlepath" : "visual-cable multipath";
           const repColor = isSinglePath ? "var(--color-danger)" : "var(--color-success)";
 
+          // Dynamic S-curve horizontal offsets to separate stacks
+          const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12;
+
           // Site A local loop outbound: Node A e0a/e1a -> Site A Shelf IOM-A IN
-          svgStr += `<path d="M ${pAX},${portY} C ${pAX},${(portY + cy)/2} 30,${(portY + cy)/2} 30,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M ${pAX},${portY} C ${pAX},${ctrlY} 30,${ctrlY} 30,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
           
           // Site B local loop outbound: Node B e0a/e1a -> Site B Shelf IOM-A IN
-          svgStr += `<path d="M ${pBX},${portY} C ${pBX},${(portY + cy)/2} 490,${(portY + cy)/2} 490,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M ${pBX},${portY} C ${pBX},${ctrlY} 490,${ctrlY} 490,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
 
           // Site A SyncMirror DR loop outbound: Node A e0b/e1b -> Site B Shelf IOM-B IN
-          svgStr += `<path d="M ${repAX},${portY} C ${repAX},${(portY + cy)/2} 700,${(portY + cy)/2} 700,${cy}" class="${replicationClass}" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M ${repAX},${portY} C ${repAX},${ctrlY} 700,${ctrlY} 700,${cy}" class="${replicationClass}" stroke-dasharray="4 3" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
 
           // Site B SyncMirror DR loop outbound: Node B e0b/e1b -> Site A Shelf IOM-B IN
           if (!isSinglePath) {
-            svgStr += `<path d="M ${repBX},${portY} C ${repBX},${(portY + cy)/2} 240,${(portY + cy)/2} 240,${cy}" class="${replicationClass}" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
+            svgStr += `<path d="M ${repBX},${portY} C ${repBX},${ctrlY} 240,${ctrlY} 240,${cy}" class="${replicationClass}" stroke-dasharray="4 3" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
           } else {
             svgStr += `<path d="M ${repBX},${portY} C ${repBX},${yNode + 110} 380,105 380,120" class="${replicationClass}" stroke="var(--color-danger)" fill="none" stroke-dasharray="3 3" stroke-width="1.5"/>`;
             svgStr += `<circle cx="380" cy="120" r="4" fill="var(--color-danger)" />`;
@@ -2629,20 +2648,25 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
           const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
           const portY = yNode + 50;
 
-          const rAX = boxXA + 14 + (localPortPairIdx + 1) * 24;
-          const rBX = boxXB + 14 + (localPortPairIdx + 1) * 24;
+          const rAIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
+          const rBIdx = Math.min(localPortPairIdx + 1, allStoragePortsB.length - 1);
+
+          const rAX = startXA + rAIdx * spacingA + portWA / 2;
+          const rBX = startXB + rBIdx * spacingB + portWB / 2;
+
+          const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12 + 6;
 
           // Site A local loop return: Site A Shelf IOM-A OUT -> Node A e0b/e1b
-          svgStr += `<path d="M 50,${cy} C 50,${(portY + cy)/2} ${rAX},${(portY + cy)/2} ${rAX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M 50,${cy} C 50,${ctrlY} ${rAX},${ctrlY} ${rAX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
           
           // Site B local loop return: Site B Shelf IOM-A OUT -> Node B e0b/e1b
-          svgStr += `<path d="M 510,${cy} C 510,${(portY + cy)/2} ${rBX},${(portY + cy)/2} ${rBX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M 510,${cy} C 510,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
 
           // Site A SyncMirror DR loop return: Site B Shelf IOM-B OUT -> Node A replication return
-          svgStr += `<path d="M 720,${cy} C 720,${(portY + cy)/2} ${rAX},${(portY + cy)/2} ${rAX},${portY}" class="visual-cable multipath" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M 720,${cy} C 720,${ctrlY} ${rAX},${ctrlY} ${rAX},${portY}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
           
           // Site B SyncMirror DR loop return: Site A Shelf IOM-B OUT -> Node B replication return
-          svgStr += `<path d="M 260,${cy} C 260,${(portY + cy)/2} ${rBX},${(portY + cy)/2} ${rBX},${portY}" class="visual-cable multipath" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M 260,${cy} C 260,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
         }
       }
     }
@@ -2751,15 +2775,18 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
       }
 
       // Node A storage box drawing (dynamic)
-      const blockWidthA = Math.max(55, 7 + allStoragePortsA.length * 24);
-      const boxXA = 290 - blockWidthA;
-      svgStr += `<rect x="${boxXA}" y="${currentY + 45}" width="${blockWidthA}" height="30" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" rx="3"/>`;
-      svgStr += `<text x="${boxXA + blockWidthA/2}" y="${currentY + 40}" fill="var(--color-info)" font-size="7" text-anchor="middle">Storage</text>`;
+      const numPortsA = allStoragePortsA.length;
+      const spacingA = numPortsA > 4 ? Math.floor(100 / numPortsA) : 24;
+      const portWA = numPortsA > 4 ? Math.max(8, spacingA - 2) : 20;
+      const startXA = 175 + 5 + Math.floor((100 - (numPortsA * spacingA)) / 2);
+
+      svgStr += `<rect x="175" y="${currentY + 45}" width="110" height="30" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" rx="3"/>`;
+      svgStr += `<text x="230" y="${currentY + 40}" fill="var(--color-info)" font-size="7" text-anchor="middle">Storage</text>`;
       allStoragePortsA.forEach((port, idx) => {
-        const x = boxXA + 5 + idx * 24;
+        const x = startXA + idx * spacingA;
         svgStr += `
-          <rect class="visual-port active" id="port-${nodeAName}-${port}" x="${x}" y="${currentY + 48}" width="20" height="14" rx="1"/>
-          <text x="${x + 10}" y="${currentY + 57}" fill="#fff" font-size="7" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
+          <rect class="visual-port active" id="port-${nodeAName}-${port}" x="${x}" y="${currentY + 48}" width="${portWA}" height="14" rx="1"/>
+          <text x="${x + portWA/2}" y="${currentY + 57}" fill="#fff" font-size="${numPortsA > 6 ? 5 : 7}" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
         `;
       });
 
@@ -2807,15 +2834,18 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
       }
 
       // Node B storage box drawing (dynamic)
-      const blockWidthB = Math.max(55, 7 + allStoragePortsB.length * 24);
-      const boxXB = 620 - blockWidthB;
-      svgStr += `<rect x="${boxXB}" y="${currentY + 45}" width="${blockWidthB}" height="30" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" rx="3"/>`;
-      svgStr += `<text x="${boxXB + blockWidthB/2}" y="${currentY + 40}" fill="var(--color-info)" font-size="7" text-anchor="middle">Storage</text>`;
+      const numPortsB = allStoragePortsB.length;
+      const spacingB = numPortsB > 4 ? Math.floor(100 / numPortsB) : 24;
+      const portWB = numPortsB > 4 ? Math.max(8, spacingB - 2) : 20;
+      const startXB = 500 + 5 + Math.floor((100 - (numPortsB * spacingB)) / 2);
+
+      svgStr += `<rect x="500" y="${currentY + 45}" width="110" height="30" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" rx="3"/>`;
+      svgStr += `<text x="555" y="${currentY + 40}" fill="var(--color-info)" font-size="7" text-anchor="middle">Storage</text>`;
       allStoragePortsB.forEach((port, idx) => {
-        const x = boxXB + 5 + idx * 24;
+        const x = startXB + idx * spacingB;
         svgStr += `
-          <rect class="visual-port active" id="port-${nodeBName}-${port}" x="${x}" y="${currentY + 48}" width="20" height="14" rx="1"/>
-          <text x="${x + 10}" y="${currentY + 57}" fill="#fff" font-size="7" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
+          <rect class="visual-port active" id="port-${nodeBName}-${port}" x="${x}" y="${currentY + 48}" width="${portWB}" height="14" rx="1"/>
+          <text x="${x + portWB/2}" y="${currentY + 57}" fill="#fff" font-size="${numPortsB > 6 ? 5 : 7}" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
         `;
       });
 
@@ -2868,10 +2898,10 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         const pBIdx = Math.min(pairStackIdx * 2, allStoragePortsB.length - 2);
         const rBIdx = Math.min(pairStackIdx * 2 + 1, allStoragePortsB.length - 1);
 
-        const pAX = boxXA + 5 + pAIdx * 24 + 10;
-        const rAX = boxXA + 5 + rAIdx * 24 + 10;
-        const pBX = boxXB + 5 + pBIdx * 24 + 10;
-        const rBX = boxXB + 5 + rBIdx * 24 + 10;
+        const pAX = startXA + pAIdx * spacingA + portWA / 2;
+        const rAX = startXA + rAIdx * spacingA + portWA / 2;
+        const pBX = startXB + pBIdx * spacingB + portWB / 2;
+        const rBX = startXB + rBIdx * spacingB + portWB / 2;
 
         for (let j = 0; j < stack.length; j++) {
           const shelfItem = stack[j];
