@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.14)
+# NetApp AutoSupport Analyzer & Modeler (v2.15)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,14 +6,16 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.14)
-* **High-Fidelity Storage Shelf Visualizer:** Cabling topology diagram now renders exact visual profiles for specific disk shelves:
-  * **DS460C (4U 60-Bay):** Thicker 4U bezel, 5 sliding drawer layers with vertical lock indicators, and high-density disk slots.
-  * **DS212C (2U 12-Bay):** Horizontal LFF slots showing wide-form factor drive bays.
-  * **NS224 (2U 24-Bay NVMe):** Vertical slots with cyan NVMe drive highlights.
-  * **DS224C (2U 24-Bay SAS):** Vertical slots with amber SAS drive highlights.
-* **Variable Shelf Height Cabling:** Cabling lines dynamically center connection ports based on physical unit height.
-* **PCIe Slots Parser & Layout Visualizer (v2.13):** Automatic PCIe card extraction and interactive rear panel.
+## 🆕 New in this Version (v2.15)
+* **MetroCluster Cabling Topology Fix:** Restructured MetroCluster dual-site cabling visuals:
+  * Injected dedicated **IN/OUT ports** for IOM modules on MetroCluster layout configurations.
+  * Re-routed local storage loops and SyncMirror DR replication links with zero-collision curves and exact IOM-A/B path separation.
+* **Representative Rear Chassis Slots Layouts:** Configured physical slot layout orientations matching the selected controller chassis:
+  * **Quad Horizontal Layout:** (e.g. AFF A400, FAS8300, FAS8700, FAS8200) draws 4 horizontal PCIe card bays grouped symmetrically.
+  * **Horizontal Stacked Layout:** (e.g. AFF A250, C250) stacked horizontal bays in the center.
+  * **Vertical Layout:** (e.g. AFF A1K, A90, A70, A50, A30) draws vertical slot plates side-by-side.
+  * **Onboard Motherboard Block:** Added onboard RJ-45 management (`e0M`), serial console (`CON`), cluster (`e0a`/`e0b`), and storage SAS (`0a`/`0b`) interfaces.
+  * **Dual PSUs:** Renders dual redundant PSUs (PSU 1 and PSU 2) on the left and right.
 
 ---
 

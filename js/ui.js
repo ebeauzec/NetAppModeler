@@ -2488,23 +2488,35 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         // Site A Shelf
         svgStr += getShelfVisualSVG(shelfObj, 15, y, 260, shelfHeight, shelfItem.isProposed);
         svgStr += `
-          <!-- Site A Cable Ports -->
-          <circle cx="25" cy="${cy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1.2"/>
-          <text x="25" y="${cy + 9}" fill="var(--color-muted)" font-size="5.5" text-anchor="middle">IOM-A</text>
+          <!-- Site A Cable Ports (IN/OUT for IOM-A & IOM-B) -->
+          <rect x="20" y="${cy - 12}" width="40" height="24" fill="rgba(6,182,212,0.15)" stroke="var(--color-info)" stroke-width="1" rx="2"/>
+          <circle cx="30" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+          <text x="30" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
+          <circle cx="50" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+          <text x="50" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
           
-          <circle cx="265" cy="${cy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1.2"/>
-          <text x="265" y="${cy + 9}" fill="var(--color-muted)" font-size="5.5" text-anchor="middle">IOM-B</text>
+          <rect x="230" y="${cy - 12}" width="40" height="24" fill="rgba(236,72,153,0.15)" stroke="var(--color-warning)" stroke-width="1" rx="2"/>
+          <circle cx="240" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+          <text x="240" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
+          <circle cx="260" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+          <text x="260" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
         `;
 
         // Site B Shelf
         svgStr += getShelfVisualSVG(shelfObj, 475, y, 260, shelfHeight, shelfItem.isProposed);
         svgStr += `
-          <!-- Site B Cable Ports -->
-          <circle cx="485" cy="${cy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1.2"/>
-          <text x="485" y="${cy + 9}" fill="var(--color-muted)" font-size="5.5" text-anchor="middle">IOM-A</text>
+          <!-- Site B Cable Ports (IN/OUT for IOM-A & IOM-B) -->
+          <rect x="480" y="${cy - 12}" width="40" height="24" fill="rgba(6,182,212,0.15)" stroke="var(--color-info)" stroke-width="1" rx="2"/>
+          <circle cx="490" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+          <text x="490" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
+          <circle cx="510" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+          <text x="510" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
           
-          <circle cx="725" cy="${cy}" r="4" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="1.2"/>
-          <text x="725" y="${cy + 9}" fill="var(--color-muted)" font-size="5.5" text-anchor="middle">IOM-B</text>
+          <rect x="690" y="${cy - 12}" width="40" height="24" fill="rgba(236,72,153,0.15)" stroke="var(--color-warning)" stroke-width="1" rx="2"/>
+          <circle cx="700" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+          <text x="700" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
+          <circle cx="720" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+          <text x="720" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
         `;
 
         // Daisy chains within the stack
@@ -2514,74 +2526,75 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
           const prevHeight = getShelfHeight(stack[j-1].obj.model);
           const prevCy = prevY + Math.floor(prevHeight / 2);
           
-          // Site A
-          svgStr += `<path d="M 25,${prevCy} L 25,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-          svgStr += `<path d="M 265,${prevCy} L 265,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-          // Site B
-          svgStr += `<path d="M 485,${prevCy} L 485,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-          svgStr += `<path d="M 725,${prevCy} L 725,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+          // Site A Daisy Chains (OUT to IN)
+          svgStr += `<path d="M 50,${prevCy} L 30,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M 260,${prevCy} L 240,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+          // Site B Daisy Chains (OUT to IN)
+          svgStr += `<path d="M 510,${prevCy} L 490,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+          svgStr += `<path d="M 720,${prevCy} L 700,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
         }
 
-        // Local loop cabling to Node ports (first shelf in stack)
+        // Local & Sync Mirror replication connections from/to controllers
         const blockWidthA = Math.max(56, 8 + allStoragePortsA.length * 24);
         const boxXA = 265 - blockWidthA;
         const blockWidthB = Math.max(56, 8 + allStoragePortsB.length * 24);
         const boxXB = 485;
 
-        if (j === 0) {
-          if (!isPortExhausted) {
-            const k = sIdx % nodesPerSite;
-            const yNode = 10 + k * 90;
-            const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
-            const pAIdx = localPortPairIdx;
-            const pAX = boxXA + 14 + pAIdx * 24;
-            const pBX = boxXB + 14 + pAIdx * 24;
-            const portY = yNode + 50;
-            
-            svgStr += `<path d="M ${pAX},${portY} C ${pAX},${yNode + 95} 25,${yNode + 110} 25,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-            svgStr += `<path d="M ${pBX},${portY} C ${pBX},${yNode + 95} 485,${yNode + 110} 485,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+        // 1. Outbound loops from first shelf in stack
+        if (j === 0 && !isPortExhausted) {
+          const k = sIdx % nodesPerSite;
+          const yNode = 10 + k * 90;
+          const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
+          const portY = yNode + 50;
+
+          const pAX = boxXA + 14 + localPortPairIdx * 24;
+          const pBX = boxXB + 14 + localPortPairIdx * 24;
+          const repAX = boxXA + 14 + (localPortPairIdx + 1) * 24;
+          const repBX = boxXB + 14 + (localPortPairIdx + 1) * 24;
+          
+          const replicationClass = isSinglePath ? "visual-cable singlepath" : "visual-cable multipath";
+          const repColor = isSinglePath ? "var(--color-danger)" : "var(--color-success)";
+
+          // Site A local loop outbound: Node A e0a/e1a -> Site A Shelf IOM-A IN
+          svgStr += `<path d="M ${pAX},${portY} C ${pAX},${(portY + cy)/2} 30,${(portY + cy)/2} 30,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+          
+          // Site B local loop outbound: Node B e0a/e1a -> Site B Shelf IOM-A IN
+          svgStr += `<path d="M ${pBX},${portY} C ${pBX},${(portY + cy)/2} 490,${(portY + cy)/2} 490,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+
+          // Site A SyncMirror DR loop outbound: Node A e0b/e1b -> Site B Shelf IOM-B IN
+          svgStr += `<path d="M ${repAX},${portY} C ${repAX},${(portY + cy)/2} 700,${(portY + cy)/2} 700,${cy}" class="${replicationClass}" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
+
+          // Site B SyncMirror DR loop outbound: Node B e0b/e1b -> Site A Shelf IOM-B IN
+          if (!isSinglePath) {
+            svgStr += `<path d="M ${repBX},${portY} C ${repBX},${(portY + cy)/2} 240,${(portY + cy)/2} 240,${cy}" class="${replicationClass}" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
+          } else {
+            svgStr += `<path d="M ${repBX},${portY} C ${repBX},${yNode + 110} 380,105 380,120" class="${replicationClass}" stroke="var(--color-danger)" fill="none" stroke-dasharray="3 3" stroke-width="1.5"/>`;
+            svgStr += `<circle cx="380" cy="120" r="4" fill="var(--color-danger)" />`;
+            svgStr += `<text x="380" y="115" fill="var(--color-danger)" font-size="7" text-anchor="middle" font-weight="700">Sync Dead</text>`;
           }
         }
 
-        // Sync Mirror Replication (first shelf in stack)
-        const replicationClass = isSinglePath ? "visual-cable singlepath" : "visual-cable multipath";
-        const repColor = isSinglePath ? "var(--color-danger)" : "var(--color-success)";
-        if (j === 0) {
-          if (!isPortExhausted) {
-            const k = sIdx % nodesPerSite;
-            const yNode = 10 + k * 90;
-            const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
-            const repAIdx = localPortPairIdx + 1;
-            const repAX = boxXA + 14 + repAIdx * 24;
-            const repBX = boxXB + 14 + repAIdx * 24;
-            const portY = yNode + 50;
+        // 2. Return loops from last shelf in stack
+        if (j === stack.length - 1 && !isPortExhausted && !isSinglePath) {
+          const k = sIdx % nodesPerSite;
+          const yNode = 10 + k * 90;
+          const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
+          const portY = yNode + 50;
 
-            svgStr += `<path d="M ${repAX},${portY} C ${repAX},${yNode + 120} 450,110 485,${cy}" class="${replicationClass}" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
+          const rAX = boxXA + 14 + (localPortPairIdx + 1) * 24;
+          const rBX = boxXB + 14 + (localPortPairIdx + 1) * 24;
 
-            if (!isSinglePath) {
-              svgStr += `<path d="M ${repBX},${portY} C ${repBX},${yNode + 120} 300,110 265,${cy}" class="${replicationClass}" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
-            } else {
-              svgStr += `<path d="M ${repBX},${portY} C ${repBX},${yNode + 110} 380,105 380,120" class="${replicationClass}" stroke="var(--color-danger)" fill="none" stroke-dasharray="3 3" stroke-width="1.5"/>`;
-              svgStr += `<circle cx="380" cy="120" r="4" fill="var(--color-danger)" />`;
-              svgStr += `<text x="380" y="115" fill="var(--color-danger)" font-size="7" text-anchor="middle" font-weight="700">Sync Dead</text>`;
-            }
-          }
-        }
+          // Site A local loop return: Site A Shelf IOM-A OUT -> Node A e0b/e1b
+          svgStr += `<path d="M 50,${cy} C 50,${(portY + cy)/2} ${rAX},${(portY + cy)/2} ${rAX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
+          
+          // Site B local loop return: Site B Shelf IOM-A OUT -> Node B e0b/e1b
+          svgStr += `<path d="M 510,${cy} C 510,${(portY + cy)/2} ${rBX},${(portY + cy)/2} ${rBX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
 
-        // Return loops (last shelf in stack)
-        if (j === stack.length - 1 && !isSinglePath) {
-          if (!isPortExhausted) {
-            const k = sIdx % nodesPerSite;
-            const yNode = 10 + k * 90;
-            const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
-            const rAIdx = localPortPairIdx + 1;
-            const rAX = boxXA + 14 + rAIdx * 24;
-            const rBX = boxXB + 14 + rAIdx * 24;
-            const portY = yNode + 50;
-            
-            svgStr += `<path d="M ${rAX},${portY} C ${rAX},${yNode + 110} 265,125 265,${cy}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
-            svgStr += `<path d="M ${rBX},${portY} C ${rBX},${yNode + 110} 725,125 725,${cy}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
-          }
+          // Site A SyncMirror DR loop return: Site B Shelf IOM-B OUT -> Node A replication return
+          svgStr += `<path d="M 720,${cy} C 720,${(portY + cy)/2} ${rAX},${(portY + cy)/2} ${rAX},${portY}" class="visual-cable multipath" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+          
+          // Site B SyncMirror DR loop return: Site A Shelf IOM-B OUT -> Node B replication return
+          svgStr += `<path d="M 260,${cy} C 260,${(portY + cy)/2} ${rBX},${(portY + cy)/2} ${rBX},${portY}" class="visual-cable multipath" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
         }
       }
     }
@@ -3723,6 +3736,57 @@ window.selectChassisSlot = function(slotNum) {
   }
 };
 
+function drawOnboardPorts(x, y, w, h) {
+  let html = `
+    <!-- Onboard Controller Motherboard Block -->
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#0f172a" stroke="#334155" stroke-width="1" rx="3" />
+    <text x="${x + w/2}" y="${y + 12}" fill="#64748b" font-size="6.5" font-weight="700" text-anchor="middle">ONBOARD</text>
+  `;
+  
+  // 1. Management Port RJ-45
+  const mgtX = x + 10;
+  const mgtY = y + 20;
+  html += `
+    <rect x="${mgtX}" y="${mgtY}" width="15" height="11" fill="#1e293b" stroke="#475569" rx="1"/>
+    <rect x="${mgtX + 4}" y="${mgtY - 2}" width="7" height="2" fill="#475569"/>
+    <text x="${mgtX + 7.5}" y="${mgtY + 8}" fill="#94a3b8" font-size="5.5" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">e0M</text>
+  `;
+
+  // 2. Console Port
+  const consX = x + 30;
+  const consY = y + 20;
+  html += `
+    <rect x="${consX}" y="${consY}" width="15" height="11" fill="#1e293b" stroke="#475569" rx="1"/>
+    <text x="${consX + 7.5}" y="${consY + 8}" fill="#94a3b8" font-size="5" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">CON</text>
+  `;
+
+  // 3. Dual 10G/25G SFP+ Onboard Data/Cluster Ports
+  const portY = y + 36;
+  const portW = 16;
+  const portH = 12;
+  
+  html += `
+    <rect x="${x + 10}" y="${portY}" width="${portW}" height="${portH}" fill="#1e293b" stroke="#10b981" rx="1"/>
+    <text x="${x + 10 + portW/2}" y="${portY + 8}" fill="#fff" font-size="5.5" font-family="var(--font-mono)" text-anchor="middle" font-weight="700">e0a</text>
+    
+    <rect x="${x + 30}" y="${portY}" width="${portW}" height="${portH}" fill="#1e293b" stroke="#10b981" rx="1"/>
+    <text x="${x + 30 + portW/2}" y="${portY + 8}" fill="#fff" font-size="5.5" font-family="var(--font-mono)" text-anchor="middle" font-weight="700">e0b</text>
+  `;
+  
+  if (w > 100) {
+    // If wider, draw onboard SAS ports 0a, 0b
+    html += `
+      <rect x="${x + 55}" y="${portY}" width="${portW}" height="${portH}" fill="#1e293b" stroke="#3b82f6" rx="1"/>
+      <text x="${x + 55 + portW/2}" y="${portY + 8}" fill="#fff" font-size="5.5" font-family="var(--font-mono)" text-anchor="middle" font-weight="700">0a</text>
+      
+      <rect x="${x + 75}" y="${portY}" width="${portW}" height="${portH}" fill="#1e293b" stroke="#3b82f6" rx="1"/>
+      <text x="${x + 75 + portW/2}" y="${portY + 8}" fill="#fff" font-size="5.5" font-family="var(--font-mono)" text-anchor="middle" font-weight="700">0b</text>
+    `;
+  }
+  
+  return html;
+}
+
 function drawPCIeChassis(state, targetId) {
   const container = document.getElementById(targetId);
   if (!container) return;
@@ -3738,55 +3802,138 @@ function drawPCIeChassis(state, targetId) {
 
   const N = slots.length;
   const svgWidth = 600;
-  const svgHeight = 150;
   
-  let svgStr = `<svg width="100%" height="150" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg" style="background:#0f172a; border-radius:6px; overflow:hidden;">`;
+  let layoutType = "vertical";
+  const modelUpper = model.toUpperCase();
+  if (N === 4 && (modelUpper.includes("A400") || modelUpper.includes("8300") || modelUpper.includes("8700") || modelUpper.includes("8200"))) {
+    layoutType = "quad_horizontal";
+  } else if (N <= 2 && N > 0) {
+    layoutType = "horizontal_stacked";
+  }
+
+  let chassisHeight = 130;
+  if (layoutType === "vertical") {
+    chassisHeight = N >= 8 ? 160 : 130;
+  } else if (layoutType === "quad_horizontal") {
+    chassisHeight = 135;
+  } else if (layoutType === "horizontal_stacked") {
+    chassisHeight = 120;
+  }
+
+  const svgHeight = chassisHeight + 20;
+  
+  let svgStr = `<svg width="100%" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg" style="background:#0f172a; border-radius:6px; overflow:hidden;">`;
 
   // Draw steel chassis container background
   svgStr += `
     <!-- Chassis Body -->
-    <rect x="20" y="10" width="560" height="130" fill="#1e293b" stroke="#475569" stroke-width="2" rx="4" />
-    <rect x="25" y="15" width="550" height="120" fill="#0f172a" rx="2" />
+    <rect x="20" y="10" width="560" height="${chassisHeight}" fill="#1e293b" stroke="#475569" stroke-width="2" rx="4" />
+    <rect x="25" y="15" width="550" height="${chassisHeight - 10}" fill="#0f172a" rx="2" />
     
     <!-- Left Rack Ear -->
-    <rect x="5" y="10" width="15" height="130" fill="#334155" rx="2" />
-    <rect x="8" y="15" width="9" height="120" fill="#1e293b" rx="1" />
+    <rect x="5" y="10" width="15" height="${chassisHeight}" fill="#334155" rx="2" />
+    <rect x="8" y="15" width="9" height="${chassisHeight - 10}" fill="#1e293b" rx="1" />
     <circle cx="12" cy="25" r="3" fill="#64748b" stroke="#475569" stroke-width="0.5"/>
-    <circle cx="12" cy="125" r="3" fill="#64748b" stroke="#475569" stroke-width="0.5"/>
+    <circle cx="12" cy="${chassisHeight - 5}" r="3" fill="#64748b" stroke="#475569" stroke-width="0.5"/>
     
     <!-- Right Rack Ear -->
-    <rect x="580" y="10" width="15" height="130" fill="#334155" rx="2" />
-    <rect x="583" y="15" width="9" height="120" fill="#1e293b" rx="1" />
+    <rect x="580" y="10" width="15" height="${chassisHeight}" fill="#334155" rx="2" />
+    <rect x="583" y="15" width="9" height="${chassisHeight - 10}" fill="#1e293b" rx="1" />
     <circle cx="587" cy="25" r="3" fill="#64748b" stroke="#475569" stroke-width="0.5"/>
-    <circle cx="587" cy="125" r="3" fill="#64748b" stroke="#475569" stroke-width="0.5"/>
+    <circle cx="587" cy="${chassisHeight - 5}" r="3" fill="#64748b" stroke="#475569" stroke-width="0.5"/>
     
-    <!-- Power Supplies representation (PSU 1 & PSU 2 on far right/left or bottom) -->
-    <rect x="30" y="20" width="40" height="110" fill="#1e293b" stroke="#334155" rx="2"/>
-    <rect x="35" y="30" width="30" height="20" fill="#020617" rx="1"/> <!-- fan -->
-    <circle cx="50" cy="40" r="8" fill="none" stroke="#334155" stroke-width="1"/>
-    <circle cx="50" cy="85" r="5" fill="#10b981" /> <!-- status green led -->
-    <text x="50" y="115" fill="#64748b" font-size="6" text-anchor="middle" font-weight="700">PSU 1</text>
+    <!-- Dual Power Supplies representation (PSU 1 & PSU 2) -->
+    <rect x="25" y="20" width="40" height="${chassisHeight - 20}" fill="#1e293b" stroke="#334155" rx="2"/>
+    <rect x="30" y="30" width="30" height="20" fill="#020617" rx="1"/> <!-- fan -->
+    <circle cx="45" cy="40" r="8" fill="none" stroke="#334155" stroke-width="1"/>
+    <circle cx="45" cy="${chassisHeight - 25}" r="4" fill="#10b981" /> <!-- status green led -->
+    <text x="45" y="${chassisHeight - 10}" fill="#64748b" font-size="6.5" text-anchor="middle" font-weight="700">PSU 1</text>
+    
+    <rect x="535" y="20" width="40" height="${chassisHeight - 20}" fill="#1e293b" stroke="#334155" rx="2"/>
+    <rect x="540" y="30" width="30" height="20" fill="#020617" rx="1"/> <!-- fan -->
+    <circle cx="555" cy="40" r="8" fill="none" stroke="#334155" stroke-width="1"/>
+    <circle cx="555" cy="${chassisHeight - 25}" r="4" fill="#10b981" /> <!-- status green led -->
+    <text x="555" y="${chassisHeight - 10}" fill="#64748b" font-size="6.5" text-anchor="middle" font-weight="700">PSU 2</text>
   `;
 
-  // Draw slot bays
-  const startX = 80;
-  const endX = 570;
-  const availableWidth = endX - startX;
-  const slotWidth = Math.floor(availableWidth / N) - 4;
-
-  slots.forEach((slot, index) => {
-    const x = startX + index * (slotWidth + 4);
-    const y = 20;
-    const h = 110;
-    const card = cards.find(c => c.slot === slot.num);
-
-    svgStr += `<!-- Slot ${slot.num} Bay -->`;
+  // Map slots to layout coordinates
+  const slotLayouts = [];
+  if (layoutType === "quad_horizontal") {
+    // 4 horizontal slots: 2 on the left (Slots 1, 2), 2 on the right (Slots 3, 4)
+    slots.forEach((slot, index) => {
+      let sx, sy;
+      const sNum = slot.num;
+      if (sNum === 1) { sx = 75; sy = 25; }
+      else if (sNum === 2) { sx = 75; sy = 75; }
+      else if (sNum === 3) { sx = 385; sy = 25; }
+      else if (sNum === 4) { sx = 385; sy = 75; }
+      else { sx = 75 + index * 100; sy = 25; }
+      slotLayouts.push({
+        num: sNum,
+        x: sx,
+        y: sy,
+        w: 140,
+        h: 42,
+        isHorizontal: true,
+        type: slot.type,
+        recType: slot.recType
+      });
+    });
+    // Onboard ports centered in the middle
+    svgStr += drawOnboardPorts(225, 25, 150, 92);
     
+  } else if (layoutType === "horizontal_stacked") {
+    // Stacked horizontal slots (e.g. 2 slots for A250)
+    slots.forEach((slot, index) => {
+      const sNum = slot.num;
+      const sy = 25 + index * 45;
+      slotLayouts.push({
+        num: sNum,
+        x: 290,
+        y: sy,
+        w: 235,
+        h: 38,
+        isHorizontal: true,
+        type: slot.type,
+        recType: slot.recType
+      });
+    });
+    // Onboard ports on the left side
+    svgStr += drawOnboardPorts(75, 25, 205, 83);
+    
+  } else {
+    // Vertical slots side-by-side
+    const startX = 180;
+    const endX = 525;
+    const availableWidth = endX - startX;
+    const slotW = Math.floor(availableWidth / N) - 4;
+    slots.forEach((slot, index) => {
+      const sx = startX + index * (slotW + 4);
+      slotLayouts.push({
+        num: slot.num,
+        x: sx,
+        y: 22,
+        w: slotW,
+        h: chassisHeight - 24,
+        isHorizontal: false,
+        type: slot.type,
+        recType: slot.recType
+      });
+    });
+    // Onboard ports block on the left next to PSU 1
+    svgStr += drawOnboardPorts(75, 22, 95, chassisHeight - 24);
+  }
+
+  // Draw Slots
+  slotLayouts.forEach(lay => {
+    const card = cards.find(c => c.slot === lay.num);
+    svgStr += `<!-- Slot ${lay.num} -->`;
+
     if (card) {
       const cSpec = EXP_CARDS_CATALOG[card.cardKey];
       if (cSpec) {
-        const isTypeMatch = slot.recType === "any" || slot.recType === cSpec.type;
-        const isBandwidthMatch = !(cSpec.speed.includes("100G") && slot.type.includes("x8"));
+        const isTypeMatch = lay.recType === "any" || lay.recType === cSpec.type;
+        const isBandwidthMatch = !(cSpec.speed.includes("100G") && lay.type.includes("x8"));
         const isBestPractice = isTypeMatch && isBandwidthMatch;
         
         let pcbColor = "#064e3b"; // Forest green PCB for compliant cards
@@ -3796,72 +3943,108 @@ function drawPCIeChassis(state, targetId) {
           pcbColor = "#78350f"; // Amber/brown for sub-optimal
         }
 
-        // Draw Occupied PCIe Card
+        // Card plate background
         svgStr += `
-          <rect x="${x}" y="${y}" width="${slotWidth}" height="${h}" fill="${pcbColor}" stroke="#475569" rx="2" style="cursor:pointer;" onclick="selectChassisSlot(${slot.num})"/>
-          
-          <!-- Slot Label -->
-          <text x="${x + slotWidth/2}" y="${y + 12}" fill="#fff" font-size="7" font-weight="700" text-anchor="middle">SLOT ${slot.num}</text>
-          
-          <!-- Card Name -->
-          <text x="${x + slotWidth/2}" y="${y + 24}" fill="#e2e8f0" font-size="5.5" text-anchor="middle" font-weight="600" width="${slotWidth - 4}">${cSpec.speed}</text>
-          <text x="${x + slotWidth/2}" y="${y + 32}" fill="#94a3b8" font-size="5" text-anchor="middle">${cSpec.type.toUpperCase()}</text>
+          <rect x="${lay.x}" y="${lay.y}" width="${lay.w}" height="${lay.h}" fill="${pcbColor}" stroke="#475569" rx="2" style="cursor:pointer;" onclick="selectChassisSlot(${lay.num})"/>
         `;
 
-        // Draw ports based on card specification
-        const cardPorts = getCardPorts(card.cardKey, slot.num);
-        const pyStart = y + 42;
-        const portH = 12;
-        const portW = Math.min(slotWidth - 8, 18);
-        const px = x + (slotWidth - portW) / 2;
-
-        cardPorts.forEach((pName, pIdx) => {
-          const py = pyStart + pIdx * (portH + 4);
-          let portColor = "#1e293b";
-          let strokeColor = "#64748b";
-          let ledColor = "#10b981";
-
-          if (cSpec.type === "storage") {
-            portColor = "#0f172a";
-            strokeColor = "#3b82f6";
-            ledColor = "#3b82f6"; // blue LED for storage
-          } else if (cSpec.type === "san") {
-            portColor = "#0f172a";
-            strokeColor = "#ec4899"; // pink for SAN FC
-            ledColor = "#f472b6";
-          }
-
+        // Card Labels and details
+        if (lay.isHorizontal) {
+          // Horizontal layout card labels
           svgStr += `
-            <!-- Port ${pName} -->
-            <rect x="${px}" y="${py}" width="${portW}" height="${portH}" fill="${portColor}" stroke="${strokeColor}" rx="1"/>
-            <text x="${px + portW/2}" y="${py + 8}" fill="#fff" font-size="5.5" font-family="var(--font-mono)" text-anchor="middle" font-weight="700">${pName}</text>
-            <circle cx="${px + 2}" cy="${py + 2}" r="1" fill="${ledColor}"/>
+            <text x="${lay.x + 8}" y="${lay.y + 14}" fill="#fff" font-size="7.5" font-weight="700">SLOT ${lay.num}</text>
+            <text x="${lay.x + 8}" y="${lay.y + 24}" fill="#e2e8f0" font-size="5.5" font-weight="600">${cSpec.speed}</text>
+            <text x="${lay.x + 8}" y="${lay.y + 32}" fill="#94a3b8" font-size="5.5">${cSpec.type.toUpperCase()}</text>
           `;
-        });
 
-        // Bottom connector fingers (gold teeth)
-        svgStr += `
-          <rect x="${x + 4}" y="${y + h - 4}" width="${slotWidth - 8}" height="3" fill="#fbbf24"/>
-        `;
+          // Draw ports horizontally
+          const cardPorts = getCardPorts(card.cardKey, lay.num);
+          const pxStart = lay.x + 75;
+          const portW = 16;
+          const portH = 11;
+          const py = lay.y + (lay.h - portH) / 2;
+
+          cardPorts.forEach((pName, pIdx) => {
+            const px = pxStart + pIdx * (portW + 4);
+            let portColor = "#1e293b";
+            let strokeColor = "#64748b";
+            let ledColor = "#10b981";
+
+            if (cSpec.type === "storage") {
+              portColor = "#0f172a";
+              strokeColor = "#3b82f6";
+              ledColor = "#3b82f6";
+            } else if (cSpec.type === "san") {
+              portColor = "#0f172a";
+              strokeColor = "#ec4899";
+              ledColor = "#f472b6";
+            }
+
+            svgStr += `
+              <rect x="${px}" y="${py}" width="${portW}" height="${portH}" fill="${portColor}" stroke="${strokeColor}" rx="1"/>
+              <text x="${px + portW/2}" y="${py + 7.5}" fill="#fff" font-size="5" font-family="var(--font-mono)" text-anchor="middle" font-weight="700">${pName}</text>
+            `;
+          });
+        } else {
+          // Vertical layout card labels
+          svgStr += `
+            <text x="${lay.x + lay.w/2}" y="${lay.y + 12}" fill="#fff" font-size="7.5" font-weight="700" text-anchor="middle">SLOT ${lay.num}</text>
+            <text x="${lay.x + lay.w/2}" y="${lay.y + 24}" fill="#e2e8f0" font-size="5.5" font-weight="600" text-anchor="middle">${cSpec.speed}</text>
+            <text x="${lay.x + lay.w/2}" y="${lay.y + 32}" fill="#94a3b8" font-size="5" text-anchor="middle">${cSpec.type.toUpperCase()}</text>
+          `;
+
+          // Draw ports vertically
+          const cardPorts = getCardPorts(card.cardKey, lay.num);
+          const pyStart = lay.y + 42;
+          const portH = 11;
+          const portW = Math.min(lay.w - 6, 17);
+          const px = lay.x + (lay.w - portW) / 2;
+
+          cardPorts.forEach((pName, pIdx) => {
+            const py = pyStart + pIdx * (portH + 3);
+            let portColor = "#1e293b";
+            let strokeColor = "#64748b";
+
+            if (cSpec.type === "storage") {
+              portColor = "#0f172a";
+              strokeColor = "#3b82f6";
+            } else if (cSpec.type === "san") {
+              portColor = "#0f172a";
+              strokeColor = "#ec4899";
+            }
+
+            svgStr += `
+              <rect x="${px}" y="${py}" width="${portW}" height="${portH}" fill="${portColor}" stroke="${strokeColor}" rx="1"/>
+              <text x="${px + portW/2}" y="${py + 8}" fill="#fff" font-size="5" font-family="var(--font-mono)" text-anchor="middle" font-weight="700">${pName}</text>
+            `;
+          });
+        }
       }
     } else {
-      // Draw empty slot plate with ventilation grill
+      // Draw Empty slot plate
       svgStr += `
-        <rect x="${x}" y="${y}" width="${slotWidth}" height="${h}" fill="#1e293b" stroke="#334155" rx="2" style="cursor:pointer;" onclick="selectChassisSlot(${slot.num})"/>
-        
-        <!-- Slot Label -->
-        <text x="${x + slotWidth/2}" y="${y + 25}" fill="#64748b" font-size="7" font-weight="700" text-anchor="middle">SLOT ${slot.num}</text>
-        <text x="${x + slotWidth/2}" y="${y + 36}" fill="#475569" font-size="5.5" text-anchor="middle">${slot.type.split(' ')[0]}</text>
-        
-        <!-- Optimized for RecType label -->
-        <text x="${x + slotWidth/2}" y="${y + 55}" fill="#475569" font-size="4.5" font-weight="700" text-anchor="middle">OPT FOR:</text>
-        <text x="${x + slotWidth/2}" y="${y + 65}" fill="#64748b" font-size="5.5" font-weight="700" text-anchor="middle">${slot.recType.toUpperCase()}</text>
-        
-        <!-- Ventilation Slits -->
-        <line x1="${x + 4}" y1="${y + 80}" x2="${x + slotWidth - 4}" y2="${y + 80}" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="2 2"/>
-        <line x1="${x + 4}" y1="${y + 90}" x2="${x + slotWidth - 4}" y2="${y + 90}" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="2 2"/>
-        <line x1="${x + 4}" y1="${y + 100}" x2="${x + slotWidth - 4}" y2="${y + 100}" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="2 2"/>
+        <rect x="${lay.x}" y="${lay.y}" width="${lay.w}" height="${lay.h}" fill="#1e293b" stroke="#334155" rx="2" style="cursor:pointer;" onclick="selectChassisSlot(${lay.num})"/>
       `;
+
+      if (lay.isHorizontal) {
+        // Horizontal empty layout
+        svgStr += `
+          <text x="${lay.x + 8}" y="${lay.y + 15}" fill="#64748b" font-size="7.5" font-weight="700">SLOT ${lay.num}</text>
+          <text x="${lay.x + 8}" y="${lay.y + 24}" fill="#475569" font-size="5.5">${lay.type.split(' ')[0]}</text>
+          
+          <text x="${lay.x + 95}" y="${lay.y + 15}" fill="#475569" font-size="5" font-weight="700">OPT FOR:</text>
+          <text x="${lay.x + 95}" y="${lay.y + 25}" fill="#64748b" font-size="6" font-weight="700">${lay.recType.toUpperCase()}</text>
+        `;
+      } else {
+        // Vertical empty layout
+        svgStr += `
+          <text x="${lay.x + lay.w/2}" y="${lay.y + 20}" fill="#64748b" font-size="7" font-weight="700" text-anchor="middle">SLOT ${lay.num}</text>
+          <text x="${lay.x + lay.w/2}" y="${lay.y + 32}" fill="#475569" font-size="5" text-anchor="middle">${lay.type.split(' ')[0]}</text>
+          
+          <text x="${lay.x + lay.w/2}" y="${lay.y + 55}" fill="#475569" font-size="5" font-weight="700" text-anchor="middle">OPT FOR:</text>
+          <text x="${lay.x + lay.w/2}" y="${lay.y + 65}" fill="#64748b" font-size="5.5" font-weight="700" text-anchor="middle">${lay.recType.toUpperCase()}</text>
+        `;
+      }
     }
   });
 
