@@ -6635,6 +6635,20 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
     });
   }
 
+  const expansionCards = [];
+  if (isGreenfield && profile.supportedLicenses.includes("FCP")) {
+    const hasOnboardSan = profile.ports.san && profile.ports.san.length > 0;
+    if (!hasOnboardSan) {
+      const pSlots = getPlatformSlots(model);
+      const sanSlot = pSlots.find(s => s.recType === "san");
+      if (sanSlot) {
+        expansionCards.push({ slot: sanSlot.num, cardKey: "fc_hba_32g_2port", autoAdded: true });
+      }
+    }
+  }
+
+  const mcType = document.getElementById("deploy-metrocluster").checked ? document.getElementById("metrocluster-type").value : "none";
+
   const state = {
     version: {
       model: model,
@@ -6642,8 +6656,8 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
       serial: serial,
       systemFirmware: isGreenfield ? (profile.maxFirmware || "v20.0") : "v1.0"
     },
-    expansionCards: [],
-    metrocluster: document.getElementById("deploy-metrocluster").checked ? document.getElementById("metrocluster-type").value : "none",
+    expansionCards: expansionCards,
+    metrocluster: mcType,
     nodes: nodes,
     switches: [
       { name: "CSW-BES-01", model: "BES-53248", version: "1.3.0.1", role: "cluster-switch" },
@@ -6658,12 +6672,15 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
       { name: "CIFS", status: "active", details: "", serial: serial },
       { name: "FCP", status: isGreenfield ? "active" : "expired", details: isGreenfield ? "" : "Expired: 2024-01-01", serial: serial },
       { name: "iSCSI", status: "active", details: "", serial: serial },
-      { name: "SnapMirror", status: isGreenfield ? "active" : "expired", details: isGreenfield ? "" : "Expired: 2024-01-01", serial: serial }
+      { name: "SnapMirror", status: isGreenfield ? "active" : "expired", details: isGreenfield ? "" : "Expired: 2024-01-01", serial: serial },
+      { name: "FlexClone", status: "active", details: "", serial: serial },
+      { name: "FabricPool", status: "active", details: "", serial: serial },
+      { name: "MetroCluster", status: (isGreenfield || mcType !== "none") ? "active" : "disabled", details: "", serial: serial }
     ].filter(lic => profile.supportedLicenses.includes(lic.name))
   };
 
-  // Add FC ports if platform supports FCP
-  if (profile.supportedLicenses.includes("FCP") && profile.ports.san && profile.ports.san.length > 0) {
+  // Add onboard SAN ports if platform has them
+  if (profile.ports.san && profile.ports.san.length > 0) {
     state.nodes.forEach(node => {
       profile.ports.san.forEach(p => {
         node.ports.push({ name: p, status: "up", speed: "16Gb FC", duplex: "full", type: "fc" });
@@ -6671,10 +6688,22 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
     });
   }
 
-  // If MetroCluster is active, enable MC license
-  if (state.metrocluster !== "none") {
-    state.licenses.push({ name: "MetroCluster", status: "active", details: "", serial: serial });
-  }
+  // Auto-allocate ports for expansion cards
+  state.expansionCards.forEach(card => {
+    const cardSpec = EXP_CARDS_CATALOG[card.cardKey];
+    if (cardSpec) {
+      const dynamicPorts = getCardPorts(card.cardKey, card.slot);
+      state.nodes.forEach(node => {
+        dynamicPorts.forEach(pName => {
+          const portType = cardSpec.type === "san" ? "fc" : (cardSpec.type === "storage" ? "storage" : "data");
+          const exists = node.ports.find(p => p.name === pName);
+          if (!exists) {
+            node.ports.push({ name: pName, status: "up", speed: cardSpec.speed, duplex: "full", type: portType });
+          }
+        });
+      });
+    }
+  });
 
   allocateHBACardsForState(state);
   loadASUPData(state, isGreenfield);
