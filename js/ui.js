@@ -1314,7 +1314,7 @@ function loadASUPData(input, isGreenfield = false) {
       }
     } else {
       currentState = parseASUP(input);
-      currentState.expansionCards = [];
+      if (!currentState.expansionCards) currentState.expansionCards = [];
       currentState.metrocluster = "none";
       isGreenfieldMode = false;
     }
@@ -1498,6 +1498,31 @@ function allocateHBACardsForState(state) {
         ports.sas += 4;
       }
     }
+  }
+
+  // Ensure all expansion card ports (parsed, manual, or auto-allocated) are present in node.ports
+  if (state.expansionCards) {
+    state.expansionCards.forEach(c => {
+      const cSpec = EXP_CARDS_CATALOG[c.cardKey];
+      if (cSpec) {
+        const dynamicPorts = getCardPorts(c.cardKey, c.slot);
+        state.nodes.forEach(node => {
+          if (!node.ports) node.ports = [];
+          dynamicPorts.forEach(pName => {
+            const exists = node.ports.find(p => p.name.toLowerCase() === pName.toLowerCase());
+            if (!exists) {
+              node.ports.push({
+                name: pName,
+                status: "up",
+                speed: cSpec.speed,
+                duplex: "full",
+                type: cSpec.type === "storage" ? "storage" : cSpec.type === "san" ? "san" : "data"
+              });
+            }
+          });
+        });
+      }
+    });
   }
 }
 
@@ -3523,6 +3548,165 @@ function populatePcieSlotDropdown(selectedCardKey) {
   });
 }
 
+// Select a slot when clicking the empty slot in visualizer
+window.selectChassisSlot = function(slotNum) {
+  const slotSelect = document.getElementById("add-pcie-slot");
+  if (slotSelect) {
+    slotSelect.value = slotNum;
+    // Highlight the dropdown
+    slotSelect.style.borderColor = "var(--color-primary)";
+    setTimeout(() => {
+      slotSelect.style.borderColor = "rgba(255,255,255,0.15)";
+    }, 1000);
+  }
+};
+
+function drawPCIeChassis(state, targetId) {
+  const container = document.getElementById(targetId);
+  if (!container) return;
+  container.innerHTML = "";
+
+  const model = state.version.model;
+  const profile = getPlatformProfile(model);
+  const slots = getPlatformSlots(model);
+  const cards = state.expansionCards || [];
+
+  const badgeEl = document.getElementById("chassis-model-badge");
+  if (badgeEl) badgeEl.textContent = model;
+
+  const N = slots.length;
+  const svgWidth = 600;
+  const svgHeight = 150;
+  
+  let svgStr = `<svg width="100%" height="150" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg" style="background:#0f172a; border-radius:6px; overflow:hidden;">`;
+
+  // Draw steel chassis container background
+  svgStr += `
+    <!-- Chassis Body -->
+    <rect x="20" y="10" width="560" height="130" fill="#1e293b" stroke="#475569" stroke-width="2" rx="4" />
+    <rect x="25" y="15" width="550" height="120" fill="#0f172a" rx="2" />
+    
+    <!-- Left Rack Ear -->
+    <rect x="5" y="10" width="15" height="130" fill="#334155" rx="2" />
+    <rect x="8" y="15" width="9" height="120" fill="#1e293b" rx="1" />
+    <circle cx="12" cy="25" r="3" fill="#64748b" stroke="#475569" stroke-width="0.5"/>
+    <circle cx="12" cy="125" r="3" fill="#64748b" stroke="#475569" stroke-width="0.5"/>
+    
+    <!-- Right Rack Ear -->
+    <rect x="580" y="10" width="15" height="130" fill="#334155" rx="2" />
+    <rect x="583" y="15" width="9" height="120" fill="#1e293b" rx="1" />
+    <circle cx="587" cy="25" r="3" fill="#64748b" stroke="#475569" stroke-width="0.5"/>
+    <circle cx="587" cy="125" r="3" fill="#64748b" stroke="#475569" stroke-width="0.5"/>
+    
+    <!-- Power Supplies representation (PSU 1 & PSU 2 on far right/left or bottom) -->
+    <rect x="30" y="20" width="40" height="110" fill="#1e293b" stroke="#334155" rx="2"/>
+    <rect x="35" y="30" width="30" height="20" fill="#020617" rx="1"/> <!-- fan -->
+    <circle cx="50" cy="40" r="8" fill="none" stroke="#334155" stroke-width="1"/>
+    <circle cx="50" cy="85" r="5" fill="#10b981" /> <!-- status green led -->
+    <text x="50" y="115" fill="#64748b" font-size="6" text-anchor="middle" font-weight="700">PSU 1</text>
+  `;
+
+  // Draw slot bays
+  const startX = 80;
+  const endX = 570;
+  const availableWidth = endX - startX;
+  const slotWidth = Math.floor(availableWidth / N) - 4;
+
+  slots.forEach((slot, index) => {
+    const x = startX + index * (slotWidth + 4);
+    const y = 20;
+    const h = 110;
+    const card = cards.find(c => c.slot === slot.num);
+
+    svgStr += `<!-- Slot ${slot.num} Bay -->`;
+    
+    if (card) {
+      const cSpec = EXP_CARDS_CATALOG[card.cardKey];
+      if (cSpec) {
+        const isTypeMatch = slot.recType === "any" || slot.recType === cSpec.type;
+        const isBandwidthMatch = !(cSpec.speed.includes("100G") && slot.type.includes("x8"));
+        const isBestPractice = isTypeMatch && isBandwidthMatch;
+        
+        let pcbColor = "#064e3b"; // Forest green PCB for compliant cards
+        if (card.autoAdded) {
+          pcbColor = "#0c4a6e"; // Cyan-blue for auto-allocated
+        } else if (!isBestPractice) {
+          pcbColor = "#78350f"; // Amber/brown for sub-optimal
+        }
+
+        // Draw Occupied PCIe Card
+        svgStr += `
+          <rect x="${x}" y="${y}" width="${slotWidth}" height="${h}" fill="${pcbColor}" stroke="#475569" rx="2" style="cursor:pointer;" onclick="selectChassisSlot(${slot.num})"/>
+          
+          <!-- Slot Label -->
+          <text x="${x + slotWidth/2}" y="${y + 12}" fill="#fff" font-size="7" font-weight="700" text-anchor="middle">SLOT ${slot.num}</text>
+          
+          <!-- Card Name -->
+          <text x="${x + slotWidth/2}" y="${y + 24}" fill="#e2e8f0" font-size="5.5" text-anchor="middle" font-weight="600" width="${slotWidth - 4}">${cSpec.speed}</text>
+          <text x="${x + slotWidth/2}" y="${y + 32}" fill="#94a3b8" font-size="5" text-anchor="middle">${cSpec.type.toUpperCase()}</text>
+        `;
+
+        // Draw ports based on card specification
+        const cardPorts = getCardPorts(card.cardKey, slot.num);
+        const pyStart = y + 42;
+        const portH = 12;
+        const portW = Math.min(slotWidth - 8, 18);
+        const px = x + (slotWidth - portW) / 2;
+
+        cardPorts.forEach((pName, pIdx) => {
+          const py = pyStart + pIdx * (portH + 4);
+          let portColor = "#1e293b";
+          let strokeColor = "#64748b";
+          let ledColor = "#10b981";
+
+          if (cSpec.type === "storage") {
+            portColor = "#0f172a";
+            strokeColor = "#3b82f6";
+            ledColor = "#3b82f6"; // blue LED for storage
+          } else if (cSpec.type === "san") {
+            portColor = "#0f172a";
+            strokeColor = "#ec4899"; // pink for SAN FC
+            ledColor = "#f472b6";
+          }
+
+          svgStr += `
+            <!-- Port ${pName} -->
+            <rect x="${px}" y="${py}" width="${portW}" height="${portH}" fill="${portColor}" stroke="${strokeColor}" rx="1"/>
+            <text x="${px + portW/2}" y="${py + 8}" fill="#fff" font-size="5.5" font-family="var(--font-mono)" text-anchor="middle" font-weight="700">${pName}</text>
+            <circle cx="${px + 2}" cy="${py + 2}" r="1" fill="${ledColor}"/>
+          `;
+        });
+
+        // Bottom connector fingers (gold teeth)
+        svgStr += `
+          <rect x="${x + 4}" y="${y + h - 4}" width="${slotWidth - 8}" height="3" fill="#fbbf24"/>
+        `;
+      }
+    } else {
+      // Draw empty slot plate with ventilation grill
+      svgStr += `
+        <rect x="${x}" y="${y}" width="${slotWidth}" height="${h}" fill="#1e293b" stroke="#334155" rx="2" style="cursor:pointer;" onclick="selectChassisSlot(${slot.num})"/>
+        
+        <!-- Slot Label -->
+        <text x="${x + slotWidth/2}" y="${y + 25}" fill="#64748b" font-size="7" font-weight="700" text-anchor="middle">SLOT ${slot.num}</text>
+        <text x="${x + slotWidth/2}" y="${y + 36}" fill="#475569" font-size="5.5" text-anchor="middle">${slot.type.split(' ')[0]}</text>
+        
+        <!-- Optimized for RecType label -->
+        <text x="${x + slotWidth/2}" y="${y + 55}" fill="#475569" font-size="4.5" font-weight="700" text-anchor="middle">OPT FOR:</text>
+        <text x="${x + slotWidth/2}" y="${y + 65}" fill="#64748b" font-size="5.5" font-weight="700" text-anchor="middle">${slot.recType.toUpperCase()}</text>
+        
+        <!-- Ventilation Slits -->
+        <line x1="${x + 4}" y1="${y + 80}" x2="${x + slotWidth - 4}" y2="${y + 80}" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="2 2"/>
+        <line x1="${x + 4}" y1="${y + 90}" x2="${x + slotWidth - 4}" y2="${y + 90}" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="2 2"/>
+        <line x1="${x + 4}" y1="${y + 100}" x2="${x + slotWidth - 4}" y2="${y + 100}" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="2 2"/>
+      `;
+    }
+  });
+
+  svgStr += `</svg>`;
+  container.innerHTML = svgStr;
+}
+
 function renderAddedCardsList() {
   const list = document.getElementById("added-cards-list");
   const countSpan = document.getElementById("pcie-slots-count");
@@ -3533,6 +3717,9 @@ function renderAddedCardsList() {
   const cards = currentState.expansionCards || [];
   
   countSpan.textContent = `${profile.maxPcieSlots - cards.length} / ${profile.maxPcieSlots}`;
+
+  // Call chassis visualizer
+  drawPCIeChassis(currentState, "pcie-chassis-visualizer");
 
   const slots = getPlatformSlots(currentState.version.model);
   

@@ -47,6 +47,7 @@ export function parseASUP(files) {
     aggregates: [],
     spares: [],
     licenses: [],
+    expansionCards: [],
     parseWarnings: []
   };
 
@@ -550,6 +551,44 @@ export function parseASUP(files) {
   }
 
   data.switches = switches;
+
+  // --- 9. Parse PCIe Expansion Cards from sysconfig -a ---
+  const slotCardRegex = /slot\s+(\d+):\s+([^\r\n]+)/ig;
+  let slotMatch;
+  slotCardRegex.lastIndex = 0;
+  while ((slotMatch = slotCardRegex.exec(combinedText)) !== null) {
+    const slotNum = parseInt(slotMatch[1]);
+    const desc = slotMatch[2].toLowerCase();
+    
+    // Ignore slot 0 which is usually system board onboard ports
+    if (slotNum === 0) continue;
+    
+    let cardKey = null;
+    if (desc.includes("fibre channel") || desc.includes("fc host adapter") || desc.includes("fc target host adapter")) {
+      if (desc.includes("64g")) cardKey = "fc_hba_64g_2port";
+      else if (desc.includes("32g")) cardKey = "fc_hba_32g_2port";
+      else cardKey = "fc_hba_16g_2port";
+    } else if (desc.includes("sas host adapter") || desc.includes("sas adapter")) {
+      cardKey = "sas_hba_12g_4port";
+    } else if ((desc.includes("100gbe") || desc.includes("100g")) && (desc.includes("roce") || desc.includes("nvme"))) {
+      cardKey = "roce_hba_100g_2port";
+    } else if (desc.includes("100gbe") || desc.includes("100g")) {
+      cardKey = "nic_100g_2port";
+    } else if (desc.includes("200gbe") || desc.includes("200g")) {
+      cardKey = "nic_200g_2port";
+    } else if (desc.includes("25gbe") || desc.includes("25g")) {
+      cardKey = "nic_25g_4port";
+    } else if (desc.includes("10gbe") || desc.includes("10g")) {
+      cardKey = "nic_10g_2port";
+    }
+    
+    if (cardKey) {
+      const existing = data.expansionCards.find(c => c.slot === slotNum);
+      if (!existing) {
+        data.expansionCards.push({ slot: slotNum, cardKey: cardKey });
+      }
+    }
+  }
 
   data.alerts = extractASUPAlerts(combinedText, files);
 

@@ -16,6 +16,31 @@ export const EXP_CARDS_CATALOG = {
 };
 
 export const PLATFORM_SLOT_DETAILS = {
+  11: [
+    { num: 1, type: "PCIe Gen5 x16", recType: "nic", rec: "Primary 200G/100G data/cluster networking" },
+    { num: 2, type: "PCIe Gen5 x16", recType: "nic", rec: "Secondary 200G/100G data/cluster networking" },
+    { num: 3, type: "PCIe Gen5 x16", recType: "san", rec: "64Gb/32Gb Fibre Channel SAN HBA" },
+    { num: 4, type: "PCIe Gen5 x16", recType: "san", rec: "64Gb/32Gb Fibre Channel SAN HBA" },
+    { num: 5, type: "PCIe Gen5 x16", recType: "storage", rec: "High-speed NVMe-oF RoCE adapter" },
+    { num: 6, type: "PCIe Gen5 x16", recType: "storage", rec: "High-speed NVMe-oF RoCE adapter" },
+    { num: 7, type: "PCIe Gen5 x16", recType: "storage", rec: "High-speed NVMe-oF RoCE adapter" },
+    { num: 8, type: "PCIe Gen5 x16", recType: "nic", rec: "Auxiliary 100G/25G data connection" },
+    { num: 9, type: "PCIe Gen5 x16", recType: "nic", rec: "Auxiliary 100G/25G data connection" },
+    { num: 10, type: "PCIe Gen5 x16", recType: "san", rec: "FC HBA target adapter" },
+    { num: 11, type: "PCIe Gen5 x16", recType: "storage", rec: "High-speed storage extension" }
+  ],
+  10: [
+    { num: 1, type: "PCIe Gen4 x16", recType: "nic", rec: "Primary 100GbE data/cluster networking" },
+    { num: 2, type: "PCIe Gen4 x16", recType: "nic", rec: "Secondary 100GbE data/cluster networking" },
+    { num: 3, type: "PCIe Gen4 x16", recType: "san", rec: "Fibre Channel HBA (32Gb/16Gb FC SAN Target)" },
+    { num: 4, type: "PCIe Gen4 x16", recType: "san", rec: "Fibre Channel HBA (32Gb/16Gb FC SAN Target)" },
+    { num: 5, type: "PCIe Gen4 x16", recType: "storage", rec: "High-speed NVMe-oF RoCE sync/storage" },
+    { num: 6, type: "PCIe Gen4 x16", recType: "storage", rec: "High-speed NVMe-oF RoCE sync/storage" },
+    { num: 7, type: "PCIe Gen4 x8",  recType: "storage", rec: "Backend 12Gb SAS storage shelf adapter" },
+    { num: 8, type: "PCIe Gen4 x8",  recType: "storage", rec: "Backend 12Gb SAS storage shelf adapter" },
+    { num: 9, type: "PCIe Gen4 x8",  recType: "san", rec: "SAN Target HBA (Fibre Channel)" },
+    { num: 10, type: "PCIe Gen4 x8", recType: "nic", rec: "Auxiliary Ethernet card" }
+  ],
   8: [
     { num: 1, type: "PCIe Gen4 x16", recType: "nic", rec: "Primary 100GbE data/cluster networking" },
     { num: 2, type: "PCIe Gen4 x16", recType: "nic", rec: "Secondary 100GbE data/cluster networking" },
@@ -80,7 +105,7 @@ export const NETAPP_PLATFORMS = {
       storage: ["e0g", "e0h"] // NVMe (RoCE)
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
-    maxPcieSlots: 8
+    maxPcieSlots: 11
   },
   "AFF A90": {
     maxOntap: "9.20.1",
@@ -151,7 +176,7 @@ export const NETAPP_PLATFORMS = {
       storage: ["e0g", "e0h"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
-    maxPcieSlots: 8
+    maxPcieSlots: 10
   },
   "AFF A800": {
     maxOntap: "9.13.1",
@@ -555,7 +580,7 @@ export const NETAPP_PLATFORMS = {
       storage: ["0a", "0b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
-    maxPcieSlots: 8
+    maxPcieSlots: 10
   },
   "FAS9000": {
     maxOntap: "9.13.1",
@@ -798,7 +823,7 @@ export const NETAPP_PLATFORMS = {
       storage: ["0a", "0b", "e0g", "e0h"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
-    maxPcieSlots: 8
+    maxPcieSlots: 6
   },
   "FAS70": {
     maxOntap: "9.20.1",
@@ -868,7 +893,7 @@ export const NETAPP_PLATFORMS = {
       storage: ["e0g", "e0h"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
-    maxPcieSlots: 8
+    maxPcieSlots: 11
   },
   "ASA A90": {
     maxOntap: "9.20.1",
@@ -1045,11 +1070,6 @@ export function getPlatformProfile(modelStr) {
   if (upper.includes("ASA A20")) return NETAPP_PLATFORMS["ASA A20"];
   if (upper.includes("ASA C30")) return NETAPP_PLATFORMS["ASA C30"];
   
-  // Match new FAS models
-  if (upper.includes("FAS90")) return NETAPP_PLATFORMS["FAS90"];
-  if (upper.includes("FAS70")) return NETAPP_PLATFORMS["FAS70"];
-  if (upper.includes("FAS50")) return NETAPP_PLATFORMS["FAS50"];
-  
   // Match key patterns
   if (upper.includes("A1K")) return NETAPP_PLATFORMS["AFF A1K"];
   if (upper.includes("A900")) return NETAPP_PLATFORMS["AFF A900"];
@@ -1085,6 +1105,11 @@ export function getPlatformProfile(modelStr) {
   if (upper.includes("2720")) return NETAPP_PLATFORMS["FAS2720"];
   if (upper.includes("2650")) return NETAPP_PLATFORMS["FAS2650"];
   if (upper.includes("2620")) return NETAPP_PLATFORMS["FAS2620"];
+  
+  // Match new FAS models (after legacy numeric FAS models to avoid prefix collision with FAS9000 etc.)
+  if (upper.includes("FAS90")) return NETAPP_PLATFORMS["FAS90"];
+  if (upper.includes("FAS70")) return NETAPP_PLATFORMS["FAS70"];
+  if (upper.includes("FAS50")) return NETAPP_PLATFORMS["FAS50"];
   
   if (upper.includes("2520")) return NETAPP_PLATFORMS["FAS2520"];
   

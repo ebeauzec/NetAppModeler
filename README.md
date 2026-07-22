@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.12)
+# NetApp AutoSupport Analyzer & Modeler (v2.13)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,12 +6,11 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.12)
-* **Parser Alert Fallback Sanitization:** Completely removed model name checks (`FAS8300`) from demo alert injection in `extractASUPAlerts()`. Real production FAS8300 AutoSupport logs without alerts now report 0 findings with 100% fidelity, eliminating false cabling SPOF and expired license alerts on healthy customer systems.
-* **Transparent Partial Parse Warnings:** Added explicit `parseWarnings` tracking and an Amber UI Banner in Step 2. If log regexes fail to extract specific sections (nodes, shelves, aggregates, spares, licenses, or switches) from custom or unusual ASUP formats, a prominent notice explicitly lists which sections are using fallback defaults.
-* **License Default Integrity:** Default fallback licenses for unparsed logs now default to `active` instead of injecting a false `expired` SnapMirror license.
-* **Cross-Platform Build Script Safety:** Wrapped optional local environment scratch path copies in `build_standalone.py` with safety checks (`os.path.exists`) and exception handling, preventing tracebacks for external contributors.
-* **Hardware & Disk Expansion (v2.11):** Added FAS50/70/90, ASA block arrays (ASA A1K-C30), and 61.2TB QLC SSDs.
+## 🆕 New in this Version (v2.13)
+* **On-Site Production-Ready PCIe Slots Parser:** Added automated regex extraction to parse physical PCIe expansion cards directly from the `sysconfig -a` output inside real AutoSupport logs. It dynamically detects Fibre Channel (FC) HBAs, SAS adapters, and RoCE/Ethernet NICs, registering their respective ports under node objects.
+* **Rear Chassis PCIe Slots Layout Visualizer:** Renders an interactive, steel-textured rear controller chassis panel SVG, mapping each physical slot (including 10-slot and 11-slot configurations for high-end platforms like A900/FAS9500 and A1K). Occupied cards show detailed PCB colors (best-practice green, auto cyan, sub-optimal amber), gold connectors, and physical port links. Empty slots are clickable to select them in the modeler slot picker.
+* **Model Prefix Collision Fix:** Resolved a matching collision in `getPlatformProfile()` where legacy systems like the `FAS9000` were incorrectly detected as new `FAS90` platforms.
+* **Parser Alert Fallback Sanitization (v2.12):** Clean alert reports on real FAS8300 logs.
 
 ---
 
