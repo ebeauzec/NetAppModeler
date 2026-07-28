@@ -30,7 +30,7 @@ function getCardPorts(cardKey, slot) {
 }
 
 // ONTAP Upgrade paths compatibility including 9.18.1 and 9.19.1
-const ONTAP_HOPS = {
+const UI_UPGRADE_HOPS = {
   "9.7": {
     "9.7": [],
     "9.8": ["9.8"],
@@ -476,7 +476,7 @@ function exportMarkdownPlan() {
   const targetOntap = document.getElementById("target-ontap").value;
   const curVer = currentState.version.ontap;
   const baseCur = resolveBaseVersionKey(curVer);
-  const hops = ONTAP_HOPS[baseCur] ? ONTAP_HOPS[baseCur][targetOntap] : [];
+  const hops = UI_UPGRADE_HOPS[baseCur] ? UI_UPGRADE_HOPS[baseCur][targetOntap] : [];
   const hopList = hops.length > 0 ? hops.join(" -> ") : "No upgrade required";
 
   let md = `# NetApp Storage Upgrade & Implementation Plan\n\n`;
@@ -618,7 +618,7 @@ function generateCliScriptText() {
   const targetOntap = document.getElementById("target-ontap") ? document.getElementById("target-ontap").value : "9.20.1";
   const curVer = currentState.version.ontap;
   const baseCur = resolveBaseVersionKey(curVer);
-  const hops = ONTAP_HOPS[baseCur] ? ONTAP_HOPS[baseCur][targetOntap] : [];
+  const hops = UI_UPGRADE_HOPS[baseCur] ? UI_UPGRADE_HOPS[baseCur][targetOntap] : [];
 
   let script = `#!/bin/bash\n`;
   script += `# ==========================================================================\n`;
@@ -3710,7 +3710,7 @@ function updateUpgradeHopTimeline() {
   const curVer = currentState.version.ontap;
   const baseCur = resolveBaseVersionKey(curVer);
   const target = document.getElementById("target-ontap").value;
-  const hops = ONTAP_HOPS[baseCur] ? ONTAP_HOPS[baseCur][target] : [];
+  const hops = UI_UPGRADE_HOPS[baseCur] ? UI_UPGRADE_HOPS[baseCur][target] : [];
 
   const box = document.getElementById("upgrade-timeline-box");
   const timeline = document.getElementById("hop-timeline");
@@ -5953,7 +5953,7 @@ function generateReport() {
   const targetOntap = document.getElementById("target-ontap").value;
   const curVer = currentState.version.ontap;
   const baseCur = resolveBaseVersionKey(curVer);
-  const hops = ONTAP_HOPS[baseCur] ? ONTAP_HOPS[baseCur][targetOntap] : [];
+  const hops = UI_UPGRADE_HOPS[baseCur] ? UI_UPGRADE_HOPS[baseCur][targetOntap] : [];
   let hopListText = `${baseCur} ➔ ` + (hops.length > 0 ? hops.join(" ➔ ") : "No upgrade required");
 
   // Determine Cabling Fix text
