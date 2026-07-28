@@ -12,7 +12,8 @@ export const EXP_CARDS_CATALOG = {
   fc_hba_32g_2port: { name: "Dual-port 32Gb Fibre Channel HBA", type: "san", ports: ["0i", "0j"], speed: "32Gb FC", minOntap: "9.5", power: 25 },
   fc_hba_64g_2port: { name: "Dual-port 64Gb Fibre Channel HBA", type: "san", ports: ["0i", "0j"], speed: "64Gb FC", minOntap: "9.16.1", power: 28 },
   sas_hba_12g_4port: { name: "Quad-port 12G SAS Adapter", type: "storage", ports: ["0c", "0d", "0e", "0f"], speed: "12Gb SAS", minOntap: "9.1", power: 20 },
-  roce_hba_100g_2port: { name: "Dual-port 100GbE NVMe-oF RoCE Adapter", type: "storage", ports: ["e0g", "e0h"], speed: "100GbE RoCE", minOntap: "9.8", power: 38 }
+  roce_hba_100g_2port: { name: "Dual-port 100GbE NVMe-oF RoCE Adapter", type: "storage", ports: ["e0g", "e0h"], speed: "100GbE RoCE", minOntap: "9.8", power: 38 },
+  nvme_tcp_100g_2port: { name: "Dual-port 100GbE NVMe-over-TCP Adapter", type: "nic", ports: ["e2a", "e2b"], speed: "100GbE", minOntap: "9.10.1", power: 35 }
 };
 
 export const PLATFORM_SLOT_DETAILS = {
@@ -1033,6 +1034,329 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
   },
+  "ASA C800": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
+    shelfErrors: {
+      "ds224c": "ASA C800 is NVMe-only; SAS shelves are unsupported.",
+      "ds212c": "HDD shelves not supported.",
+      "ds460c": "HDD shelves not supported.",
+      "ds2246": "Legacy SAS not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v18.4",
+    description: "Capacity-optimized SAN All-Flash Array (QLC SSD).",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 4,
+    ram: 256,
+    cpus: 32
+  },
+  "ASA C400": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224", "ds224c"],
+    unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf is highly recommended." },
+    shelfErrors: {
+      "ds212c": "SATA HDD shelves not supported.",
+      "ds460c": "SATA HDD shelves not supported.",
+      "ds2246": "Legacy SAS-2 is not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v15.5",
+    description: "Capacity-optimized mid-range SAN All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_10g_2port", "nic_25g_4port", "nic_100g_2port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
+    maxPcieSlots: 4,
+    ram: 256,
+    cpus: 32
+  },
+  "ASA C250": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf is supported natively." },
+    shelfErrors: {
+      "ds224c": "ASA C250 is NVMe-only and does not support SAS SSD/HDD shelves.",
+      "ds212c": "HDD shelves not supported.",
+      "ds460c": "HDD shelves not supported.",
+      "ds2246": "Legacy SAS not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v16.1",
+    description: "Capacity-optimized entry SAN All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 2,
+    ram: 128,
+    cpus: 16
+  },
+  "ASA A800": {
+    maxOntap: "9.13.1",
+    supportedShelves: ["ns224", "ds224c"],
+    unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
+    shelfWarnings: {
+      "ns224": "NS224 is supported. Enforce target ONTAP version >= 9.8.",
+      "ds224c": "DS224C SAS SSD shelf is supported, but NVMe shelves are preferred."
+    },
+    shelfErrors: {
+      "ds212c": "LFF HDD shelves are not supported on All-SAN arrays.",
+      "ds460c": "High-density mechanical storage is not supported.",
+      "ds2246": "DS2246 legacy SAS-2 shelf is not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v14.6",
+    description: "High-performance SAN-Optimized All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 4,
+    ram: 256,
+    cpus: 32
+  },
+  "ASA A400": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224", "ds224c"],
+    unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
+    shelfWarnings: {
+      "ns224": "NS224 NVMe shelf is highly recommended for optimal performance.",
+      "ds224c": "DS224C SAS shelf is supported for SAS SSD drives."
+    },
+    shelfErrors: {
+      "ds212c": "ASA A400 does not support large-form SATA drives.",
+      "ds460c": "ASA A400 does not support SATA HDD expansion stacks.",
+      "ds2246": "Legacy 6G SAS is not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v15.5",
+    description: "High-performance mid-range SAN-Optimized All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_10g_2port", "nic_25g_4port", "nic_100g_2port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
+    maxPcieSlots: 4,
+    ram: 256,
+    cpus: 32
+  },
+  "ASA A900": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: {
+      "ns224": "NS224 NVMe shelf is natively supported."
+    },
+    shelfErrors: {
+      "ds224c": "ASA A900 is an all-NVMe system and does not support SAS SSD/HDD shelves.",
+      "ds212c": "HDD shelves are not supported.",
+      "ds460c": "HDD shelves are not supported.",
+      "ds2246": "Legacy 6G SAS is not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v18.4",
+    description: "Enterprise SAN-Optimized All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 10,
+    ram: 1024,
+    cpus: 128
+  },
+  "FAS8080": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: {
+      "ds2246": "Legacy 6G SAS shelf DS2246 is supported on historical FAS8080 controllers."
+    },
+    shelfErrors: {
+      "ns224": "FAS8080 does not support high-speed NVMe storage shelves."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.6",
+    description: "Legacy high-end FAS controller platform.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 8,
+    ram: 128,
+    cpus: 16
+  },
+  "FAS8060": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: {
+      "ds2246": "DS2246 is supported."
+    },
+    shelfErrors: {
+      "ns224": "FAS8060 does not support NVMe shelves."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.6",
+    description: "Legacy mid-to-high FAS controller platform.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 4,
+    ram: 64,
+    cpus: 12
+  },
+  "FAS8040": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: { "ds2246": "DS2246 is supported." },
+    shelfErrors: { "ns224": "FAS8040 does not support NVMe shelves." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.6",
+    description: "Legacy mid-range FAS controller platform.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 4,
+    ram: 64,
+    cpus: 12
+  },
+  "FAS8020": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: { "ds2246": "DS2246 is supported." },
+    shelfErrors: { "ns224": "FAS8020 does not support NVMe shelves." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.6",
+    description: "Legacy entry-mid FAS controller platform.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 2,
+    ram: 48,
+    cpus: 8
+  },
+  "FAS2554": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: { "ds2246": "DS2246 is supported." },
+    shelfErrors: { "ns224": "NVMe shelves are unsupported." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.5",
+    description: "Legacy entry hybrid LFF storage array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 1,
+    ram: 36,
+    cpus: 8
+  },
+  "FAS2552": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: { "ds2246": "DS2246 is supported." },
+    shelfErrors: { "ns224": "NVMe shelves are unsupported." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.5",
+    description: "Legacy entry hybrid SFF storage array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 1,
+    ram: 36,
+    cpus: 8
+  },
+  "ONTAP Select": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224", "ds224c"],
+    unsupportedShelves: ["ds2246"],
+    shelfWarnings: { "*": "Virtual disk storage cabled under hypervisor host limits." },
+    shelfErrors: {},
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v1.0",
+    description: "Software-defined virtual storage appliance.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d", "e0e", "e0f"],
+      san: [],
+      storage: []
+    },
+    supportedCards: ["nic_10g_2port", "nic_25g_4port"],
+    maxPcieSlots: 0,
+    ram: 128,
+    cpus: 16
+  },
+  "Cloud Volumes ONTAP": {
+    maxOntap: "9.20.1",
+    supportedShelves: [],
+    unsupportedShelves: ["ns224", "ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: {},
+    shelfErrors: { "*": "Physical hardware shelves are not cabled in cloud infrastructure." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
+    maxFirmware: "v1.0",
+    description: "ONTAP storage software running inside AWS, Azure, or GCP cloud VM.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: [],
+      storage: []
+    },
+    supportedCards: [],
+    maxPcieSlots: 0,
+    ram: 128,
+    cpus: 16
+  },
   "Default": {
     maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ns224"],
@@ -1069,6 +1393,12 @@ export function getPlatformProfile(modelStr) {
   if (upper.includes("ASA A30")) return NETAPP_PLATFORMS["ASA A30"];
   if (upper.includes("ASA A20")) return NETAPP_PLATFORMS["ASA A20"];
   if (upper.includes("ASA C30")) return NETAPP_PLATFORMS["ASA C30"];
+  if (upper.includes("ASA C800")) return NETAPP_PLATFORMS["ASA C800"];
+  if (upper.includes("ASA C400")) return NETAPP_PLATFORMS["ASA C400"];
+  if (upper.includes("ASA C250")) return NETAPP_PLATFORMS["ASA C250"];
+  if (upper.includes("ASA A800")) return NETAPP_PLATFORMS["ASA A800"];
+  if (upper.includes("ASA A400")) return NETAPP_PLATFORMS["ASA A400"];
+  if (upper.includes("ASA A900")) return NETAPP_PLATFORMS["ASA A900"];
   
   // Match key patterns
   if (upper.includes("A1K")) return NETAPP_PLATFORMS["AFF A1K"];
@@ -1106,12 +1436,20 @@ export function getPlatformProfile(modelStr) {
   if (upper.includes("2650")) return NETAPP_PLATFORMS["FAS2650"];
   if (upper.includes("2620")) return NETAPP_PLATFORMS["FAS2620"];
   
-  // Match new FAS models (after legacy numeric FAS models to avoid prefix collision with FAS9000 etc.)
+  if (upper.includes("8080")) return NETAPP_PLATFORMS["FAS8080"];
+  if (upper.includes("8060")) return NETAPP_PLATFORMS["FAS8060"];
+  if (upper.includes("8040")) return NETAPP_PLATFORMS["FAS8040"];
+  if (upper.includes("8020")) return NETAPP_PLATFORMS["FAS8020"];
+  if (upper.includes("2554")) return NETAPP_PLATFORMS["FAS2554"];
+  if (upper.includes("2552")) return NETAPP_PLATFORMS["FAS2552"];
+  if (upper.includes("2520")) return NETAPP_PLATFORMS["FAS2520"];
+  
   if (upper.includes("FAS90")) return NETAPP_PLATFORMS["FAS90"];
   if (upper.includes("FAS70")) return NETAPP_PLATFORMS["FAS70"];
   if (upper.includes("FAS50")) return NETAPP_PLATFORMS["FAS50"];
   
-  if (upper.includes("2520")) return NETAPP_PLATFORMS["FAS2520"];
+  if (upper.includes("SELECT") || upper.includes("ONTAP SELECT")) return NETAPP_PLATFORMS["ONTAP Select"];
+  if (upper.includes("CLOUD VOLUMES ONTAP") || upper.includes("CVO")) return NETAPP_PLATFORMS["Cloud Volumes ONTAP"];
   
   return NETAPP_PLATFORMS["Default"];
 }

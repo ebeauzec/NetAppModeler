@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.16)
+# NetApp AutoSupport Analyzer & Modeler (v2.20)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,11 +6,10 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.16)
-* **Interactive Startup Splash Screen:** Renders a premium, glassmorphic modal overlay on startup summarizing major platform updates, changes, and sizing additions. Users can dismiss it, saving states locally.
-* **Repositioned Legal Disclaimer Notice:** Relocated the legal disclaimer notice bar to a clean footer section at the bottom of the screen, preserving compliance while reducing screen intrusion.
-* **MetroCluster Cabling Topology Fix (v2.15):** Restructured MetroCluster dual-site cabling visuals with dedicated IN/OUT ports and collision-free curves.
-* **Representative Rear Chassis Slots Layouts (v2.15):** Physical slot arrangements (Quad Horizontal for A400, Stacked for A250, Vertical for A1K/A90/A70), dual PSUs, and onboard port blocks.
+## 🆕 New in this Version (v2.20)
+* **MetroCluster Auto-Detection & Topologies:** Automatically detects MetroCluster IP/FC configurations from ASUP logs, rendering dual-site split cabling graphs and replication paths.
+* **Advanced Best Practice Audits:** Added 5 new rules covering cluster switch RCF versions, front-end port MTU sizing (Jumbo Frames), MetroCluster aggregate SyncMirror status, site hardware symmetry, and Flash Pool SSD cache ratios.
+* **Interactive CLI Script Generator:** Renders a copy-pasteable ONTAP CLI command block in the reporting step to dynamically guide system remediation.
 
 ---
 

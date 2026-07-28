@@ -37,7 +37,7 @@
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.16</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.20</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -119,6 +119,10 @@
               <button id="demo-affa400-btn" class="btn-secondary">
                 <strong>AFF A400 Cluster Profile</strong>
                 <span class="btn-desc">ONTAP 9.9.1, NS224 NVMe shelf, 86% aggregate capacity limit warning.</span>
+              </button>
+              <button id="demo-metrocluster-btn" class="btn-secondary">
+                <strong>AFF A400 MetroCluster IP</strong>
+                <span class="btn-desc">ONTAP 9.12.1, 4-Node MetroCluster IP, switch RCF & unmirrored aggregates warnings.</span>
               </button>
             </div>
           </div>
@@ -227,6 +231,18 @@
               <div class="detail-card">
                 <div class="detail-label">Controllers (Nodes)</div>
                 <div id="cur-nodes" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Motherboard RAM</div>
+                <div id="cur-ram" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Cluster Switches</div>
+                <div id="cur-switches" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">MetroCluster Type</div>
+                <div id="cur-metrocluster" class="detail-value">-</div>
               </div>
               <div class="detail-card">
                 <div class="detail-label">Total Raw Capacity</div>
@@ -811,6 +827,22 @@
         <div id="report-frame" class="report-body">
           <!-- Full Technical Report generated dynamically in UI.js -->
         </div>
+
+        <div id="cli-script-container" class="no-print" style="margin-top: 2rem; border-top: 1px dashed var(--border-color); padding-top: 2rem; text-align: left;">
+          <h3 style="color: #fff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; font-size: 1.15rem;">
+            <svg style="width:20px; height:20px; fill:var(--color-primary);" viewBox="0 0 24 24">
+              <path d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M9.5,8.5L13.5,12.5L9.5,16.5L8,15L11,12L8,9L9.5,8.5M14,15H17V17H14V15Z"/>
+            </svg>
+            ONTAP CLI Remediation Script
+          </h3>
+          <p style="color: var(--color-muted); font-size: 0.82rem; margin-bottom: 1rem; line-height: 1.4;">
+            The following commands can be executed directly in the ONTAP administration CLI (via SSH) to remediate the identified best practice findings and configure new storage aggregates.
+          </p>
+          <div style="position: relative;">
+            <button id="copy-cli-btn" class="btn-secondary" style="position: absolute; top: 10px; right: 10px; padding: 6px 12px; font-size: 0.75rem; border-radius: 4px;">Copy Script</button>
+            <pre id="cli-script-code" style="background: rgba(0,0,0,0.6); padding: 1.25rem; border-radius: var(--radius-md); font-family: monospace; font-size: 0.82rem; color: #a5f3fc; overflow-x: auto; white-space: pre-wrap; border: 1px solid var(--border-color); max-height: 350px; line-height: 1.5; margin: 0;"></pre>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -877,7 +909,7 @@
     </div>
   </div>
 
-  <!-- Splash Screen Modal Overlay (What's New in v2.16) -->
+  <!-- Splash Screen Modal Overlay (What's New in v2.20) -->
   <div id="splash-modal" class="modal-overlay no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 11000; backdrop-filter: blur(8px);">
     <div class="modal-content" style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(15,23,42,0.95) 100%); border: 1.5px solid var(--color-primary); border-radius: var(--radius-lg); padding: 2.5rem; width: 550px; box-shadow: 0 25px 50px -12px rgba(6,182,212,0.3); position: relative; max-height: 85vh; overflow-y: auto;">
       
@@ -888,7 +920,7 @@
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.16</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.20</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
@@ -899,31 +931,31 @@
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
           <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🔗</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">MetroCluster Cabling Topology Fix</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">MetroCluster Auto-Detection</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              Restructured the dual-site layout with dedicated IN and OUT cable sockets on IOM panels. routed local loops and SyncMirror DR replication links using distinct, collision-free S-curves.
+              Auto-detect and model MetroCluster dual-site configurations (IP or FC) directly from uploaded AutoSupport logs. Visualizes local cabling loops and inter-site replication paths.
             </span>
           </div>
         </div>
 
         <!-- Feature 2 -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
-          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">💻</span>
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">⚙️</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Representative Rear Chassis Layouts</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Advanced Configuration Auditing</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              PCIe slots dynamically rearrange to match physical hardware profiles (Quad Horizontal for A400/FAS8300, Stacked for A250, Vertical for A1K/A90/A70). Includes an onboard Motherboard ports block and dual PSUs.
+              Five new rules to audit switch RCF files, front-end MTU sizing (Jumbo Frames), unmirrored aggregates, node hardware specification asymmetries (RAM/CPU), and Flash Pool SSD caching ratios.
             </span>
           </div>
         </div>
 
         <!-- Feature 3 -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
-          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">💿</span>
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">💻</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">High-Fidelity Storage Shelves</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Automated Modeler & Sizing Solver</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              Renders representative chassis profiles for DS460C (4U 60-Bay with sliding drawers), DS212C (2U 12-Bay LFF horizontal), NS224 (NVMe vertical), and DS224C (SAS vertical).
+              Solves and recommends optimal drive configurations and HBA card slotting based on capacity requirements. Generates execution scripts containing copy-pasteable ONTAP CLI commands to remediate findings.
             </span>
           </div>
         </div>

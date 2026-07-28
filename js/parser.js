@@ -48,7 +48,9 @@ export function parseASUP(files) {
     spares: [],
     licenses: [],
     expansionCards: [],
-    parseWarnings: []
+    parseWarnings: [],
+    metrocluster: "none",
+    switches: []
   };
 
   const lowerText = combinedText.toLowerCase();
@@ -123,6 +125,18 @@ export function parseASUP(files) {
                       combinedText.match(/Serial Number:\s*([a-zA-Z0-9]{5,})/i);
   if (serialMatch) data.version.serial = serialMatch[1].trim();
 
+  // --- 1.5. Parse MetroCluster ---
+  let metrocluster = "none";
+  if (lowerText.includes("metrocluster show") || lowerText.includes("metrocluster node show") || 
+      lowerText.includes("metrocluster interconnect show") || lowerText.includes("metrocluster configurations")) {
+    if (lowerText.includes("metrocluster ip") || lowerText.includes("mcc-ip") || lowerText.includes("mcc_ip") || lowerText.includes("ip-fabric")) {
+      metrocluster = "ip";
+    } else {
+      metrocluster = "fc"; // default to fc if no ip keyword is found
+    }
+  }
+  data.metrocluster = metrocluster;
+
   // --- 2. Parse Nodes ---
   const nodeRegex = /System ID:\s*(\d+)\s*\(([^)]+)\);\s*System Serial Number:\s*(\d+)/ig;
   let nodeMatch;
@@ -149,6 +163,32 @@ export function parseASUP(files) {
     data.nodes.push({ id: "536870913", name: "node-b", serial: data.version.serial + "B" });
     nodeNames.push("node-a", "node-b");
   }
+
+  // Parse memory/CPU sizes per node
+  data.nodes.forEach(node => {
+    const nodeHeaderIdx = combinedText.indexOf(node.name);
+    let nodeBlock = combinedText;
+    if (nodeHeaderIdx !== -1) {
+      nodeBlock = combinedText.substring(nodeHeaderIdx, nodeHeaderIdx + 15000);
+    }
+    
+    let memGB = 0;
+    const memMatch = nodeBlock.match(/(?:System Memory|Memory Size|Memory):\s*(\d+)\s*(GB|MB)/i);
+    if (memMatch) {
+      const val = parseInt(memMatch[1]);
+      const unit = memMatch[2].toUpperCase();
+      memGB = unit === 'MB' ? Math.round(val / 1024) : val;
+    }
+    
+    let cpus = 0;
+    const cpuMatch = nodeBlock.match(/(?:Number of Processors|Processors|CPUs):\s*(\d+)/i);
+    if (cpuMatch) {
+      cpus = parseInt(cpuMatch[1]);
+    }
+    
+    node.memoryGB = memGB || 128;
+    node.cpus = cpus || 16;
+  });
 
   // --- 3. Parse Shelves & Cabling ---
   const shelfRegex = /Shelf\s+(\d+):\s+([\w\-]+)\s+\(S\/N:\s*([^)]+)\)\s+(v\d+)(?:\s+\(Latest:\s*(v\d+)\))?/ig;
@@ -451,16 +491,55 @@ export function parseASUP(files) {
     const status = licMatch[2].trim().toLowerCase();
     const details = licMatch[3] ? `Expired: ${licMatch[3].trim()}` : "";
     
-    const existing = data.licenses.find(l => l.name === name);
-    if (!existing) {
-      data.licenses.push({
-        name,
-        status,
-        details,
-        serial: data.version.serial
-      });
+    // Filter out standard column headers that might trigger false matches
+    if (!["feature", "package", "owner", "expiration", "serial"].includes(name.toLowerCase())) {
+      const existing = data.licenses.find(l => l.name.toUpperCase() === name.toUpperCase());
+      if (!existing) {
+        data.licenses.push({
+          name,
+          status,
+          details,
+          serial: data.version.serial
+        });
+      }
     }
   }
+
+  // Resilient license table parsing (e.g. "CIFS license CIFS License -")
+  const licenseTableLines = combinedText.split(/\r?\n/);
+  licenseTableLines.forEach(line => {
+    const trimmed = line.trim();
+    const match = trimmed.match(/^([a-zA-Z0-9_\-]+)\s+(license|site|demo)\s+([a-zA-Z0-9_\-\s]+?)\s+(-|\d{4}-\d{2}-\d{2})\s*(?:\((Expired|Active)\))?$/i) ||
+                  trimmed.match(/^([a-zA-Z0-9_\-]+)\s+(license|site|demo)\s+([a-zA-Z0-9_\-\s]+?)\s*$/i);
+    if (match) {
+      const name = match[1].trim();
+      let status = "active";
+      let details = "";
+      
+      if (match[4]) {
+        const exp = match[4].trim();
+        if (exp !== "-") {
+          status = "expired";
+          details = `Expired: ${exp}`;
+        }
+      }
+      if (match[5] && match[5].toLowerCase() === 'expired') {
+        status = "expired";
+      }
+      
+      if (!["feature", "package", "owner", "expiration", "serial"].includes(name.toLowerCase())) {
+        const existing = data.licenses.find(l => l.name.toUpperCase() === name.toUpperCase());
+        if (!existing) {
+          data.licenses.push({
+            name,
+            status,
+            details,
+            serial: data.version.serial
+          });
+        }
+      }
+    }
+  });
 
   // Default licensing if none parsed
   if (data.licenses.length === 0) {
@@ -491,7 +570,8 @@ export function parseASUP(files) {
       status: portMatch[2].toLowerCase(),
       speed: portMatch[3],
       duplex: portMatch[4],
-      type: portMatch[5]
+      type: portMatch[5],
+      mtu: portMatch[1].startsWith("e0a") || portMatch[1].startsWith("e0b") ? 9000 : 1500
     });
   }
 
@@ -499,11 +579,62 @@ export function parseASUP(files) {
     node.ports = portsList.length > 0 ? 
                  portsList.slice(nodeIdx * 4, (nodeIdx + 1) * 4) : 
                  [
-                   { name: "e0a", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect" },
-                   { name: "e0b", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect" },
-                   { name: "e0c", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data" },
-                   { name: "e0d", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data" }
+                   { name: "e0a", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
+                   { name: "e0b", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
+                   { name: "e0c", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 },
+                   { name: "e0d", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 }
                  ];
+  });
+
+  // Resilient network port show table parsing (mtu and status)
+  const netportLines = combinedText.split(/\r?\n/);
+  netportLines.forEach(line => {
+    const trimmed = line.trim();
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 6) {
+      const firstPart = parts[0].toLowerCase();
+      const secondPart = parts[1].toLowerCase();
+      
+      // Check if line represents a port (e.g. node-a e0a ...) or if we can guess from port names
+      const isPortName = /^[a-e0-9]+$/.test(secondPart) && secondPart.length >= 3;
+      if (isPortName) {
+        const link = parts[parts.length - 3]?.toLowerCase() || parts[4]?.toLowerCase();
+        const mtuVal = parseInt(parts[parts.length - 2]) || parseInt(parts[5]);
+        
+        if ((link === 'up' || link === 'down') && !isNaN(mtuVal) && mtuVal >= 1500 && mtuVal <= 9000) {
+          // find matching node
+          const matchingNode = data.nodes.find(n => n.name.toLowerCase() === firstPart || firstPart.includes(n.name.toLowerCase()));
+          if (matchingNode) {
+            if (!matchingNode.ports) matchingNode.ports = [];
+            let existingPort = matchingNode.ports.find(p => p.name === secondPart);
+            if (existingPort) {
+              existingPort.status = link;
+              existingPort.mtu = mtuVal;
+            } else {
+              matchingNode.ports.push({
+                name: secondPart,
+                status: link,
+                speed: parts[parts.length - 1] || "10GbE",
+                duplex: "full-duplex",
+                type: secondPart.startsWith("e0a") || secondPart.startsWith("e0b") ? "cluster-interconnect" : "data",
+                mtu: mtuVal
+              });
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Ensure all ports have an MTU
+  data.nodes.forEach(node => {
+    if (node.ports) {
+      node.ports.forEach(p => {
+        if (!p.mtu) {
+          p.mtu = (p.type === "cluster-interconnect") ? 9000 : 1500;
+        }
+      });
+    }
   });
 
   // --- 8. Parse Cluster Switches ---

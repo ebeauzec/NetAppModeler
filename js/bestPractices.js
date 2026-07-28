@@ -6,6 +6,13 @@
 import { getPlatformProfile, compareVersions, EXP_CARDS_CATALOG, PLATFORM_SLOT_DETAILS } from './compatibility.js';
 
 export const ONTAP_LIFECYCLE = {
+  "9.0": { status: "critical", label: "End of Support", desc: "ONTAP 9.0 entered End of Support in 2018. Immediate upgrade is critical." },
+  "9.1": { status: "critical", label: "End of Support", desc: "ONTAP 9.1 entered End of Support in 2019. Immediate upgrade is critical." },
+  "9.2": { status: "critical", label: "End of Support", desc: "ONTAP 9.2 entered End of Support in 2020. Immediate upgrade is critical." },
+  "9.3": { status: "critical", label: "End of Support", desc: "ONTAP 9.3 entered End of Support in 2021. Immediate upgrade is critical." },
+  "9.4": { status: "critical", label: "End of Support", desc: "ONTAP 9.4 entered End of Support in 2021. Immediate upgrade is critical." },
+  "9.5": { status: "critical", label: "End of Support", desc: "ONTAP 9.5 entered End of Support in 2022. Immediate upgrade is critical." },
+  "9.6": { status: "critical", label: "End of Support", desc: "ONTAP 9.6 entered End of Support in 2022. Immediate upgrade is critical." },
   "9.7": { status: "critical", label: "End of Support", desc: "ONTAP 9.7 entered End of Support in October 2022. No security patches or bug fixes are provided. Immediate upgrade is critical." },
   "9.8": { status: "warning", label: "Limited Support", desc: "ONTAP 9.8 is in Limited Support. Only critical security fixes are provided." },
   "9.9.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.9.1 is in Limited Support. Only critical security fixes are provided." },
@@ -19,7 +26,9 @@ export const ONTAP_LIFECYCLE = {
   "9.17.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.17.1 is in General Support (GA)." },
   "9.18.1": { status: "compliant", label: "Active Support (Latest Stable)", desc: "ONTAP 9.18.1 is in General Support (GA) and is a modern recommended baseline." },
   "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, delivering NVMe-oF and AI optimizations." },
-  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault, cyber resiliency, and advanced file security controls." }
+  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault, cyber resiliency, and advanced file security controls." },
+  "9.21.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.21.1 is in General Support (GA) with advanced block caching." },
+  "10.0": { status: "compliant", label: "Active Support (Next-Gen)", desc: "ONTAP 10.0 represents the next major operating system release with enhanced cloud-scale unified security features." }
 };
 
 export function getPlatformMaxDrives(model) {
@@ -676,6 +685,191 @@ export function runAudit(systemState) {
         ""
       );
     }
+  }
+
+  // --- Rule 16: Cluster Switch RCF File Version Verification ---
+  let switchWarnings = [];
+  if (systemState.switches && systemState.switches.length > 0) {
+    systemState.switches.forEach(sw => {
+      if (sw.model === "BES-53248" && compareVersions(sw.version, "1.3.0.1") < 0) {
+        switchWarnings.push(`Switch ${sw.name} (${sw.model}) runs legacy RCF version ${sw.version}. RCF v1.3.0.1 or higher is required.`);
+      } else if (sw.model.includes("9336C") && compareVersions(sw.version, "2.2") < 0) {
+        switchWarnings.push(`Switch ${sw.name} (${sw.model}) runs legacy RCF version ${sw.version}. RCF v2.2 or higher is required for ONTAP 9.18+ compatibility.`);
+      }
+    });
+  }
+
+  if (switchWarnings.length > 0) {
+    addReport(
+      "BP_SWITCH_RCF",
+      "Cluster Interconnect Switch RCF Version Currency",
+      "Network",
+      "warning",
+      switchWarnings.join("\n"),
+      "Upgrade the ethernet switch Reference Configuration File (RCF) to the latest NetApp qualified version (v1.3+ for Broadcom, v2.2+ for Cisco Nexus).",
+      "Download NetApp switch RCF configuration files and apply to the switches via CLI commands."
+    );
+  } else if (systemState.switches && systemState.switches.length > 0) {
+    addReport(
+      "BP_SWITCH_RCF",
+      "Cluster Interconnect Switch RCF Version Currency",
+      "Network",
+      "compliant",
+      "All cluster interconnect switches are running approved, up-to-date Reference Configuration Files (RCF).",
+      "None required.",
+      ""
+    );
+  }
+
+  // --- Rule 17: Network Port MTU Sizing Check ---
+  const blocksActive = systemState.licenses.some(l => (l.name === "iSCSI" || l.name === "FCP" || l.name === "NVMe") && l.status === "active");
+  let mtuWarnings = [];
+  systemState.nodes.forEach(node => {
+    if (node.ports) {
+      node.ports.forEach(p => {
+        if (p.type === "data" && p.mtu === 1500 && blocksActive) {
+          mtuWarnings.push(`${node.name} port ${p.name} is configured at MTU 1500 while high-speed block storage protocols are licensed.`);
+        }
+      });
+    }
+  });
+
+  if (mtuWarnings.length > 0) {
+    addReport(
+      "BP_PORT_MTU_SIZING",
+      "Network Port MTU Sizing for Block Storage Protocols",
+      "Network",
+      "warning",
+      mtuWarnings.join("\n") + "\nMTU 1500 can restrict throughput by up to 30% and cause CPU overhead under high block workload levels.",
+      "Modify network port MTU configurations to 9000 (Jumbo Frames) on all end-to-end data paths supporting iSCSI or NVMe-oF traffic.",
+      "Execute 'network port modify -node <node> -port <port> -mtu 9000' in ONTAP shell."
+    );
+  } else {
+    addReport(
+      "BP_PORT_MTU_SIZING",
+      "Network Port MTU Sizing for Block Storage Protocols",
+      "Network",
+      "compliant",
+      "All active front-end target ports cabled for block protocols are configured with optimal Jumbo Frame MTU sizing.",
+      "None required.",
+      ""
+    );
+  }
+
+  // --- Rule 18: MetroCluster Mirroring Check ---
+  if (systemState.metrocluster && systemState.metrocluster !== "none") {
+    let unmirroredAggregates = [];
+    systemState.aggregates.forEach(aggr => {
+      if (aggr.name.startsWith("aggr0")) return;
+      // If name does not end with _mirror or sync, or if we explicitly flag it
+      if (aggr.isMirrored === false || aggr.name.includes("local") || !aggr.name.includes("sync")) {
+        unmirroredAggregates.push(aggr.name);
+      }
+    });
+
+    if (unmirroredAggregates.length > 0) {
+      addReport(
+        "BP_MCC_MIRRORING",
+        "MetroCluster Remote Sync Mirroring Compliance",
+        "Disaster Recovery",
+        "critical",
+        `Aggregates [${unmirroredAggregates.join(", ")}] are un-mirrored. In a MetroCluster DR environment, all data aggregates must be mirrored across sites (Pool0 and Pool1) to enable switchover.`,
+        "Mirror the aggregates by assigning remote partner disks and setting up SyncMirror.",
+        "Execute 'storage aggregate mirror -aggregate <name>' to mirror the aggregates."
+      );
+    } else {
+      addReport(
+        "BP_MCC_MIRRORING",
+        "MetroCluster Remote Sync Mirroring Compliance",
+        "Disaster Recovery",
+        "compliant",
+        "All data aggregates are mirrored symmetrically (SyncMirror) across DR sites. Switchover operations are fully supported.",
+        "None required.",
+        ""
+      );
+    }
+  }
+
+  // --- Rule 19: MetroCluster Hardware Symmetry ---
+  if (systemState.metrocluster && systemState.metrocluster !== "none") {
+    let symmetryWarnings = [];
+    const nodeA = systemState.nodes.find(n => n.name.includes("-a") || n.name.includes("node-a") || n.name.includes("node-1")) || systemState.nodes[0];
+    const nodeB = systemState.nodes.find(n => n.name.includes("-b") || n.name.includes("node-b") || n.name.includes("node-2")) || systemState.nodes[1];
+    
+    if (nodeA && nodeB) {
+      if (nodeA.memoryGB !== nodeB.memoryGB) {
+        symmetryWarnings.push(`Memory asymmetry: ${nodeA.name} has ${nodeA.memoryGB} GB, but partner ${nodeB.name} has ${nodeB.memoryGB} GB.`);
+      }
+      if (nodeA.cpus !== nodeB.cpus) {
+        symmetryWarnings.push(`Processor asymmetry: ${nodeA.name} has ${nodeA.cpus} cores, but partner ${nodeB.name} has ${nodeB.cpus} cores.`);
+      }
+      // Compare cards slots count
+      const cardsA = systemState.expansionCards ? systemState.expansionCards.filter(c => c.node === nodeA.name) : [];
+      const cardsB = systemState.expansionCards ? systemState.expansionCards.filter(c => c.node === nodeB.name) : [];
+      if (cardsA.length !== cardsB.length) {
+        symmetryWarnings.push(`PCIe expansion card asymmetry: Site-A has ${cardsA.length} cards, while Site-B has ${cardsB.length} cards.`);
+      }
+    }
+    
+    if (symmetryWarnings.length > 0) {
+      addReport(
+        "BP_MCC_SYMMETRY",
+        "MetroCluster DR Site Hardware Symmetry",
+        "Disaster Recovery",
+        "warning",
+        symmetryWarnings.join("\n"),
+        "Align CPU, RAM, and PCIe HBA adapter slots symmetrically on both MetroCluster nodes to ensure failover performance parity.",
+        "Add memory/cards or upgrade controller hardware to balance the sites."
+      );
+    } else {
+      addReport(
+        "BP_MCC_SYMMETRY",
+        "MetroCluster DR Site Hardware Symmetry",
+        "Disaster Recovery",
+        "compliant",
+        "Local and remote MetroCluster controller nodes feature symmetrical hardware specs (CPU, memory, slots).",
+        "None required.",
+        ""
+      );
+    }
+  }
+
+  // --- Rule 20: Flash Pool / SSD Cache Sizing ---
+  let flashPoolWarnings = [];
+  const isHybrid = upperModel.includes("FAS");
+  if (isHybrid) {
+    systemState.aggregates.forEach(aggr => {
+      if (aggr.name.startsWith("aggr0")) return;
+      // If hybrid aggregate but SSD portion is small
+      if (aggr.ssdCacheSizeGB && aggr.hddSizeGB) {
+        const ratio = aggr.ssdCacheSizeGB / aggr.hddSizeGB;
+        if (ratio < 0.10) {
+          flashPoolWarnings.push(`Hybrid Aggregate ${aggr.name} has SSD cache ratio of ${(ratio * 100).toFixed(1)}%, which is below the recommended 10%–15% size.`);
+        }
+      }
+    });
+  }
+
+  if (flashPoolWarnings.length > 0) {
+    addReport(
+      "BP_FLASH_POOL_SIZING",
+      "Flash Pool SSD Caching Sizing Ratio",
+      "Capacity",
+      "warning",
+      flashPoolWarnings.join("\n"),
+      "Add additional SSD drives to the hybrid aggregate's SSD cache tier to hit the recommended 10%–15% caching ratio target.",
+      "Execute 'storage aggregate add -aggregate <name> -disktype SSD -diskcount <num>' to scale the SSD cache tier."
+    );
+  } else if (isHybrid) {
+    addReport(
+      "BP_FLASH_POOL_SIZING",
+      "Flash Pool SSD Caching Sizing Ratio",
+      "Capacity",
+      "compliant",
+      "All active hybrid storage aggregates maintain healthy SSD-to-HDD cache sizing ratios (above 10%).",
+      "None required.",
+      ""
+    );
   }
 
   return reports;

@@ -591,14 +591,9 @@ function exportMarkdownPlan() {
   URL.revokeObjectURL(url);
 }
 
-function exportCliScript() {
-  if (!currentState || !modeledState) {
-    alert("No active model state. Please complete the sizing first.");
-    return;
-  }
-
+function generateCliScriptText() {
   const isMetroCluster = currentState.metrocluster && currentState.metrocluster !== "none";
-  const targetOntap = document.getElementById("target-ontap").value;
+  const targetOntap = document.getElementById("target-ontap") ? document.getElementById("target-ontap").value : "9.20.1";
   const curVer = currentState.version.ontap;
   const baseCur = resolveBaseVersionKey(curVer);
   const hops = ONTAP_HOPS[baseCur] ? ONTAP_HOPS[baseCur][targetOntap] : [];
@@ -641,7 +636,7 @@ function exportCliScript() {
     script += `# storage failover giveback -ofnode <node_name>\n\n`;
   }
 
-  if (hops.length > 0) {
+  if (hops && hops.length > 0) {
     script += `# --- Step 5: Execute ONTAP Upgrade hops ---\n`;
     if (isMetroCluster) {
       script += `# metrocluster switchover -controller-replacement true\n`;
@@ -655,11 +650,27 @@ function exportCliScript() {
     script += `\n`;
   }
 
-  const shelfType = document.getElementById("shelf-type").value;
+  const shelfType = document.getElementById("shelf-type") ? document.getElementById("shelf-type").value : "none";
   if (shelfType !== "none") {
     script += `# --- Step 6: Mount & Cable Storage Shelf Expansion ---\n`;
     script += `storage shelf show\n`;
     script += `storage cabling show\n\n`;
+  }
+
+  // Add audited config remediations
+  script += `# --- Step 6.5: Audited Configurations & Best Practice Remediations ---\n`;
+  const auditReports = runAudit(currentState);
+  let remediationCount = 0;
+  auditReports.forEach(r => {
+    if (r.status !== "compliant" && r.remediation) {
+      script += `# Finding: ${r.title}\n`;
+      script += `# ${r.description.split('\n')[0]}\n`;
+      script += `${r.remediation}\n\n`;
+      remediationCount++;
+    }
+  });
+  if (remediationCount === 0) {
+    script += `# All audited rules are fully compliant. No CLI remediation needed.\n\n`;
   }
 
   script += `# --- Step 7: Logical Aggregates & Spares Provisioning ---\n`;
@@ -669,6 +680,16 @@ function exportCliScript() {
   });
   script += `storage disk show -container-type spare\n`;
 
+  return script;
+}
+
+function exportCliScript() {
+  if (!currentState || !modeledState) {
+    alert("No active model state. Please complete the sizing first.");
+    return;
+  }
+
+  const script = generateCliScriptText();
   const blob = new Blob([script], { type: "text/plain;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -992,6 +1013,27 @@ function setupWizardListeners() {
       downloadSvgElement("comp-after-cabling", `${model.replace(/\s+/g, "_")}_after_modeling_cabling.svg`);
     });
   }
+
+  const copyCliBtn = document.getElementById("copy-cli-btn");
+  if (copyCliBtn) {
+    copyCliBtn.addEventListener("click", () => {
+      const code = document.getElementById("cli-script-code").textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        const origText = copyCliBtn.textContent;
+        copyCliBtn.textContent = "Copied!";
+        copyCliBtn.classList.add("btn-primary");
+        copyCliBtn.classList.remove("btn-secondary");
+        setTimeout(() => {
+          copyCliBtn.textContent = origText;
+          copyCliBtn.classList.add("btn-secondary");
+          copyCliBtn.classList.remove("btn-primary");
+        }, 2000);
+      }).catch(err => {
+        console.error("Failed to copy CLI script: ", err);
+        alert("Copy failed. Please copy the script manually from the code block.");
+      });
+    });
+  }
 }
 
 // --- Upload / Demo Selection ---
@@ -1007,6 +1049,12 @@ function setupUploadListeners() {
     const state = parseASUP(DEMO_DATA.aff_a400.files);
     state.expansionCards = [];
     state.metrocluster = "none";
+    loadASUPData(state);
+  });
+
+  document.getElementById("demo-metrocluster-btn").addEventListener("click", () => {
+    const state = parseASUP(DEMO_DATA.metrocluster_ip.files);
+    state.expansionCards = [];
     loadASUPData(state);
   });
 
@@ -1963,6 +2011,32 @@ function renderCurrentAuditDashboard() {
       .filter(l => l.status === "active")
       .map(l => l.name);
     curLicsElem.textContent = activeLics.length > 0 ? activeLics.join(", ") : "None";
+  }
+
+  // Motherboard RAM
+  const curRamElem = document.getElementById("cur-ram");
+  if (curRamElem) {
+    const nodeRAMs = currentState.nodes.map(n => `${n.name}: ${n.memoryGB || 128} GB RAM`);
+    curRamElem.textContent = nodeRAMs.join(", ");
+  }
+
+  // Cluster Switches
+  const curSwitchesElem = document.getElementById("cur-switches");
+  if (curSwitchesElem) {
+    if (currentState.switches && currentState.switches.length > 0) {
+      const swNames = currentState.switches.map(s => `${s.model} (RCF ${s.version})`);
+      const uniqueSw = [...new Set(swNames)];
+      curSwitchesElem.textContent = uniqueSw.join(", ");
+    } else {
+      curSwitchesElem.textContent = "None";
+    }
+  }
+
+  // MetroCluster Type
+  const curMetroclusterElem = document.getElementById("cur-metrocluster");
+  if (curMetroclusterElem) {
+    const mcVal = currentState.metrocluster || "none";
+    curMetroclusterElem.textContent = mcVal !== "none" ? `MetroCluster ${mcVal.toUpperCase()}` : "Standard HA";
   }
 
   // Render SVG Cabling
@@ -6248,4 +6322,9 @@ function generateReport() {
   document.getElementById("print-report-btn").addEventListener("click", () => {
     window.print();
   });
+
+  const cliCodePre = document.getElementById("cli-script-code");
+  if (cliCodePre) {
+    cliCodePre.textContent = generateCliScriptText();
+  }
 }

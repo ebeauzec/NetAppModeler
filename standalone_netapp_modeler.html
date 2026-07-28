@@ -937,7 +937,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.16</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.20</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -1019,6 +1019,10 @@ svg.cabling-graph {
               <button id="demo-affa400-btn" class="btn-secondary">
                 <strong>AFF A400 Cluster Profile</strong>
                 <span class="btn-desc">ONTAP 9.9.1, NS224 NVMe shelf, 86% aggregate capacity limit warning.</span>
+              </button>
+              <button id="demo-metrocluster-btn" class="btn-secondary">
+                <strong>AFF A400 MetroCluster IP</strong>
+                <span class="btn-desc">ONTAP 9.12.1, 4-Node MetroCluster IP, switch RCF & unmirrored aggregates warnings.</span>
               </button>
             </div>
           </div>
@@ -1127,6 +1131,18 @@ svg.cabling-graph {
               <div class="detail-card">
                 <div class="detail-label">Controllers (Nodes)</div>
                 <div id="cur-nodes" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Motherboard RAM</div>
+                <div id="cur-ram" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">Cluster Switches</div>
+                <div id="cur-switches" class="detail-value">-</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-label">MetroCluster Type</div>
+                <div id="cur-metrocluster" class="detail-value">-</div>
               </div>
               <div class="detail-card">
                 <div class="detail-label">Total Raw Capacity</div>
@@ -1711,6 +1727,22 @@ svg.cabling-graph {
         <div id="report-frame" class="report-body">
           <!-- Full Technical Report generated dynamically in UI.js -->
         </div>
+
+        <div id="cli-script-container" class="no-print" style="margin-top: 2rem; border-top: 1px dashed var(--border-color); padding-top: 2rem; text-align: left;">
+          <h3 style="color: #fff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; font-size: 1.15rem;">
+            <svg style="width:20px; height:20px; fill:var(--color-primary);" viewBox="0 0 24 24">
+              <path d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M9.5,8.5L13.5,12.5L9.5,16.5L8,15L11,12L8,9L9.5,8.5M14,15H17V17H14V15Z"/>
+            </svg>
+            ONTAP CLI Remediation Script
+          </h3>
+          <p style="color: var(--color-muted); font-size: 0.82rem; margin-bottom: 1rem; line-height: 1.4;">
+            The following commands can be executed directly in the ONTAP administration CLI (via SSH) to remediate the identified best practice findings and configure new storage aggregates.
+          </p>
+          <div style="position: relative;">
+            <button id="copy-cli-btn" class="btn-secondary" style="position: absolute; top: 10px; right: 10px; padding: 6px 12px; font-size: 0.75rem; border-radius: 4px;">Copy Script</button>
+            <pre id="cli-script-code" style="background: rgba(0,0,0,0.6); padding: 1.25rem; border-radius: var(--radius-md); font-family: monospace; font-size: 0.82rem; color: #a5f3fc; overflow-x: auto; white-space: pre-wrap; border: 1px solid var(--border-color); max-height: 350px; line-height: 1.5; margin: 0;"></pre>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -1777,7 +1809,7 @@ svg.cabling-graph {
     </div>
   </div>
 
-  <!-- Splash Screen Modal Overlay (What's New in v2.16) -->
+  <!-- Splash Screen Modal Overlay (What's New in v2.20) -->
   <div id="splash-modal" class="modal-overlay no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 11000; backdrop-filter: blur(8px);">
     <div class="modal-content" style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(15,23,42,0.95) 100%); border: 1.5px solid var(--color-primary); border-radius: var(--radius-lg); padding: 2.5rem; width: 550px; box-shadow: 0 25px 50px -12px rgba(6,182,212,0.3); position: relative; max-height: 85vh; overflow-y: auto;">
       
@@ -1788,7 +1820,7 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.16</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.20</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
@@ -1799,31 +1831,31 @@ svg.cabling-graph {
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
           <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🔗</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">MetroCluster Cabling Topology Fix</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">MetroCluster Auto-Detection</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              Restructured the dual-site layout with dedicated IN and OUT cable sockets on IOM panels. routed local loops and SyncMirror DR replication links using distinct, collision-free S-curves.
+              Auto-detect and model MetroCluster dual-site configurations (IP or FC) directly from uploaded AutoSupport logs. Visualizes local cabling loops and inter-site replication paths.
             </span>
           </div>
         </div>
 
         <!-- Feature 2 -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
-          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">💻</span>
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">⚙️</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Representative Rear Chassis Layouts</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Advanced Configuration Auditing</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              PCIe slots dynamically rearrange to match physical hardware profiles (Quad Horizontal for A400/FAS8300, Stacked for A250, Vertical for A1K/A90/A70). Includes an onboard Motherboard ports block and dual PSUs.
+              Five new rules to audit switch RCF files, front-end MTU sizing (Jumbo Frames), unmirrored aggregates, node hardware specification asymmetries (RAM/CPU), and Flash Pool SSD caching ratios.
             </span>
           </div>
         </div>
 
         <!-- Feature 3 -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
-          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">💿</span>
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">💻</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">High-Fidelity Storage Shelves</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Automated Modeler & Sizing Solver</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              Renders representative chassis profiles for DS460C (4U 60-Bay with sliding drawers), DS212C (2U 12-Bay LFF horizontal), NS224 (NVMe vertical), and DS224C (SAS vertical).
+              Solves and recommends optimal drive configurations and HBA card slotting based on capacity requirements. Generates execution scripts containing copy-pasteable ONTAP CLI commands to remediate findings.
             </span>
           </div>
         </div>
@@ -1885,6 +1917,9 @@ System Serial Number: 700000111111`,
       "SYSCONFIG-A": `NetApp Release 9.7P12: Thu Nov 12 18:22:45 UTC 2020
 System ID: 536870912 (node-a); System Serial Number: 700000111111 (node-a)
 System ID: 536870913 (node-b); System Serial Number: 700000222222 (node-b)
+
+Memory Size: 131072 MB
+Number of Processors: 16
 
 slot 0: M.2 SATA SSD
 slot 1: Dual-port 10GbE SFP+
@@ -1987,16 +2022,19 @@ System Serial Number: 700000222222 (node-b)
   SnapMirror  expired  [Expired: 2023-10-10]
   FlexClone   active`,
       
-      "NETPORT": `node-a:
-    port e0a  up  10GbE  full-duplex  cluster-interconnect
-    port e0b  up  10GbE  full-duplex  cluster-interconnect
-    port e0c  up  10GbE  full-duplex  data
-    port e0d  up  10GbE  full-duplex  data
-node-b:
-    port e0a  up  10GbE  full-duplex  cluster-interconnect
-    port e0b  up  10GbE  full-duplex  cluster-interconnect
-    port e0c  up  10GbE  full-duplex  data
-    port e0d  up  10GbE  full-duplex  data`
+      "NETPORT": `Node   Port   IPspace   Broadcast Domain   Link   MTU   Admin/Oper
+node-a e0a    Default   Cluster            up     9000  auto/10000
+node-a e0b    Default   Cluster            up     9000  auto/10000
+node-a e0c    Default   Default            up     1500  auto/10000
+node-a e0d    Default   Default            up     1500  auto/10000
+node-b e0a    Default   Cluster            up     9000  auto/10000
+node-b e0b    Default   Cluster            up     9000  auto/10000
+node-b e0c    Default   Default            up     1500  auto/10000
+node-b e0d    Default   Default            up     1500  auto/10000`,
+
+      "SWITCHES": `===== Ethernet Switch Show =====
+Switch Name: CSW-BES-01 Model: BES-53248 Version: 1.2.0.1
+Switch Name: CSW-BES-02 Model: BES-53248 Version: 1.2.0.1`
     }
   },
   
@@ -2010,6 +2048,9 @@ System Serial Number: 800000111111`,
       "SYSCONFIG-A": `NetApp Release 9.9.1P8: Thu Dec 16 22:15:10 UTC 2021
 System ID: 838860800 (node-a); System Serial Number: 800000111111 (node-a)
 System ID: 838860801 (node-b); System Serial Number: 800000222222 (node-b)
+
+Memory Size: 262144 MB
+Number of Processors: 32
 
 slot 0: M.2 NVMe SSD
 slot 1: Quad-port 25GbE SFP28 Adapter
@@ -2075,28 +2116,113 @@ System Serial Number: 800000111111 (node-a)
   FCP         active
   iSCSI       active
   SnapMirror  active
-  FlexClone   active
-System Serial Number: 800000222222 (node-b)
+  FlexClone   active`,
+      
+      "NETPORT": `Node   Port   IPspace   Broadcast Domain   Link   MTU   Admin/Oper
+node-a e0a    Default   Cluster            up     9000  auto/25000
+node-a e0b    Default   Cluster            up     9000  auto/25000
+node-a e0c    Default   Default            up     9000  auto/25000
+node-a e0d    Default   Default            up     9000  auto/25000
+node-b e0a    Default   Cluster            up     9000  auto/25000
+node-b e0b    Default   Cluster            up     9000  auto/25000
+node-b e0c    Default   Default            up     9000  auto/25000
+node-b e0d    Default   Default            up     9000  auto/25000`,
+
+      "SWITCHES": `===== Ethernet Switch Show =====
+Switch Name: CSW-NEXUS-01 Model: Nexus 9336C-FX2 Version: 9.3(8)
+Switch Name: CSW-NEXUS-02 Model: Nexus 9336C-FX2 Version: 9.3(8)`
+    }
+  },
+
+  metrocluster_ip: {
+    name: "AFF A400 MetroCluster IP DR System (ONTAP 9.12.1)",
+    files: {
+      "VERSION": `NetApp Release 9.12.1P4: Thu Feb 16 14:22:45 UTC 2023
+Model Name: AFF A400
+System Serial Number: 900000111111`,
+
+      "SYSCONFIG-A": `NetApp Release 9.12.1P4: Thu Feb 16 14:22:45 UTC 2023
+System ID: 936870912 (node-a1); System Serial Number: 900000111111 (node-a1)
+System ID: 936870913 (node-a2); System Serial Number: 900000111112 (node-a2)
+System ID: 936870914 (node-b1); System Serial Number: 900000222221 (node-b1)
+System ID: 936870915 (node-b2); System Serial Number: 900000222222 (node-b2)
+
+Memory Size: 262144 MB
+Number of Processors: 32
+
+slot 0: M.2 NVMe SSD
+slot 1: Quad-port 25GbE SFP28 Adapter
+slot 2: Dual-port 100GbE NVMe-oF Shelf Adapter
+        cabling: loop 1a cabled to Shelf 1 (NS224) Multipath HA
+slot 3: Dual-port 32Gb FC Adapter
+
+Shelf 1: NS224 (S/N: NS224-000001) v0120 (Latest: v0130)
+    Disk 0: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0001)
+    Disk 1: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0002)
+    Disk 2: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0003)
+    Disk 3: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0004)
+    Disk 4: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0005)
+    Disk 5: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0006)
+    Disk 6: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0007)
+    Disk 7: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0008)
+    Disk 8: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0009)
+    Disk 9: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0010)
+    Disk 10: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0011)
+    Disk 11: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0012)
+    Disk 12: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0013)
+    Disk 13: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0014)
+    Disk 14: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0015)
+    Disk 15: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0016)
+    Disk 16: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0017)
+    Disk 17: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0018)
+    Disk 18: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0019)
+    Disk 19: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0020)
+    Disk 20: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0021)
+    Disk 21: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0022)
+    Disk 22: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0023)
+    Disk 23: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0024)`,`SYSCONFIG-R`: `Aggregate aggr0_a1 (online, raid_dp) (block-checksum)
+    Size: 2200 GB, Usable: 1800 GB, Used: 1500 GB, Free: 300 GB
+    RAID Group rg0 (dual parity, active)
+        Disks: 3 (1.9TB NVMe SSD)
+        Spare Disks: 0
+
+Aggregate aggr_nvme_sync_a1 (online, raid_dp, mirrored) (block-checksum)
+    Size: 20900 GB, Usable: 17100 GB, Used: 14750 GB, Free: 23500 GB
+    RAID Group rg1 (dual parity, active)
+        Disks: 11 (1.9TB NVMe SSD)
+        Spare Disks: 1 of size 1.9TB NVMe SSD (node-a1)
+
+Aggregate aggr_nvme_local_a2 (online, raid_dp) (block-checksum)
+    Size: 20900 GB, Usable: 17100 GB, Used: 11500 GB, Free: 5600 GB
+    RAID Group rg2 (dual parity, active)
+        Disks: 11 (1.9TB NVMe SSD)
+        Spare Disks: 1 of size 1.9TB NVMe SSD (node-a2)
+
+Spare Disks (node-a1):
+    NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD) - 1 spares
+
+Spare Disks (node-a2):
+    NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD) - 1 spares`,`LICENSE`: `Base Licenses:
+System Serial Number: 900000111111 (node-a1)
   Cluster     active
   NFS         active
   CIFS        active
   FCP         active
   iSCSI       active
   SnapMirror  active
-  FlexClone   active`,
-      
-      "NETPORT": `node-a:
-    port e0a  up  25GbE  full-duplex  cluster-interconnect
-    port e0b  up  25GbE  full-duplex  cluster-interconnect
-    port e0c  up  25GbE  full-duplex  data
-    port e0d  up  25GbE  full-duplex  data
-node-b:
-    port e0a  up  25GbE  full-duplex  cluster-interconnect
-    port e0b  up  25GbE  full-duplex  cluster-interconnect
-    port e0c  up  25GbE  full-duplex  data
-    port e0d  up  25GbE  full-duplex  data`
-    }
-  }
+  FlexClone   active
+  MetroCluster active`,`NETPORT`: `Node   Port   IPspace   Broadcast Domain   Link   MTU   Admin/Oper
+node-a1 e0a    Default   Cluster            up     9000  auto/25000
+node-a1 e0b    Default   Cluster            up     9000  auto/25000
+node-a1 e0c    Default   Default            up     9000  auto/25000
+node-a1 e0d    Default   Default            up     9000  auto/25000`,`SWITCHES`: `===== Ethernet Switch Show =====
+Switch Name: CSW-NEXUS-01 Model: Nexus 9336C-FX2 Version: 9.3(8)
+Switch Name: CSW-NEXUS-02 Model: Nexus 9336C-FX2 Version: 9.3(8)`,`METROCLUSTER-SHOW`: `===== METROCLUSTER SHOW =====
+Cluster        Partner Cluster        Configuration State
+-------------- ---------------------- -------------------
+cluster-a      cluster-b              configured
+
+MetroCluster IP Configuration Status: configured`}
 };
 
 // --- END js/demoData.js ---
@@ -2152,7 +2278,9 @@ function parseASUP(files) {
     spares: [],
     licenses: [],
     expansionCards: [],
-    parseWarnings: []
+    parseWarnings: [],
+    metrocluster: "none",
+    switches: []
   };
 
   const lowerText = combinedText.toLowerCase();
@@ -2227,6 +2355,18 @@ function parseASUP(files) {
                       combinedText.match(/Serial Number:\s*([a-zA-Z0-9]{5,})/i);
   if (serialMatch) data.version.serial = serialMatch[1].trim();
 
+  // --- 1.5. Parse MetroCluster ---
+  let metrocluster = "none";
+  if (lowerText.includes("metrocluster show") || lowerText.includes("metrocluster node show") || 
+      lowerText.includes("metrocluster interconnect show") || lowerText.includes("metrocluster configurations")) {
+    if (lowerText.includes("metrocluster ip") || lowerText.includes("mcc-ip") || lowerText.includes("mcc_ip") || lowerText.includes("ip-fabric")) {
+      metrocluster = "ip";
+    } else {
+      metrocluster = "fc"; // default to fc if no ip keyword is found
+    }
+  }
+  data.metrocluster = metrocluster;
+
   // --- 2. Parse Nodes ---
   const nodeRegex = /System ID:\s*(\d+)\s*\(([^)]+)\);\s*System Serial Number:\s*(\d+)/ig;
   let nodeMatch;
@@ -2253,6 +2393,32 @@ function parseASUP(files) {
     data.nodes.push({ id: "536870913", name: "node-b", serial: data.version.serial + "B" });
     nodeNames.push("node-a", "node-b");
   }
+
+  // Parse memory/CPU sizes per node
+  data.nodes.forEach(node => {
+    const nodeHeaderIdx = combinedText.indexOf(node.name);
+    let nodeBlock = combinedText;
+    if (nodeHeaderIdx !== -1) {
+      nodeBlock = combinedText.substring(nodeHeaderIdx, nodeHeaderIdx + 15000);
+    }
+    
+    let memGB = 0;
+    const memMatch = nodeBlock.match(/(?:System Memory|Memory Size|Memory):\s*(\d+)\s*(GB|MB)/i);
+    if (memMatch) {
+      const val = parseInt(memMatch[1]);
+      const unit = memMatch[2].toUpperCase();
+      memGB = unit === 'MB' ? Math.round(val / 1024) : val;
+    }
+    
+    let cpus = 0;
+    const cpuMatch = nodeBlock.match(/(?:Number of Processors|Processors|CPUs):\s*(\d+)/i);
+    if (cpuMatch) {
+      cpus = parseInt(cpuMatch[1]);
+    }
+    
+    node.memoryGB = memGB || 128;
+    node.cpus = cpus || 16;
+  });
 
   // --- 3. Parse Shelves & Cabling ---
   const shelfRegex = /Shelf\s+(\d+):\s+([\w\-]+)\s+\(S\/N:\s*([^)]+)\)\s+(v\d+)(?:\s+\(Latest:\s*(v\d+)\))?/ig;
@@ -2555,16 +2721,55 @@ function parseASUP(files) {
     const status = licMatch[2].trim().toLowerCase();
     const details = licMatch[3] ? `Expired: ${licMatch[3].trim()}` : "";
     
-    const existing = data.licenses.find(l => l.name === name);
-    if (!existing) {
-      data.licenses.push({
-        name,
-        status,
-        details,
-        serial: data.version.serial
-      });
+    // Filter out standard column headers that might trigger false matches
+    if (!["feature", "package", "owner", "expiration", "serial"].includes(name.toLowerCase())) {
+      const existing = data.licenses.find(l => l.name.toUpperCase() === name.toUpperCase());
+      if (!existing) {
+        data.licenses.push({
+          name,
+          status,
+          details,
+          serial: data.version.serial
+        });
+      }
     }
   }
+
+  // Resilient license table parsing (e.g. "CIFS license CIFS License -")
+  const licenseTableLines = combinedText.split(/\r?\n/);
+  licenseTableLines.forEach(line => {
+    const trimmed = line.trim();
+    const match = trimmed.match(/^([a-zA-Z0-9_\-]+)\s+(license|site|demo)\s+([a-zA-Z0-9_\-\s]+?)\s+(-|\d{4}-\d{2}-\d{2})\s*(?:\((Expired|Active)\))?$/i) ||
+                  trimmed.match(/^([a-zA-Z0-9_\-]+)\s+(license|site|demo)\s+([a-zA-Z0-9_\-\s]+?)\s*$/i);
+    if (match) {
+      const name = match[1].trim();
+      let status = "active";
+      let details = "";
+      
+      if (match[4]) {
+        const exp = match[4].trim();
+        if (exp !== "-") {
+          status = "expired";
+          details = `Expired: ${exp}`;
+        }
+      }
+      if (match[5] && match[5].toLowerCase() === 'expired') {
+        status = "expired";
+      }
+      
+      if (!["feature", "package", "owner", "expiration", "serial"].includes(name.toLowerCase())) {
+        const existing = data.licenses.find(l => l.name.toUpperCase() === name.toUpperCase());
+        if (!existing) {
+          data.licenses.push({
+            name,
+            status,
+            details,
+            serial: data.version.serial
+          });
+        }
+      }
+    }
+  });
 
   // Default licensing if none parsed
   if (data.licenses.length === 0) {
@@ -2595,7 +2800,8 @@ function parseASUP(files) {
       status: portMatch[2].toLowerCase(),
       speed: portMatch[3],
       duplex: portMatch[4],
-      type: portMatch[5]
+      type: portMatch[5],
+      mtu: portMatch[1].startsWith("e0a") || portMatch[1].startsWith("e0b") ? 9000 : 1500
     });
   }
 
@@ -2603,11 +2809,62 @@ function parseASUP(files) {
     node.ports = portsList.length > 0 ? 
                  portsList.slice(nodeIdx * 4, (nodeIdx + 1) * 4) : 
                  [
-                   { name: "e0a", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect" },
-                   { name: "e0b", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect" },
-                   { name: "e0c", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data" },
-                   { name: "e0d", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data" }
+                   { name: "e0a", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
+                   { name: "e0b", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
+                   { name: "e0c", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 },
+                   { name: "e0d", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 }
                  ];
+  });
+
+  // Resilient network port show table parsing (mtu and status)
+  const netportLines = combinedText.split(/\r?\n/);
+  netportLines.forEach(line => {
+    const trimmed = line.trim();
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 6) {
+      const firstPart = parts[0].toLowerCase();
+      const secondPart = parts[1].toLowerCase();
+      
+      // Check if line represents a port (e.g. node-a e0a ...) or if we can guess from port names
+      const isPortName = /^[a-e0-9]+$/.test(secondPart) && secondPart.length >= 3;
+      if (isPortName) {
+        const link = parts[parts.length - 3]?.toLowerCase() || parts[4]?.toLowerCase();
+        const mtuVal = parseInt(parts[parts.length - 2]) || parseInt(parts[5]);
+        
+        if ((link === 'up' || link === 'down') && !isNaN(mtuVal) && mtuVal >= 1500 && mtuVal <= 9000) {
+          // find matching node
+          const matchingNode = data.nodes.find(n => n.name.toLowerCase() === firstPart || firstPart.includes(n.name.toLowerCase()));
+          if (matchingNode) {
+            if (!matchingNode.ports) matchingNode.ports = [];
+            let existingPort = matchingNode.ports.find(p => p.name === secondPart);
+            if (existingPort) {
+              existingPort.status = link;
+              existingPort.mtu = mtuVal;
+            } else {
+              matchingNode.ports.push({
+                name: secondPart,
+                status: link,
+                speed: parts[parts.length - 1] || "10GbE",
+                duplex: "full-duplex",
+                type: secondPart.startsWith("e0a") || secondPart.startsWith("e0b") ? "cluster-interconnect" : "data",
+                mtu: mtuVal
+              });
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Ensure all ports have an MTU
+  data.nodes.forEach(node => {
+    if (node.ports) {
+      node.ports.forEach(p => {
+        if (!p.mtu) {
+          p.mtu = (p.type === "cluster-interconnect") ? 9000 : 1500;
+        }
+      });
+    }
   });
 
   // --- 8. Parse Cluster Switches ---
@@ -2840,7 +3097,8 @@ const EXP_CARDS_CATALOG = {
   fc_hba_32g_2port: { name: "Dual-port 32Gb Fibre Channel HBA", type: "san", ports: ["0i", "0j"], speed: "32Gb FC", minOntap: "9.5", power: 25 },
   fc_hba_64g_2port: { name: "Dual-port 64Gb Fibre Channel HBA", type: "san", ports: ["0i", "0j"], speed: "64Gb FC", minOntap: "9.16.1", power: 28 },
   sas_hba_12g_4port: { name: "Quad-port 12G SAS Adapter", type: "storage", ports: ["0c", "0d", "0e", "0f"], speed: "12Gb SAS", minOntap: "9.1", power: 20 },
-  roce_hba_100g_2port: { name: "Dual-port 100GbE NVMe-oF RoCE Adapter", type: "storage", ports: ["e0g", "e0h"], speed: "100GbE RoCE", minOntap: "9.8", power: 38 }
+  roce_hba_100g_2port: { name: "Dual-port 100GbE NVMe-oF RoCE Adapter", type: "storage", ports: ["e0g", "e0h"], speed: "100GbE RoCE", minOntap: "9.8", power: 38 },
+  nvme_tcp_100g_2port: { name: "Dual-port 100GbE NVMe-over-TCP Adapter", type: "nic", ports: ["e2a", "e2b"], speed: "100GbE", minOntap: "9.10.1", power: 35 }
 };
 
 const PLATFORM_SLOT_DETAILS = {
@@ -3861,6 +4119,329 @@ const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
   },
+  "ASA C800": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
+    shelfErrors: {
+      "ds224c": "ASA C800 is NVMe-only; SAS shelves are unsupported.",
+      "ds212c": "HDD shelves not supported.",
+      "ds460c": "HDD shelves not supported.",
+      "ds2246": "Legacy SAS not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v18.4",
+    description: "Capacity-optimized SAN All-Flash Array (QLC SSD).",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 4,
+    ram: 256,
+    cpus: 32
+  },
+  "ASA C400": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224", "ds224c"],
+    unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf is highly recommended." },
+    shelfErrors: {
+      "ds212c": "SATA HDD shelves not supported.",
+      "ds460c": "SATA HDD shelves not supported.",
+      "ds2246": "Legacy SAS-2 is not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v15.5",
+    description: "Capacity-optimized mid-range SAN All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_10g_2port", "nic_25g_4port", "nic_100g_2port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
+    maxPcieSlots: 4,
+    ram: 256,
+    cpus: 32
+  },
+  "ASA C250": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf is supported natively." },
+    shelfErrors: {
+      "ds224c": "ASA C250 is NVMe-only and does not support SAS SSD/HDD shelves.",
+      "ds212c": "HDD shelves not supported.",
+      "ds460c": "HDD shelves not supported.",
+      "ds2246": "Legacy SAS not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v16.1",
+    description: "Capacity-optimized entry SAN All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 2,
+    ram: 128,
+    cpus: 16
+  },
+  "ASA A800": {
+    maxOntap: "9.13.1",
+    supportedShelves: ["ns224", "ds224c"],
+    unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
+    shelfWarnings: {
+      "ns224": "NS224 is supported. Enforce target ONTAP version >= 9.8.",
+      "ds224c": "DS224C SAS SSD shelf is supported, but NVMe shelves are preferred."
+    },
+    shelfErrors: {
+      "ds212c": "LFF HDD shelves are not supported on All-SAN arrays.",
+      "ds460c": "High-density mechanical storage is not supported.",
+      "ds2246": "DS2246 legacy SAS-2 shelf is not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v14.6",
+    description: "High-performance SAN-Optimized All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 4,
+    ram: 256,
+    cpus: 32
+  },
+  "ASA A400": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224", "ds224c"],
+    unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
+    shelfWarnings: {
+      "ns224": "NS224 NVMe shelf is highly recommended for optimal performance.",
+      "ds224c": "DS224C SAS shelf is supported for SAS SSD drives."
+    },
+    shelfErrors: {
+      "ds212c": "ASA A400 does not support large-form SATA drives.",
+      "ds460c": "ASA A400 does not support SATA HDD expansion stacks.",
+      "ds2246": "Legacy 6G SAS is not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v15.5",
+    description: "High-performance mid-range SAN-Optimized All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_10g_2port", "nic_25g_4port", "nic_100g_2port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
+    maxPcieSlots: 4,
+    ram: 256,
+    cpus: 32
+  },
+  "ASA A900": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: {
+      "ns224": "NS224 NVMe shelf is natively supported."
+    },
+    shelfErrors: {
+      "ds224c": "ASA A900 is an all-NVMe system and does not support SAS SSD/HDD shelves.",
+      "ds212c": "HDD shelves are not supported.",
+      "ds460c": "HDD shelves are not supported.",
+      "ds2246": "Legacy 6G SAS is not supported."
+    },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v18.4",
+    description: "Enterprise SAN-Optimized All-Flash Array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e0g", "e0h"]
+    },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 10,
+    ram: 1024,
+    cpus: 128
+  },
+  "FAS8080": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: {
+      "ds2246": "Legacy 6G SAS shelf DS2246 is supported on historical FAS8080 controllers."
+    },
+    shelfErrors: {
+      "ns224": "FAS8080 does not support high-speed NVMe storage shelves."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.6",
+    description: "Legacy high-end FAS controller platform.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 8,
+    ram: 128,
+    cpus: 16
+  },
+  "FAS8060": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: {
+      "ds2246": "DS2246 is supported."
+    },
+    shelfErrors: {
+      "ns224": "FAS8060 does not support NVMe shelves."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.6",
+    description: "Legacy mid-to-high FAS controller platform.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 4,
+    ram: 64,
+    cpus: 12
+  },
+  "FAS8040": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: { "ds2246": "DS2246 is supported." },
+    shelfErrors: { "ns224": "FAS8040 does not support NVMe shelves." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.6",
+    description: "Legacy mid-range FAS controller platform.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 4,
+    ram: 64,
+    cpus: 12
+  },
+  "FAS8020": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: { "ds2246": "DS2246 is supported." },
+    shelfErrors: { "ns224": "FAS8020 does not support NVMe shelves." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.6",
+    description: "Legacy entry-mid FAS controller platform.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 2,
+    ram: 48,
+    cpus: 8
+  },
+  "FAS2554": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: { "ds2246": "DS2246 is supported." },
+    shelfErrors: { "ns224": "NVMe shelves are unsupported." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.5",
+    description: "Legacy entry hybrid LFF storage array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 1,
+    ram: 36,
+    cpus: 8
+  },
+  "FAS2552": {
+    maxOntap: "9.8",
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: { "ds2246": "DS2246 is supported." },
+    shelfErrors: { "ns224": "NVMe shelves are unsupported." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v9.5",
+    description: "Legacy entry hybrid SFF storage array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 1,
+    ram: 36,
+    cpus: 8
+  },
+  "ONTAP Select": {
+    maxOntap: "9.20.1",
+    supportedShelves: ["ns224", "ds224c"],
+    unsupportedShelves: ["ds2246"],
+    shelfWarnings: { "*": "Virtual disk storage cabled under hypervisor host limits." },
+    shelfErrors: {},
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "iSCSI", "SnapMirror", "FlexClone"],
+    maxFirmware: "v1.0",
+    description: "Software-defined virtual storage appliance.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d", "e0e", "e0f"],
+      san: [],
+      storage: []
+    },
+    supportedCards: ["nic_10g_2port", "nic_25g_4port"],
+    maxPcieSlots: 0,
+    ram: 128,
+    cpus: 16
+  },
+  "Cloud Volumes ONTAP": {
+    maxOntap: "9.20.1",
+    supportedShelves: [],
+    unsupportedShelves: ["ns224", "ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: {},
+    shelfErrors: { "*": "Physical hardware shelves are not cabled in cloud infrastructure." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
+    maxFirmware: "v1.0",
+    description: "ONTAP storage software running inside AWS, Azure, or GCP cloud VM.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: [],
+      storage: []
+    },
+    supportedCards: [],
+    maxPcieSlots: 0,
+    ram: 128,
+    cpus: 16
+  },
   "Default": {
     maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ns224"],
@@ -3897,6 +4478,12 @@ function getPlatformProfile(modelStr) {
   if (upper.includes("ASA A30")) return NETAPP_PLATFORMS["ASA A30"];
   if (upper.includes("ASA A20")) return NETAPP_PLATFORMS["ASA A20"];
   if (upper.includes("ASA C30")) return NETAPP_PLATFORMS["ASA C30"];
+  if (upper.includes("ASA C800")) return NETAPP_PLATFORMS["ASA C800"];
+  if (upper.includes("ASA C400")) return NETAPP_PLATFORMS["ASA C400"];
+  if (upper.includes("ASA C250")) return NETAPP_PLATFORMS["ASA C250"];
+  if (upper.includes("ASA A800")) return NETAPP_PLATFORMS["ASA A800"];
+  if (upper.includes("ASA A400")) return NETAPP_PLATFORMS["ASA A400"];
+  if (upper.includes("ASA A900")) return NETAPP_PLATFORMS["ASA A900"];
   
   // Match key patterns
   if (upper.includes("A1K")) return NETAPP_PLATFORMS["AFF A1K"];
@@ -3934,12 +4521,20 @@ function getPlatformProfile(modelStr) {
   if (upper.includes("2650")) return NETAPP_PLATFORMS["FAS2650"];
   if (upper.includes("2620")) return NETAPP_PLATFORMS["FAS2620"];
   
-  // Match new FAS models (after legacy numeric FAS models to avoid prefix collision with FAS9000 etc.)
+  if (upper.includes("8080")) return NETAPP_PLATFORMS["FAS8080"];
+  if (upper.includes("8060")) return NETAPP_PLATFORMS["FAS8060"];
+  if (upper.includes("8040")) return NETAPP_PLATFORMS["FAS8040"];
+  if (upper.includes("8020")) return NETAPP_PLATFORMS["FAS8020"];
+  if (upper.includes("2554")) return NETAPP_PLATFORMS["FAS2554"];
+  if (upper.includes("2552")) return NETAPP_PLATFORMS["FAS2552"];
+  if (upper.includes("2520")) return NETAPP_PLATFORMS["FAS2520"];
+  
   if (upper.includes("FAS90")) return NETAPP_PLATFORMS["FAS90"];
   if (upper.includes("FAS70")) return NETAPP_PLATFORMS["FAS70"];
   if (upper.includes("FAS50")) return NETAPP_PLATFORMS["FAS50"];
   
-  if (upper.includes("2520")) return NETAPP_PLATFORMS["FAS2520"];
+  if (upper.includes("SELECT") || upper.includes("ONTAP SELECT")) return NETAPP_PLATFORMS["ONTAP Select"];
+  if (upper.includes("CLOUD VOLUMES ONTAP") || upper.includes("CVO")) return NETAPP_PLATFORMS["Cloud Volumes ONTAP"];
   
   return NETAPP_PLATFORMS["Default"];
 }
@@ -4101,6 +4696,13 @@ function compareVersions(v1, v2) {
 
 
 const ONTAP_LIFECYCLE = {
+  "9.0": { status: "critical", label: "End of Support", desc: "ONTAP 9.0 entered End of Support in 2018. Immediate upgrade is critical." },
+  "9.1": { status: "critical", label: "End of Support", desc: "ONTAP 9.1 entered End of Support in 2019. Immediate upgrade is critical." },
+  "9.2": { status: "critical", label: "End of Support", desc: "ONTAP 9.2 entered End of Support in 2020. Immediate upgrade is critical." },
+  "9.3": { status: "critical", label: "End of Support", desc: "ONTAP 9.3 entered End of Support in 2021. Immediate upgrade is critical." },
+  "9.4": { status: "critical", label: "End of Support", desc: "ONTAP 9.4 entered End of Support in 2021. Immediate upgrade is critical." },
+  "9.5": { status: "critical", label: "End of Support", desc: "ONTAP 9.5 entered End of Support in 2022. Immediate upgrade is critical." },
+  "9.6": { status: "critical", label: "End of Support", desc: "ONTAP 9.6 entered End of Support in 2022. Immediate upgrade is critical." },
   "9.7": { status: "critical", label: "End of Support", desc: "ONTAP 9.7 entered End of Support in October 2022. No security patches or bug fixes are provided. Immediate upgrade is critical." },
   "9.8": { status: "warning", label: "Limited Support", desc: "ONTAP 9.8 is in Limited Support. Only critical security fixes are provided." },
   "9.9.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.9.1 is in Limited Support. Only critical security fixes are provided." },
@@ -4114,7 +4716,9 @@ const ONTAP_LIFECYCLE = {
   "9.17.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.17.1 is in General Support (GA)." },
   "9.18.1": { status: "compliant", label: "Active Support (Latest Stable)", desc: "ONTAP 9.18.1 is in General Support (GA) and is a modern recommended baseline." },
   "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, delivering NVMe-oF and AI optimizations." },
-  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault, cyber resiliency, and advanced file security controls." }
+  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault, cyber resiliency, and advanced file security controls." },
+  "9.21.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.21.1 is in General Support (GA) with advanced block caching." },
+  "10.0": { status: "compliant", label: "Active Support (Next-Gen)", desc: "ONTAP 10.0 represents the next major operating system release with enhanced cloud-scale unified security features." }
 };
 
 function getPlatformMaxDrives(model) {
@@ -4773,6 +5377,191 @@ function runAudit(systemState) {
     }
   }
 
+  // --- Rule 16: Cluster Switch RCF File Version Verification ---
+  let switchWarnings = [];
+  if (systemState.switches && systemState.switches.length > 0) {
+    systemState.switches.forEach(sw => {
+      if (sw.model === "BES-53248" && compareVersions(sw.version, "1.3.0.1") < 0) {
+        switchWarnings.push(`Switch ${sw.name} (${sw.model}) runs legacy RCF version ${sw.version}. RCF v1.3.0.1 or higher is required.`);
+      } else if (sw.model.includes("9336C") && compareVersions(sw.version, "2.2") < 0) {
+        switchWarnings.push(`Switch ${sw.name} (${sw.model}) runs legacy RCF version ${sw.version}. RCF v2.2 or higher is required for ONTAP 9.18+ compatibility.`);
+      }
+    });
+  }
+
+  if (switchWarnings.length > 0) {
+    addReport(
+      "BP_SWITCH_RCF",
+      "Cluster Interconnect Switch RCF Version Currency",
+      "Network",
+      "warning",
+      switchWarnings.join("\n"),
+      "Upgrade the ethernet switch Reference Configuration File (RCF) to the latest NetApp qualified version (v1.3+ for Broadcom, v2.2+ for Cisco Nexus).",
+      "Download NetApp switch RCF configuration files and apply to the switches via CLI commands."
+    );
+  } else if (systemState.switches && systemState.switches.length > 0) {
+    addReport(
+      "BP_SWITCH_RCF",
+      "Cluster Interconnect Switch RCF Version Currency",
+      "Network",
+      "compliant",
+      "All cluster interconnect switches are running approved, up-to-date Reference Configuration Files (RCF).",
+      "None required.",
+      ""
+    );
+  }
+
+  // --- Rule 17: Network Port MTU Sizing Check ---
+  const blocksActive = systemState.licenses.some(l => (l.name === "iSCSI" || l.name === "FCP" || l.name === "NVMe") && l.status === "active");
+  let mtuWarnings = [];
+  systemState.nodes.forEach(node => {
+    if (node.ports) {
+      node.ports.forEach(p => {
+        if (p.type === "data" && p.mtu === 1500 && blocksActive) {
+          mtuWarnings.push(`${node.name} port ${p.name} is configured at MTU 1500 while high-speed block storage protocols are licensed.`);
+        }
+      });
+    }
+  });
+
+  if (mtuWarnings.length > 0) {
+    addReport(
+      "BP_PORT_MTU_SIZING",
+      "Network Port MTU Sizing for Block Storage Protocols",
+      "Network",
+      "warning",
+      mtuWarnings.join("\n") + "\nMTU 1500 can restrict throughput by up to 30% and cause CPU overhead under high block workload levels.",
+      "Modify network port MTU configurations to 9000 (Jumbo Frames) on all end-to-end data paths supporting iSCSI or NVMe-oF traffic.",
+      "Execute 'network port modify -node <node> -port <port> -mtu 9000' in ONTAP shell."
+    );
+  } else {
+    addReport(
+      "BP_PORT_MTU_SIZING",
+      "Network Port MTU Sizing for Block Storage Protocols",
+      "Network",
+      "compliant",
+      "All active front-end target ports cabled for block protocols are configured with optimal Jumbo Frame MTU sizing.",
+      "None required.",
+      ""
+    );
+  }
+
+  // --- Rule 18: MetroCluster Mirroring Check ---
+  if (systemState.metrocluster && systemState.metrocluster !== "none") {
+    let unmirroredAggregates = [];
+    systemState.aggregates.forEach(aggr => {
+      if (aggr.name.startsWith("aggr0")) return;
+      // If name does not end with _mirror or sync, or if we explicitly flag it
+      if (aggr.isMirrored === false || aggr.name.includes("local") || !aggr.name.includes("sync")) {
+        unmirroredAggregates.push(aggr.name);
+      }
+    });
+
+    if (unmirroredAggregates.length > 0) {
+      addReport(
+        "BP_MCC_MIRRORING",
+        "MetroCluster Remote Sync Mirroring Compliance",
+        "Disaster Recovery",
+        "critical",
+        `Aggregates [${unmirroredAggregates.join(", ")}] are un-mirrored. In a MetroCluster DR environment, all data aggregates must be mirrored across sites (Pool0 and Pool1) to enable switchover.`,
+        "Mirror the aggregates by assigning remote partner disks and setting up SyncMirror.",
+        "Execute 'storage aggregate mirror -aggregate <name>' to mirror the aggregates."
+      );
+    } else {
+      addReport(
+        "BP_MCC_MIRRORING",
+        "MetroCluster Remote Sync Mirroring Compliance",
+        "Disaster Recovery",
+        "compliant",
+        "All data aggregates are mirrored symmetrically (SyncMirror) across DR sites. Switchover operations are fully supported.",
+        "None required.",
+        ""
+      );
+    }
+  }
+
+  // --- Rule 19: MetroCluster Hardware Symmetry ---
+  if (systemState.metrocluster && systemState.metrocluster !== "none") {
+    let symmetryWarnings = [];
+    const nodeA = systemState.nodes.find(n => n.name.includes("-a") || n.name.includes("node-a") || n.name.includes("node-1")) || systemState.nodes[0];
+    const nodeB = systemState.nodes.find(n => n.name.includes("-b") || n.name.includes("node-b") || n.name.includes("node-2")) || systemState.nodes[1];
+    
+    if (nodeA && nodeB) {
+      if (nodeA.memoryGB !== nodeB.memoryGB) {
+        symmetryWarnings.push(`Memory asymmetry: ${nodeA.name} has ${nodeA.memoryGB} GB, but partner ${nodeB.name} has ${nodeB.memoryGB} GB.`);
+      }
+      if (nodeA.cpus !== nodeB.cpus) {
+        symmetryWarnings.push(`Processor asymmetry: ${nodeA.name} has ${nodeA.cpus} cores, but partner ${nodeB.name} has ${nodeB.cpus} cores.`);
+      }
+      // Compare cards slots count
+      const cardsA = systemState.expansionCards ? systemState.expansionCards.filter(c => c.node === nodeA.name) : [];
+      const cardsB = systemState.expansionCards ? systemState.expansionCards.filter(c => c.node === nodeB.name) : [];
+      if (cardsA.length !== cardsB.length) {
+        symmetryWarnings.push(`PCIe expansion card asymmetry: Site-A has ${cardsA.length} cards, while Site-B has ${cardsB.length} cards.`);
+      }
+    }
+    
+    if (symmetryWarnings.length > 0) {
+      addReport(
+        "BP_MCC_SYMMETRY",
+        "MetroCluster DR Site Hardware Symmetry",
+        "Disaster Recovery",
+        "warning",
+        symmetryWarnings.join("\n"),
+        "Align CPU, RAM, and PCIe HBA adapter slots symmetrically on both MetroCluster nodes to ensure failover performance parity.",
+        "Add memory/cards or upgrade controller hardware to balance the sites."
+      );
+    } else {
+      addReport(
+        "BP_MCC_SYMMETRY",
+        "MetroCluster DR Site Hardware Symmetry",
+        "Disaster Recovery",
+        "compliant",
+        "Local and remote MetroCluster controller nodes feature symmetrical hardware specs (CPU, memory, slots).",
+        "None required.",
+        ""
+      );
+    }
+  }
+
+  // --- Rule 20: Flash Pool / SSD Cache Sizing ---
+  let flashPoolWarnings = [];
+  const isHybrid = upperModel.includes("FAS");
+  if (isHybrid) {
+    systemState.aggregates.forEach(aggr => {
+      if (aggr.name.startsWith("aggr0")) return;
+      // If hybrid aggregate but SSD portion is small
+      if (aggr.ssdCacheSizeGB && aggr.hddSizeGB) {
+        const ratio = aggr.ssdCacheSizeGB / aggr.hddSizeGB;
+        if (ratio < 0.10) {
+          flashPoolWarnings.push(`Hybrid Aggregate ${aggr.name} has SSD cache ratio of ${(ratio * 100).toFixed(1)}%, which is below the recommended 10%–15% size.`);
+        }
+      }
+    });
+  }
+
+  if (flashPoolWarnings.length > 0) {
+    addReport(
+      "BP_FLASH_POOL_SIZING",
+      "Flash Pool SSD Caching Sizing Ratio",
+      "Capacity",
+      "warning",
+      flashPoolWarnings.join("\n"),
+      "Add additional SSD drives to the hybrid aggregate's SSD cache tier to hit the recommended 10%–15% caching ratio target.",
+      "Execute 'storage aggregate add -aggregate <name> -disktype SSD -diskcount <num>' to scale the SSD cache tier."
+    );
+  } else if (isHybrid) {
+    addReport(
+      "BP_FLASH_POOL_SIZING",
+      "Flash Pool SSD Caching Sizing Ratio",
+      "Capacity",
+      "compliant",
+      "All active hybrid storage aggregates maintain healthy SSD-to-HDD cache sizing ratios (above 10%).",
+      "None required.",
+      ""
+    );
+  }
+
   return reports;
 }
 
@@ -5392,14 +6181,9 @@ function exportMarkdownPlan() {
   URL.revokeObjectURL(url);
 }
 
-function exportCliScript() {
-  if (!currentState || !modeledState) {
-    alert("No active model state. Please complete the sizing first.");
-    return;
-  }
-
+function generateCliScriptText() {
   const isMetroCluster = currentState.metrocluster && currentState.metrocluster !== "none";
-  const targetOntap = document.getElementById("target-ontap").value;
+  const targetOntap = document.getElementById("target-ontap") ? document.getElementById("target-ontap").value : "9.20.1";
   const curVer = currentState.version.ontap;
   const baseCur = resolveBaseVersionKey(curVer);
   const hops = ONTAP_HOPS[baseCur] ? ONTAP_HOPS[baseCur][targetOntap] : [];
@@ -5442,7 +6226,7 @@ function exportCliScript() {
     script += `# storage failover giveback -ofnode <node_name>\n\n`;
   }
 
-  if (hops.length > 0) {
+  if (hops && hops.length > 0) {
     script += `# --- Step 5: Execute ONTAP Upgrade hops ---\n`;
     if (isMetroCluster) {
       script += `# metrocluster switchover -controller-replacement true\n`;
@@ -5456,11 +6240,27 @@ function exportCliScript() {
     script += `\n`;
   }
 
-  const shelfType = document.getElementById("shelf-type").value;
+  const shelfType = document.getElementById("shelf-type") ? document.getElementById("shelf-type").value : "none";
   if (shelfType !== "none") {
     script += `# --- Step 6: Mount & Cable Storage Shelf Expansion ---\n`;
     script += `storage shelf show\n`;
     script += `storage cabling show\n\n`;
+  }
+
+  // Add audited config remediations
+  script += `# --- Step 6.5: Audited Configurations & Best Practice Remediations ---\n`;
+  const auditReports = runAudit(currentState);
+  let remediationCount = 0;
+  auditReports.forEach(r => {
+    if (r.status !== "compliant" && r.remediation) {
+      script += `# Finding: ${r.title}\n`;
+      script += `# ${r.description.split('\n')[0]}\n`;
+      script += `${r.remediation}\n\n`;
+      remediationCount++;
+    }
+  });
+  if (remediationCount === 0) {
+    script += `# All audited rules are fully compliant. No CLI remediation needed.\n\n`;
   }
 
   script += `# --- Step 7: Logical Aggregates & Spares Provisioning ---\n`;
@@ -5470,6 +6270,16 @@ function exportCliScript() {
   });
   script += `storage disk show -container-type spare\n`;
 
+  return script;
+}
+
+function exportCliScript() {
+  if (!currentState || !modeledState) {
+    alert("No active model state. Please complete the sizing first.");
+    return;
+  }
+
+  const script = generateCliScriptText();
   const blob = new Blob([script], { type: "text/plain;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -5793,6 +6603,27 @@ function setupWizardListeners() {
       downloadSvgElement("comp-after-cabling", `${model.replace(/\s+/g, "_")}_after_modeling_cabling.svg`);
     });
   }
+
+  const copyCliBtn = document.getElementById("copy-cli-btn");
+  if (copyCliBtn) {
+    copyCliBtn.addEventListener("click", () => {
+      const code = document.getElementById("cli-script-code").textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        const origText = copyCliBtn.textContent;
+        copyCliBtn.textContent = "Copied!";
+        copyCliBtn.classList.add("btn-primary");
+        copyCliBtn.classList.remove("btn-secondary");
+        setTimeout(() => {
+          copyCliBtn.textContent = origText;
+          copyCliBtn.classList.add("btn-secondary");
+          copyCliBtn.classList.remove("btn-primary");
+        }, 2000);
+      }).catch(err => {
+        console.error("Failed to copy CLI script: ", err);
+        alert("Copy failed. Please copy the script manually from the code block.");
+      });
+    });
+  }
 }
 
 // --- Upload / Demo Selection ---
@@ -5808,6 +6639,12 @@ function setupUploadListeners() {
     const state = parseASUP(DEMO_DATA.aff_a400.files);
     state.expansionCards = [];
     state.metrocluster = "none";
+    loadASUPData(state);
+  });
+
+  document.getElementById("demo-metrocluster-btn").addEventListener("click", () => {
+    const state = parseASUP(DEMO_DATA.metrocluster_ip.files);
+    state.expansionCards = [];
     loadASUPData(state);
   });
 
@@ -6764,6 +7601,32 @@ function renderCurrentAuditDashboard() {
       .filter(l => l.status === "active")
       .map(l => l.name);
     curLicsElem.textContent = activeLics.length > 0 ? activeLics.join(", ") : "None";
+  }
+
+  // Motherboard RAM
+  const curRamElem = document.getElementById("cur-ram");
+  if (curRamElem) {
+    const nodeRAMs = currentState.nodes.map(n => `${n.name}: ${n.memoryGB || 128} GB RAM`);
+    curRamElem.textContent = nodeRAMs.join(", ");
+  }
+
+  // Cluster Switches
+  const curSwitchesElem = document.getElementById("cur-switches");
+  if (curSwitchesElem) {
+    if (currentState.switches && currentState.switches.length > 0) {
+      const swNames = currentState.switches.map(s => `${s.model} (RCF ${s.version})`);
+      const uniqueSw = [...new Set(swNames)];
+      curSwitchesElem.textContent = uniqueSw.join(", ");
+    } else {
+      curSwitchesElem.textContent = "None";
+    }
+  }
+
+  // MetroCluster Type
+  const curMetroclusterElem = document.getElementById("cur-metrocluster");
+  if (curMetroclusterElem) {
+    const mcVal = currentState.metrocluster || "none";
+    curMetroclusterElem.textContent = mcVal !== "none" ? `MetroCluster ${mcVal.toUpperCase()}` : "Standard HA";
   }
 
   // Render SVG Cabling
@@ -11049,6 +11912,11 @@ function generateReport() {
   document.getElementById("print-report-btn").addEventListener("click", () => {
     window.print();
   });
+
+  const cliCodePre = document.getElementById("cli-script-code");
+  if (cliCodePre) {
+    cliCodePre.textContent = generateCliScriptText();
+  }
 }
 // --- END js/ui.js ---
 
