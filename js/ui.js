@@ -3643,11 +3643,27 @@ function initStep3Inputs() {
     { name: "MetroCluster", label: "MetroCluster Disaster Recovery License" }
   ];
 
+  // Derive supportedLicenses from profile — new profiles use defaultProtocols instead
+  const PROTOCOL_TO_LICENSE = {
+    "NFS": "NFS", "CIFS": "CIFS", "FC": "FCP", "FCP": "FCP",
+    "iSCSI": "iSCSI", "NVMe/FC": "NVMe", "NVMe/TCP": "NVMe"
+  };
+  const supportedLicenseSet = profile && profile.supportedLicenses
+    ? new Set(profile.supportedLicenses)
+    : new Set([
+        "Cluster",
+        ...(profile && profile.defaultProtocols
+          ? profile.defaultProtocols.map(p => PROTOCOL_TO_LICENSE[p] || p).filter(Boolean)
+          : ["NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"]),
+        "SnapMirror", "FlexClone", "FabricPool"
+      ]);
+
   licSuite.forEach(lic => {
     const status = currentLicenses[lic.name] || "missing";
     const isActive = status === "active";
     const isExpired = status === "expired";
-    const isSupportedLic = profile.supportedLicenses.includes(lic.name);
+    const isSupportedLic = supportedLicenseSet.has(lic.name);
+
     
     let pillText = "Inactive";
     let pillClass = "warning";
