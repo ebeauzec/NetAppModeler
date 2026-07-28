@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.22</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.23</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -3625,7 +3625,7 @@ function getPlatformSlots(model) {
 const NETAPP_PLATFORMS = {
   // --- AFF A-Series (NVMe High Performance All Flash) ---
   "AFF A1K": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -3650,7 +3650,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 11
   },
   "AFF A90": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 natively cabled to on-board RoCE ports." },
@@ -3673,7 +3673,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF A70": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -3696,7 +3696,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF A900": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -3721,7 +3721,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 10
   },
   "AFF A800": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -3746,7 +3746,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF A50": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -3769,7 +3769,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A400": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -3794,7 +3794,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF A30": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -3817,7 +3817,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A20": {
-    maxOntap: "9.15.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -3840,7 +3840,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A300": {
-    maxOntap: "9.15.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ns224"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -3865,7 +3865,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A250": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -3915,7 +3915,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A150": {
-    maxOntap: "9.15.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c"],
     unsupportedShelves: ["ns224", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SAS SSD shelf is supported." },
@@ -3940,7 +3940,7 @@ const NETAPP_PLATFORMS = {
 
   // --- AFF C-Series (Capacity All Flash) ---
   "AFF C80": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -3963,7 +3963,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF C800": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf fully supported." },
@@ -3986,7 +3986,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF C400": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is highly recommended." },
@@ -4008,7 +4008,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF C250": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is supported natively." },
@@ -4031,7 +4031,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF C30": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4054,7 +4054,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF C60": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4077,7 +4077,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF C190": {
-    maxOntap: "9.13.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c"],
     unsupportedShelves: ["ns224", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SAS SSD shelf fully supported." },
@@ -4102,7 +4102,7 @@ const NETAPP_PLATFORMS = {
 
   // --- FAS Series (Hybrid / Capacity HDD) ---
   "FAS9500": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4125,7 +4125,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 10
   },
   "FAS9000": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4148,7 +4148,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "FAS8700": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4170,7 +4170,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "FAS8300": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4195,7 +4195,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "FAS8200": {
-    maxOntap: "9.13.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds460c": "DS460C high-density SAS shelf is fully supported." },
@@ -4216,7 +4216,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2820": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SFF shelf fully supported." },
@@ -4237,7 +4237,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2720": {
-    maxOntap: "9.14.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds212c": "LFF HDD expansion supported." },
@@ -4258,7 +4258,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2750": {
-    maxOntap: "9.15.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SFF expansion supported." },
@@ -4279,7 +4279,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2650": {
-    maxOntap: "9.9.1",
+    maxOntap: "9.11.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: {},
@@ -4300,7 +4300,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2620": {
-    maxOntap: "9.9.1",
+    maxOntap: "9.11.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: {},
@@ -4345,7 +4345,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 1
   },
   "FAS90": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4368,7 +4368,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "FAS70": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4391,7 +4391,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "FAS50": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     unsupportedShelves: ["ns224"],
     shelfWarnings: {
@@ -4413,7 +4413,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "ASA A1K": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -4438,7 +4438,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 11
   },
   "ASA A90": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 natively cabled to on-board RoCE ports." },
@@ -4461,7 +4461,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "ASA A70": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4484,7 +4484,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "ASA A50": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4507,7 +4507,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "ASA A30": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4530,7 +4530,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "ASA A20": {
-    maxOntap: "9.15.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4553,7 +4553,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "ASA C30": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 QLC-SSD NVMe shelf supported." },
@@ -4576,7 +4576,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "ASA C800": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4601,7 +4601,7 @@ const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA C400": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is highly recommended." },
@@ -4625,7 +4625,7 @@ const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA C250": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is supported natively." },
@@ -4650,7 +4650,7 @@ const NETAPP_PLATFORMS = {
     cpus: 16
   },
   "ASA A800": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -4677,7 +4677,7 @@ const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA A400": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -4704,7 +4704,7 @@ const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA A900": {
-    maxOntap: "9.17.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -4879,7 +4879,7 @@ const NETAPP_PLATFORMS = {
     cpus: 16
   },
   "Cloud Volumes ONTAP": {
-    maxOntap: "9.12.1",
+    maxOntap: "9.19.1",
     supportedShelves: [],
     unsupportedShelves: ["ns224", "ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {},
@@ -4937,9 +4937,9 @@ const NETAPP_PLATFORMS = {
 "AFF C400": { tier: "midrange", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.17.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "AFF C800": { tier: "enterprise", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.17.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
 // === AFF A-Series (Missing entries) ===
-"AFF A200": { tier: "entry", minOntap: "9.4", maxOntap: "9.10.1", maxRamGB: 192, supportedShelves: ["ds2246", "ds460c", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
-"AFF A700": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.14.1", maxRamGB: 1536, supportedShelves: ["ns224", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
-"AFF A700s": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.12.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC"] },
+"AFF A200": { tier: "entry", minOntap: "9.4", maxOntap: "9.11.1", maxRamGB: 192, supportedShelves: ["ds2246", "ds460c", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"AFF A700": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.19.1", maxRamGB: 1536, supportedShelves: ["ns224", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
+"AFF A700s": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.14.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC"] },
 "AFF A30": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.17.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
 "AFF A50": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.17.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
 "AFF A70": { tier: "midrange", minOntap: "9.15.1", maxOntap: "9.17.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
@@ -5177,28 +5177,36 @@ function compareVersions(v1, v2) {
 
 
 const ONTAP_LIFECYCLE = {
-  "9.7": { status: "end_of_support", endDate: "2023-07", notes: "ONTAP 9.7 reached End of Support July 2023." },
-  "9.8": { status: "end_of_support", endDate: "2024-01", notes: "ONTAP 9.8 reached End of Support January 2024." },
-  "9.9.1": { status: "end_of_support", endDate: "2024-07", notes: "ONTAP 9.9.1 reached End of Support July 2024." },
-  "9.10.1": { status: "end_of_support", endDate: "2025-01", notes: "ONTAP 9.10.1 reached End of Support January 2025." },
-  "9.11.1": { status: "end_of_support", endDate: "2025-07", notes: "ONTAP 9.11.1 reached End of Support July 2025." },
-  "9.12.1": { status: "limited_support", endDate: "2026-01", notes: "ONTAP 9.12.1 in Limited Support. Plan upgrade to 9.14.1+." },
-  "9.13.1": { status: "limited_support", endDate: "2026-07", notes: "ONTAP 9.13.1 in Limited Support. Upgrade to 9.14.1+ recommended." },
-  "9.14.1": { status: "active", endDate: "2027-01", notes: "ONTAP 9.14.1 in Full Support." },
-  "9.15.1": { status: "active", endDate: "2027-07", notes: "ONTAP 9.15.1 in Full Support." },
-  "9.16.1": { status: "active", endDate: "2028-01", notes: "ONTAP 9.16.1 — Latest GA release. Full Support." },
-  "9.17.1": { status: "planned", endDate: "2028-07", notes: "ONTAP 9.17.1 — Planned future release. Use for forward capacity planning only." },
-  "9.18.1": { status: "planned", endDate: "2029-01", notes: "ONTAP 9.18.1 — Planned future release." }
+  "9.7":    { status: "self_service",    releaseDate: "2019-09", endDate: "2024-10", notes: "End of Limited Support Oct 2024." },
+  "9.8":    { status: "self_service",    releaseDate: "2020-10", endDate: "2025-12", notes: "End of Limited Support Dec 2025." },
+  "9.9.1":  { status: "self_service",    releaseDate: "2021-04", endDate: "2026-06", notes: "Limited Support ends Jun 2026." },
+  "9.10.1": { status: "limited_support", releaseDate: "2021-10", endDate: "2027-01", notes: "Limited Support ends Jan 2027." },
+  "9.11.1": { status: "limited_support", releaseDate: "2022-04", endDate: "2027-07", notes: "Limited Support ends Jul 2027." },
+  "9.12.1": { status: "limited_support", releaseDate: "2022-10", endDate: "2028-02", notes: "Limited Support ends Feb 2028." },
+  "9.13.1": { status: "limited_support", releaseDate: "2023-06", endDate: "2028-06", notes: "Limited Support ends Jun 2028." },
+  "9.14.1": { status: "active",          releaseDate: "2024-01", endDate: "2027-01", notes: "Full Support through Jan 2027." },
+  "9.15.1": { status: "active",          releaseDate: "2024-05", endDate: "2027-07", notes: "Full Support through Jul 2027." },
+  "9.16.1": { status: "active",          releaseDate: "2025-01", endDate: "2028-01", notes: "Full Support through Jan 2028." },
+  "9.17.1": { status: "active",          releaseDate: "2026-01", endDate: "2028-09", notes: "Full Support through Sep 2028. Released Jan 2026." },
+  "9.18.1": { status: "active",          releaseDate: "2026-02", endDate: "2029-01", notes: "Full Support through Jan 2029." },
+  "9.19.1": { status: "active",          releaseDate: "2026-05", endDate: "2029-05", notes: "Latest GA Release (May 2026). Full Support through May 2029." },
+  "9.20.1": { status: "planned",         releaseDate: "2026-Q4", endDate: "2029-Q4", notes: "Planned release Q4 2026. Use for forward planning only." }
 };
 
 const ONTAP_HOPS = {
-  "9.10.1": { "9.14.1": ["9.12.1"] },
-  "9.11.1": { "9.14.1": ["9.12.1"] },
-  "9.12.1": { "9.13.1": [], "9.14.1": ["9.13.1"] },
-  "9.13.1": { "9.14.1": [] },
-  "9.14.1": { "9.15.1": [], "9.16.1": ["9.15.1"] },
-  "9.15.1": { "9.16.1": [] },
-  "9.16.1": { "9.17.1": [] }
+  "9.7":    { "9.8": [], "9.9.1": ["9.8"], "9.12.1": ["9.8","9.9.1"], "9.14.1": ["9.8","9.9.1","9.12.1"], "9.16.1": ["9.8","9.9.1","9.12.1","9.15.1"], "9.17.1": ["9.9.1","9.12.1","9.15.1","9.17.1"], "9.18.1": ["9.9.1","9.12.1","9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.9.1","9.12.1","9.15.1","9.17.1","9.19.1"] },
+  "9.8":    { "9.9.1": [], "9.12.1": ["9.9.1"], "9.13.1": ["9.9.1","9.12.1"], "9.14.1": ["9.9.1","9.12.1","9.13.1"], "9.15.1": ["9.9.1","9.12.1","9.13.1"], "9.16.1": ["9.9.1","9.12.1","9.15.1"], "9.17.1": ["9.9.1","9.12.1","9.15.1","9.17.1"], "9.18.1": ["9.9.1","9.12.1","9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.9.1","9.12.1","9.15.1","9.17.1","9.19.1"], "9.20.1": ["9.9.1","9.12.1","9.15.1","9.17.1","9.18.1","9.20.1"] },
+  "9.9.1":  { "9.12.1": [], "9.13.1": ["9.12.1"], "9.14.1": ["9.12.1","9.13.1"], "9.15.1": ["9.12.1","9.13.1"], "9.16.1": ["9.12.1","9.15.1"], "9.17.1": ["9.12.1","9.15.1","9.17.1"], "9.18.1": ["9.12.1","9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.12.1","9.15.1","9.17.1","9.19.1"], "9.20.1": ["9.12.1","9.15.1","9.17.1","9.18.1","9.20.1"] },
+  "9.10.1": { "9.12.1": [], "9.13.1": ["9.12.1"], "9.14.1": ["9.12.1","9.13.1"], "9.15.1": ["9.12.1","9.13.1"], "9.16.1": ["9.12.1","9.15.1"], "9.17.1": ["9.12.1","9.15.1","9.17.1"], "9.18.1": ["9.12.1","9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.12.1","9.15.1","9.17.1","9.19.1"] },
+  "9.11.1": { "9.12.1": [], "9.13.1": ["9.12.1"], "9.14.1": ["9.12.1","9.13.1"], "9.15.1": ["9.12.1","9.13.1"], "9.16.1": ["9.12.1","9.15.1"], "9.17.1": ["9.12.1","9.15.1","9.17.1"], "9.18.1": ["9.12.1","9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.12.1","9.15.1","9.17.1","9.19.1"] },
+  "9.12.1": { "9.13.1": [], "9.14.1": ["9.13.1"], "9.15.1": ["9.13.1"], "9.16.1": ["9.13.1","9.15.1"], "9.17.1": ["9.15.1","9.17.1"], "9.18.1": ["9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.15.1","9.17.1","9.19.1"], "9.20.1": ["9.15.1","9.17.1","9.18.1","9.20.1"] },
+  "9.13.1": { "9.14.1": [], "9.15.1": [], "9.16.1": ["9.15.1"], "9.17.1": ["9.15.1","9.17.1"], "9.18.1": ["9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.15.1","9.17.1","9.19.1"], "9.20.1": ["9.15.1","9.17.1","9.18.1","9.20.1"] },
+  "9.14.1": { "9.15.1": [], "9.16.1": ["9.15.1"], "9.17.1": ["9.15.1","9.17.1"], "9.18.1": ["9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.15.1","9.17.1","9.19.1"], "9.20.1": ["9.15.1","9.17.1","9.18.1","9.20.1"] },
+  "9.15.1": { "9.16.1": [], "9.17.1": ["9.16.1"], "9.18.1": ["9.17.1"], "9.19.1": ["9.17.1","9.18.1"], "9.20.1": ["9.17.1","9.18.1","9.20.1"] },
+  "9.16.1": { "9.17.1": [], "9.18.1": ["9.17.1"], "9.19.1": ["9.17.1","9.18.1"], "9.20.1": ["9.17.1","9.18.1","9.20.1"] },
+  "9.17.1": { "9.18.1": [], "9.19.1": ["9.18.1"], "9.20.1": ["9.18.1","9.20.1"] },
+  "9.18.1": { "9.19.1": [], "9.20.1": ["9.20.1"] },
+  "9.19.1": { "9.20.1": [] }
 };
 
 // --- END js/compatibility.js ---
@@ -5212,29 +5220,20 @@ const ONTAP_HOPS = {
 
 
 const ONTAP_LIFECYCLE = {
-  "9.0": { status: "critical", label: "End of Support", desc: "ONTAP 9.0 entered End of Support in 2018. Immediate upgrade is critical." },
-  "9.1": { status: "critical", label: "End of Support", desc: "ONTAP 9.1 entered End of Support in 2019. Immediate upgrade is critical." },
-  "9.2": { status: "critical", label: "End of Support", desc: "ONTAP 9.2 entered End of Support in 2020. Immediate upgrade is critical." },
-  "9.3": { status: "critical", label: "End of Support", desc: "ONTAP 9.3 entered End of Support in 2021. Immediate upgrade is critical." },
-  "9.4": { status: "critical", label: "End of Support", desc: "ONTAP 9.4 entered End of Support in 2021. Immediate upgrade is critical." },
-  "9.5": { status: "critical", label: "End of Support", desc: "ONTAP 9.5 entered End of Support in 2022. Immediate upgrade is critical." },
-  "9.6": { status: "critical", label: "End of Support", desc: "ONTAP 9.6 entered End of Support in 2022. Immediate upgrade is critical." },
-  "9.7": { status: "critical", label: "End of Support", desc: "ONTAP 9.7 entered End of Support in October 2022. No security patches or bug fixes are provided. Immediate upgrade is critical." },
-  "9.8": { status: "warning", label: "Limited Support", desc: "ONTAP 9.8 is in Limited Support. Only critical security fixes are provided." },
-  "9.9.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.9.1 is in Limited Support. Only critical security fixes are provided." },
-  "9.10.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.10.1 is in Limited Support." },
-  "9.11.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.11.1 is in Limited Support." },
-  "9.12.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.12.1 is in Limited Support." },
-  "9.13.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.13.1 entered Limited Support in early 2026." },
-  "9.14.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.14.1 is in General Support." },
-  "9.15.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.15.1 is in General Support (GA)." },
-  "9.16.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.16.1 is in General Support (GA) and is a stable recommended baseline." },
-  "9.17.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.17.1 is in General Support (GA)." },
-  "9.18.1": { status: "compliant", label: "Active Support (Latest Stable)", desc: "ONTAP 9.18.1 is in General Support (GA) and is a modern recommended baseline." },
-  "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, delivering NVMe-oF and AI optimizations." },
-  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault, cyber resiliency, and advanced file security controls." },
-  "9.21.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.21.1 is in General Support (GA) with advanced block caching." },
-  "10.0": { status: "compliant", label: "Active Support (Next-Gen)", desc: "ONTAP 10.0 represents the next major operating system release with enhanced cloud-scale unified security features." }
+  "9.7": { status: "warning", label: "Self Service", desc: "ONTAP 9.7 is in Self Service. End of Limited Support was Oct 2024." },
+  "9.8": { status: "warning", label: "Self Service", desc: "ONTAP 9.8 is in Self Service. End of Limited Support was Dec 2025." },
+  "9.9.1": { status: "warning", label: "Self Service", desc: "ONTAP 9.9.1 is in Self Service. Limited Support ends Jun 2026." },
+  "9.10.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.10.1 is in Limited Support. Support ends Jan 2027." },
+  "9.11.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.11.1 is in Limited Support. Support ends Jul 2027." },
+  "9.12.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.12.1 is in Limited Support. Support ends Feb 2028." },
+  "9.13.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.13.1 is in Limited Support. Support ends Jun 2028." },
+  "9.14.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.14.1 is in General Support until Jan 2027." },
+  "9.15.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.15.1 is in General Support until Jul 2027." },
+  "9.16.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.16.1 is in General Support until Jan 2028." },
+  "9.17.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.17.1 is in General Support until Sep 2028." },
+  "9.18.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.18.1 is in General Support until Jan 2029." },
+  "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, full support until May 2029." },
+  "9.20.1": { status: "compliant", label: "Active Support (Planned Release)", desc: "ONTAP 9.20.1 is a planned release expected Q4 2026." }
 };
 
 function getPlatformMaxDrives(model) {
@@ -6323,7 +6322,7 @@ const ONTAP_HOPS = {
     "9.17.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.16.1", "9.17.1"],
     "9.18.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1"],
     "9.19.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.19.1"],
-    "9.20.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1", "9.20.1"],
+    "9.20.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1", "9.20.1"]
   },
   "9.8": {
     "9.8": [],
@@ -6336,7 +6335,7 @@ const ONTAP_HOPS = {
     "9.17.1": ["9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.16.1", "9.17.1"],
     "9.18.1": ["9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1"],
     "9.19.1": ["9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.19.1"],
-    "9.20.1": ["9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1", "9.20.1"],
+    "9.20.1": ["9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1", "9.20.1"]
   },
   "9.9.1": {
     "9.9.1": [],
@@ -6348,7 +6347,7 @@ const ONTAP_HOPS = {
     "9.17.1": ["9.12.1", "9.13.1", "9.15.1", "9.16.1", "9.17.1"],
     "9.18.1": ["9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1"],
     "9.19.1": ["9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.19.1"],
-    "9.20.1": ["9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1", "9.20.1"],
+    "9.20.1": ["9.12.1", "9.13.1", "9.15.1", "9.17.1", "9.18.1", "9.20.1"]
   },
   "9.12.1": {
     "9.12.1": [],
@@ -6356,20 +6355,29 @@ const ONTAP_HOPS = {
     "9.14.1": ["9.13.1", "9.14.1"],
     "9.15.1": ["9.13.1", "9.15.1"],
     "9.16.1": ["9.13.1", "9.15.1", "9.16.1"],
-    "9.17.1": ["9.13.1", "9.15.1", "9.16.1", "9.17.1"],
+    "9.17.1": ["9.15.1", "9.17.1"],
     "9.18.1": ["9.15.1", "9.17.1", "9.18.1"],
     "9.19.1": ["9.15.1", "9.17.1", "9.19.1"],
-    "9.20.1": ["9.15.1", "9.17.1", "9.18.1", "9.20.1"],
+    "9.20.1": ["9.15.1", "9.17.1", "9.18.1", "9.20.1"]
   },
   "9.13.1": {
     "9.13.1": [],
     "9.14.1": ["9.14.1"],
-    "9.15.1": ["9.15.1"],
+    "9.15.1": [],
     "9.16.1": ["9.15.1", "9.16.1"],
-    "9.17.1": ["9.15.1", "9.16.1", "9.17.1"],
+    "9.17.1": ["9.15.1", "9.17.1"],
     "9.18.1": ["9.15.1", "9.17.1", "9.18.1"],
     "9.19.1": ["9.15.1", "9.17.1", "9.19.1"],
-    "9.20.1": ["9.15.1", "9.17.1", "9.18.1", "9.20.1"],
+    "9.20.1": ["9.15.1", "9.17.1", "9.18.1", "9.20.1"]
+  },
+  "9.14.1": {
+    "9.14.1": [],
+    "9.15.1": [],
+    "9.16.1": ["9.15.1", "9.16.1"],
+    "9.17.1": ["9.15.1", "9.17.1"],
+    "9.18.1": ["9.15.1", "9.17.1", "9.18.1"],
+    "9.19.1": ["9.15.1", "9.17.1", "9.19.1"],
+    "9.20.1": ["9.15.1", "9.17.1", "9.18.1", "9.20.1"]
   },
   "9.15.1": {
     "9.15.1": [],
@@ -6377,33 +6385,33 @@ const ONTAP_HOPS = {
     "9.17.1": ["9.16.1", "9.17.1"],
     "9.18.1": ["9.17.1", "9.18.1"],
     "9.19.1": ["9.17.1", "9.19.1"],
-    "9.20.1": ["9.17.1", "9.18.1", "9.20.1"],
+    "9.20.1": ["9.17.1", "9.18.1", "9.20.1"]
   },
   "9.16.1": {
     "9.16.1": [],
     "9.17.1": ["9.17.1"],
-    "9.18.1": ["9.18.1"],
-    "9.19.1": ["9.18.1", "9.19.1"],
-    "9.20.1": ["9.18.1", "9.20.1"],
+    "9.18.1": ["9.17.1", "9.18.1"],
+    "9.19.1": ["9.17.1", "9.19.1"],
+    "9.20.1": ["9.17.1", "9.18.1", "9.20.1"]
   },
   "9.17.1": {
     "9.17.1": [],
     "9.18.1": ["9.18.1"],
-    "9.19.1": ["9.19.1"],
-    "9.20.1": ["9.19.1", "9.20.1"],
+    "9.19.1": ["9.18.1", "9.19.1"],
+    "9.20.1": ["9.18.1", "9.20.1"]
   },
   "9.18.1": {
     "9.18.1": [],
     "9.19.1": ["9.19.1"],
-    "9.20.1": ["9.20.1"],
+    "9.20.1": ["9.20.1"]
   },
   "9.19.1": {
     "9.19.1": [],
-    "9.20.1": ["9.20.1"],
+    "9.20.1": ["9.20.1"]
   },
   "9.20.1": {
-    "9.20.1": [],
-  },
+    "9.20.1": []
+  }
 };
 
 function resolveMediaType(diskSizeStr) {
@@ -6484,6 +6492,7 @@ function resolveBaseVersionKey(versionStr) {
   if (base === "9.17") return "9.17.1";
   if (base === "9.18") return "9.18.1";
   if (base === "9.19") return "9.19.1";
+  if (base === "9.20") return "9.20.1";
   if (base === "9.20") return "9.20.1";
   if (base === "9.20") return "9.20.1";
   return "9.20.1";
@@ -6582,7 +6591,7 @@ function populateManualPlatformDropdown() {
     const selectedModel = select.value;
     const profile = getPlatformProfile(selectedModel);
     
-    const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1"];
+    const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1", "9.20.1"];
     
     targetOptions.forEach(optVal => {
       if (compareVersions(optVal, profile.maxOntap) <= 0) {
@@ -9879,7 +9888,7 @@ function initStep3Inputs() {
   const curVer = currentState.version.ontap;
   const profile = getPlatformProfile(currentState.version.model);
   
-  const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1"];
+  const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1", "9.20.1"];
   
   targetOptions.forEach(opt => {
     const isDowngrade = compareVersions(opt, curVer) < 0 && !curVer.startsWith(opt);
