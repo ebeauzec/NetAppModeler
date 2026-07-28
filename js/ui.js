@@ -302,7 +302,8 @@ function populateManualPlatformDropdown() {
     if (model === "Default") return;
     const opt = document.createElement("option");
     opt.value = model;
-    opt.textContent = `${model} (${NETAPP_PLATFORMS[model].description})`;
+    const desc = NETAPP_PLATFORMS[model].description || (NETAPP_PLATFORMS[model].sanOnly ? 'SAN-Only All-Flash' : NETAPP_PLATFORMS[model].isCapacityFlash ? 'Capacity Flash' : NETAPP_PLATFORMS[model].tier ? NETAPP_PLATFORMS[model].tier.charAt(0).toUpperCase() + NETAPP_PLATFORMS[model].tier.slice(1) + ' Platform' : 'Storage Platform');
+    opt.textContent = `${model} (${desc})`;
     select.appendChild(opt);
   });
 
