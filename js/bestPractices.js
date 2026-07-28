@@ -475,7 +475,7 @@ export function runAudit(systemState) {
   const modelUpper = systemState.version.model.toUpperCase();
   
   systemState.shelves.forEach(shelf => {
-    const shelfModel = shelf.model.toLowerCase();
+    const shelfModel = (shelf.model || '').toLowerCase();
     
     if (shelfModel === "ns224") {
       const isSasOnly = modelUpper.includes("A220") || modelUpper.includes("C190") || modelUpper.includes("FAS8200") || modelUpper.includes("FAS27") || modelUpper.includes("FAS25");
@@ -661,7 +661,7 @@ export function runAudit(systemState) {
     let availableSasPorts = 0;
     
     ports.forEach(p => {
-      const name = p.name.toLowerCase();
+      const name = (p.name || "").toLowerCase();
       const speed = (p.speed || "").toLowerCase();
       const type = (p.type || "").toLowerCase();
       
@@ -820,7 +820,7 @@ export function runAudit(systemState) {
     systemState.switches.forEach(sw => {
       if (sw.model === "BES-53248" && compareVersions(sw.version, "1.3.0.1") < 0) {
         switchWarnings.push(`Switch ${sw.name} (${sw.model}) runs legacy RCF version ${sw.version}. RCF v1.3.0.1 or higher is required.`);
-      } else if (sw.model.includes("9336C") && compareVersions(sw.version, "2.2") < 0) {
+      } else if ((sw.model || '').includes("9336C") && compareVersions(sw.version, "2.2") < 0) {
         switchWarnings.push(`Switch ${sw.name} (${sw.model}) runs legacy RCF version ${sw.version}. RCF v2.2 or higher is required for ONTAP 9.18+ compatibility.`);
       }
     });
