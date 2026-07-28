@@ -6,7 +6,7 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.22)
+## 🆕 New in this Version (v2.21)
 * **MetroCluster Auto-Detection & Topologies:** Automatically detects MetroCluster IP/FC configurations from ASUP logs, rendering dual-site split cabling graphs and replication paths.
 * **Advanced Best Practice Audits:** Added 5 new rules covering cluster switch RCF versions, front-end port MTU sizing (Jumbo Frames), MetroCluster aggregate SyncMirror status, site hardware symmetry, and Flash Pool SSD cache ratios.
 * **Interactive CLI Script Generator:** Renders a copy-pasteable ONTAP CLI command block in the reporting step to dynamically guide system remediation.
@@ -16,6 +16,7 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 ## 🚀 Key Features
 
 * **Resilient ASUP Parser:** Drag-and-drop or import raw NetApp AutoSupport text logs. The parser extracts cluster models, ONTAP versions, node IDs, shelf structures, disk inventories, spares, aggregates, system firmware/BIOS versions, and license keys.
+  * **Newly Parsed Sections:** HA Status, Broken Disks, Health Alerts, SnapMirror, LIFs, Aggregate Space.
 * **Best Practice Audit Engine:** Evaluates cluster compliance against NetApp storage design guidelines:
   * **ONTAP Lifecycle Support:** Checks if your ONTAP release is in active support, limited support, or has reached End of Support.
   * **Cabling Integrity:** Identifies single-path HA cabling risks (Single Points of Failure) and reports multipath HA compliance.
@@ -25,7 +26,14 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
   * **Controller System Firmware Checks (New):** Compares motherboard/BIOS versions against platform baselines and prints update command guidelines.
   * **Disk Size & ONTAP Compatibility Audits (New):** Validates SSD drive capacities (e.g. 15.3TB and 30.6TB) against target ONTAP version requirements to prevent software support conflicts.
   * **Disk-level Firmware Parsing (New):** Extracts disk-level firmware versions directly from parentheses formats or sysconfig -a style outputs and renders them in both the shelf inventory lists and comparative cabling tables.
+  * **5 New Best Practice Rules (21-25):** 
+    * Rule 21: Cluster switch RCF versions
+    * Rule 22: Front-end port MTU sizing (Jumbo Frames)
+    * Rule 23: MetroCluster aggregate SyncMirror status
+    * Rule 24: Site hardware symmetry
+    * Rule 25: Flash Pool SSD cache ratios
 * **Interactive Sizing Modeler:** A scenario planning tool to model:
+  * **2 New Demo Profiles:** ASA A400, AFF C800.
   * **Best-Practice Greenfield Baselines (New):** Initializes manual platform selections in a Greenfield state configured perfectly in compliance with best practices (optimal drive sizing solver, default spares, correct licenses, no SPOFs).
   * **Intelligent HBA Card Auto-Allocation (New):** Automatically determines, slots, and cables necessary SAS or RoCE HBA expansion cards when adding shelves based on slot optimization/compliance rules.
   * Node additions and platform upgrades (e.g., FAS to All-Flash AFF).
