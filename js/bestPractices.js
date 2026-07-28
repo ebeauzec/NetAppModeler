@@ -316,8 +316,8 @@ export function runAudit(systemState) {
   let raidGroupWarnings = [];
   systemState.aggregates.forEach(aggr => {
     if (aggr.name.startsWith("aggr0")) return;
-    const isSata = aggr.diskType.toLowerCase().includes("sata");
-    const isSsd = aggr.diskType.toLowerCase().includes("ssd") || aggr.diskType.toLowerCase().includes("nvme");
+    const isSata = (aggr.diskType || "").toLowerCase().includes("sata");
+    const isSsd = (aggr.diskType || "").toLowerCase().includes("ssd") || (aggr.diskType || "").toLowerCase().includes("nvme");
     
     if (isSata && aggr.rgSize > 20) {
       raidGroupWarnings.push(`Aggregate ${aggr.name} has RAID group size of ${aggr.rgSize} which exceeds the best-practice limit of 20 disks for SATA media.`);
@@ -426,7 +426,7 @@ export function runAudit(systemState) {
   systemState.nodes.forEach(node => {
     if (node.ports) {
       node.ports.forEach(p => {
-        const speed = p.speed.toLowerCase();
+        const speed = (p.speed || "").toLowerCase();
         const type = p.type ? p.type.toLowerCase() : "";
         const isFc = speed.includes("fc") || speed.includes("gbps") || type.includes("fc") || type.includes("fcp");
         if (isFc) hasFcPorts = true;
