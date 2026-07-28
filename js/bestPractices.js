@@ -18,7 +18,7 @@ export const ONTAP_LIFECYCLE = {
   "9.16.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.16.1 is in General Support until Jan 2028." },
   "9.17.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.17.1 is in General Support until Sep 2028." },
   "9.18.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.18.1 is in General Support until Jan 2029." },
-  "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, full support until May 2029." },
+  "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, full support until July 2029." },
   "9.20.1": { status: "compliant", label: "Active Support (Planned Release)", desc: "ONTAP 9.20.1 is a planned release expected Q4 2026." }
 };
 

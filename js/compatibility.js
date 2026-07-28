@@ -419,6 +419,7 @@ export const NETAPP_PLATFORMS = {
 
   // --- AFF C-Series (Capacity All Flash) ---
   "AFF C80": {
+    minOntap: "9.16.1",
     maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
@@ -510,6 +511,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF C30": {
+    minOntap: "9.16.1",
     maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
@@ -533,6 +535,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF C60": {
+    minOntap: "9.16.1",
     maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
@@ -1415,6 +1418,9 @@ export const NETAPP_PLATFORMS = {
 "AFF C250": { tier: "entry", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.17.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "AFF C400": { tier: "midrange", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.17.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "AFF C800": { tier: "enterprise", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.17.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
+"AFF C30": { tier: "entry", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.19.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF C60": { tier: "midrange", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.19.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF C80": { tier: "midrange", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.19.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
 // === AFF A-Series (Missing entries) ===
 "AFF A200": { tier: "entry", minOntap: "9.4", maxOntap: "9.11.1", maxRamGB: 192, supportedShelves: ["ds2246", "ds460c", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "AFF A700": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.19.1", maxRamGB: 1536, supportedShelves: ["ns224", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
@@ -1427,7 +1433,9 @@ export const NETAPP_PLATFORMS = {
 "FAS8020": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 256, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "FAS8040": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 512, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "FAS8060": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.7", maxRamGB: 768, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
-"FAS8080 EX": { tier: "enterprise", minOntap: "8.3", maxOntap: "9.7", maxRamGB: 1024, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] }
+"FAS8080 EX": { tier: "enterprise", minOntap: "8.3", maxOntap: "9.7", maxRamGB: 1024, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+// === AFX (All-Flash Extreme) — New July 2026 ===
+"AFX 2K": { tier: "enterprise", minOntap: "9.19.1", maxOntap: "9.19.1", maxRamGB: 4096, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "S3", "NVMe/FC", "NVMe/TCP"] }
 };
 
 // Returns compatibility profile for a parsed model
@@ -1468,6 +1476,7 @@ export function getPlatformProfile(modelStr) {
   if (upper.includes("A200")) return NETAPP_PLATFORMS["Default"];
   if (upper.includes("A20")) return NETAPP_PLATFORMS["AFF A20"];
   
+  if (upper.includes("AFX") || upper.includes("AFX 2K")) return NETAPP_PLATFORMS["AFX 2K"];
   if (upper.includes("C800")) return NETAPP_PLATFORMS["AFF C800"];
   if (upper.includes("C80")) return NETAPP_PLATFORMS["AFF C80"];
   if (upper.includes("C400")) return NETAPP_PLATFORMS["AFF C400"];
@@ -1668,7 +1677,7 @@ export const ONTAP_LIFECYCLE = {
   "9.16.1": { status: "active",          releaseDate: "2025-01", endDate: "2028-01", notes: "Full Support through Jan 2028." },
   "9.17.1": { status: "active",          releaseDate: "2026-01", endDate: "2028-09", notes: "Full Support through Sep 2028. Released Jan 2026." },
   "9.18.1": { status: "active",          releaseDate: "2026-02", endDate: "2029-01", notes: "Full Support through Jan 2029." },
-  "9.19.1": { status: "active",          releaseDate: "2026-05", endDate: "2029-05", notes: "Latest GA Release (May 2026). Full Support through May 2029." },
+  "9.19.1": { status: "active",          releaseDate: "2026-07", endDate: "2029-05", notes: "Latest GA Release (July 2026). Full Support through May 2029." },
   "9.20.1": { status: "planned",         releaseDate: "2026-Q4", endDate: "2029-Q4", notes: "Planned release Q4 2026. Use for forward planning only." }
 };
 
