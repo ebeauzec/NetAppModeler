@@ -237,7 +237,13 @@ function setupSplashModal() {
   const closeSplashBtn = document.getElementById("close-splash-btn");
   if (!splashModal || !closeSplashBtn) return;
   
-  const dismissedVersion = localStorage.getItem("splash-dismissed-v2.16");
+  let dismissedVersion = "false";
+  try {
+    dismissedVersion = localStorage.getItem("splash-dismissed-v2.20");
+  } catch (e) {
+    console.warn("localStorage is not accessible:", e);
+  }
+
   if (dismissedVersion === "true") {
     splashModal.classList.add("hidden");
   } else {
@@ -246,7 +252,11 @@ function setupSplashModal() {
   
   closeSplashBtn.addEventListener("click", () => {
     splashModal.classList.add("hidden");
-    localStorage.setItem("splash-dismissed-v2.16", "true");
+    try {
+      localStorage.setItem("splash-dismissed-v2.20", "true");
+    } catch (e) {
+      console.warn("localStorage write failed:", e);
+    }
   });
 }
 
