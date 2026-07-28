@@ -7817,7 +7817,7 @@ function loadASUPData(input, isGreenfield = false) {
     nextBtn.classList.remove("hidden");
   } catch (error) {
     console.error(error);
-    alert(`Error parsing AutoSupport Bundle: ${error.message}`);
+    alert(`Error parsing AutoSupport Bundle: ${error.message}\n\nStack:\n${(error.stack||'').split('\n').slice(0,5).join('\n')}`);
   }
 }
 
