@@ -1970,7 +1970,7 @@ svg.cabling-graph {
     </div>
   </div>
 
-  <!-- Splash Screen Modal Overlay (What's New in v2.20) -->
+  <!-- Splash Screen Modal Overlay (What's New in v2.21) -->
   <div id="splash-modal" class="modal-overlay no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 11000; backdrop-filter: blur(8px);">
     <div class="modal-content" style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(15,23,42,0.95) 100%); border: 1.5px solid var(--color-primary); border-radius: var(--radius-lg); padding: 2.5rem; width: 550px; box-shadow: 0 25px 50px -12px rgba(6,182,212,0.3); position: relative; max-height: 85vh; overflow-y: auto;">
       
@@ -1981,7 +1981,7 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.20</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.21</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
@@ -6463,7 +6463,7 @@ function setupSplashModal() {
   
   let dismissedVersion = "false";
   try {
-    dismissedVersion = localStorage.getItem("splash-dismissed-v2.20");
+    dismissedVersion = localStorage.getItem("splash-dismissed-v2.21");
   } catch (e) {
     console.warn("localStorage is not accessible:", e);
   }
@@ -6477,7 +6477,7 @@ function setupSplashModal() {
   closeSplashBtn.addEventListener("click", () => {
     splashModal.classList.add("hidden");
     try {
-      localStorage.setItem("splash-dismissed-v2.20", "true");
+      localStorage.setItem("splash-dismissed-v2.21", "true");
     } catch (e) {
       console.warn("localStorage write failed:", e);
     }
@@ -7272,25 +7272,34 @@ function setupWizardListeners() {
 
 // --- Upload / Demo Selection ---
 function setupUploadListeners() {
-  document.getElementById("demo-fas8300-btn").addEventListener("click", () => {
-    const state = parseASUP(DEMO_DATA.fas8300.files);
-    state.expansionCards = [];
-    state.metrocluster = "none";
-    loadASUPData(state);
-  });
+  const fas8300Btn = document.getElementById("demo-fas8300-btn");
+  if (fas8300Btn) {
+    fas8300Btn.addEventListener("click", () => {
+      const state = parseASUP(DEMO_DATA.fas8300.files);
+      state.expansionCards = [];
+      state.metrocluster = "none";
+      loadASUPData(state);
+    });
+  }
 
-  document.getElementById("demo-affa400-btn").addEventListener("click", () => {
-    const state = parseASUP(DEMO_DATA.aff_a400.files);
-    state.expansionCards = [];
-    state.metrocluster = "none";
-    loadASUPData(state);
-  });
+  const affA400Btn = document.getElementById("demo-affa400-btn");
+  if (affA400Btn) {
+    affA400Btn.addEventListener("click", () => {
+      const state = parseASUP(DEMO_DATA.aff_a400.files);
+      state.expansionCards = [];
+      state.metrocluster = "none";
+      loadASUPData(state);
+    });
+  }
 
-  document.getElementById("demo-metrocluster-btn").addEventListener("click", () => {
-    const state = parseASUP(DEMO_DATA.metrocluster_ip.files);
-    state.expansionCards = [];
-    loadASUPData(state);
-  });
+  const mccBtn = document.getElementById("demo-metrocluster-btn");
+  if (mccBtn) {
+    mccBtn.addEventListener("click", () => {
+      const state = parseASUP(DEMO_DATA.metrocluster_ip.files);
+      state.expansionCards = [];
+      loadASUPData(state);
+    });
+  }
 
   const asaA400Btn = document.getElementById("demo-asa-a400-btn");
   if (asaA400Btn) {
@@ -7310,21 +7319,27 @@ function setupUploadListeners() {
     });
   }
 
-  document.getElementById("load-manual-platform-btn").addEventListener("click", () => {
-    const model = document.getElementById("manual-platform-select").value;
-    const ontap = document.getElementById("manual-ontap-select").value;
-    const capacityTB = parseFloat(document.getElementById("manual-capacity").value) || 50;
-    const nodesCount = parseInt(document.getElementById("manual-nodes-select").value) || 2;
-    generatePlatformBaseline(model, ontap, capacityTB, nodesCount, false);
-  });
+  const loadManualBtn = document.getElementById("load-manual-platform-btn");
+  if (loadManualBtn) {
+    loadManualBtn.addEventListener("click", () => {
+      const model = document.getElementById("manual-platform-select").value;
+      const ontap = document.getElementById("manual-ontap-select").value;
+      const capacityTB = parseFloat(document.getElementById("manual-capacity").value) || 50;
+      const nodesCount = parseInt(document.getElementById("manual-nodes-select").value) || 2;
+      generatePlatformBaseline(model, ontap, capacityTB, nodesCount, false);
+    });
+  }
 
-  document.getElementById("load-greenfield-btn").addEventListener("click", () => {
-    const model = document.getElementById("manual-platform-select").value;
-    const ontap = document.getElementById("manual-ontap-select").value;
-    const capacityTB = parseFloat(document.getElementById("manual-capacity").value) || 50;
-    const nodesCount = parseInt(document.getElementById("manual-nodes-select").value) || 2;
-    generatePlatformBaseline(model, ontap, capacityTB, nodesCount, true);
-  });
+  const loadGreenfieldBtn = document.getElementById("load-greenfield-btn");
+  if (loadGreenfieldBtn) {
+    loadGreenfieldBtn.addEventListener("click", () => {
+      const model = document.getElementById("manual-platform-select").value;
+      const ontap = document.getElementById("manual-ontap-select").value;
+      const capacityTB = parseFloat(document.getElementById("manual-capacity").value) || 50;
+      const nodesCount = parseInt(document.getElementById("manual-nodes-select").value) || 2;
+      generatePlatformBaseline(model, ontap, capacityTB, nodesCount, true);
+    });
+  }
 
   dropZone.addEventListener("click", () => fileInput.click());
   
@@ -12653,9 +12668,10 @@ function generateReport() {
     }
   }
 
-  document.getElementById("print-report-btn").addEventListener("click", () => {
-    window.print();
-  });
+  const printReportBtn = document.getElementById("print-report-btn");
+  if (printReportBtn) {
+    printReportBtn.addEventListener("click", () => window.print());
+  }
 
   const cliCodePre = document.getElementById("cli-script-code");
   if (cliCodePre) {
