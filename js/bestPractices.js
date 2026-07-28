@@ -6,29 +6,20 @@
 import { getPlatformProfile, compareVersions, EXP_CARDS_CATALOG, PLATFORM_SLOT_DETAILS } from './compatibility.js';
 
 export const ONTAP_LIFECYCLE = {
-  "9.0": { status: "critical", label: "End of Support", desc: "ONTAP 9.0 entered End of Support in 2018. Immediate upgrade is critical." },
-  "9.1": { status: "critical", label: "End of Support", desc: "ONTAP 9.1 entered End of Support in 2019. Immediate upgrade is critical." },
-  "9.2": { status: "critical", label: "End of Support", desc: "ONTAP 9.2 entered End of Support in 2020. Immediate upgrade is critical." },
-  "9.3": { status: "critical", label: "End of Support", desc: "ONTAP 9.3 entered End of Support in 2021. Immediate upgrade is critical." },
-  "9.4": { status: "critical", label: "End of Support", desc: "ONTAP 9.4 entered End of Support in 2021. Immediate upgrade is critical." },
-  "9.5": { status: "critical", label: "End of Support", desc: "ONTAP 9.5 entered End of Support in 2022. Immediate upgrade is critical." },
-  "9.6": { status: "critical", label: "End of Support", desc: "ONTAP 9.6 entered End of Support in 2022. Immediate upgrade is critical." },
-  "9.7": { status: "critical", label: "End of Support", desc: "ONTAP 9.7 entered End of Support in October 2022. No security patches or bug fixes are provided. Immediate upgrade is critical." },
-  "9.8": { status: "warning", label: "Limited Support", desc: "ONTAP 9.8 is in Limited Support. Only critical security fixes are provided." },
-  "9.9.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.9.1 is in Limited Support. Only critical security fixes are provided." },
-  "9.10.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.10.1 is in Limited Support." },
-  "9.11.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.11.1 is in Limited Support." },
-  "9.12.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.12.1 is in Limited Support." },
-  "9.13.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.13.1 entered Limited Support in early 2026." },
-  "9.14.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.14.1 is in General Support." },
-  "9.15.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.15.1 is in General Support (GA)." },
-  "9.16.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.16.1 is in General Support (GA) and is a stable recommended baseline." },
-  "9.17.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.17.1 is in General Support (GA)." },
-  "9.18.1": { status: "compliant", label: "Active Support (Latest Stable)", desc: "ONTAP 9.18.1 is in General Support (GA) and is a modern recommended baseline." },
-  "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, delivering NVMe-oF and AI optimizations." },
-  "9.20.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.20.1 is a modern General Support (GA) release delivering cyber vault, cyber resiliency, and advanced file security controls." },
-  "9.21.1": { status: "compliant", label: "Active Support (New Release)", desc: "ONTAP 9.21.1 is in General Support (GA) with advanced block caching." },
-  "10.0": { status: "compliant", label: "Active Support (Next-Gen)", desc: "ONTAP 10.0 represents the next major operating system release with enhanced cloud-scale unified security features." }
+  "9.7": { status: "warning", label: "Self Service", desc: "ONTAP 9.7 is in Self Service. End of Limited Support was Oct 2024." },
+  "9.8": { status: "warning", label: "Self Service", desc: "ONTAP 9.8 is in Self Service. End of Limited Support was Dec 2025." },
+  "9.9.1": { status: "warning", label: "Self Service", desc: "ONTAP 9.9.1 is in Self Service. Limited Support ends Jun 2026." },
+  "9.10.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.10.1 is in Limited Support. Support ends Jan 2027." },
+  "9.11.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.11.1 is in Limited Support. Support ends Jul 2027." },
+  "9.12.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.12.1 is in Limited Support. Support ends Feb 2028." },
+  "9.13.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.13.1 is in Limited Support. Support ends Jun 2028." },
+  "9.14.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.14.1 is in General Support until Jan 2027." },
+  "9.15.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.15.1 is in General Support until Jul 2027." },
+  "9.16.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.16.1 is in General Support until Jan 2028." },
+  "9.17.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.17.1 is in General Support until Sep 2028." },
+  "9.18.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.18.1 is in General Support until Jan 2029." },
+  "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, full support until May 2029." },
+  "9.20.1": { status: "compliant", label: "Active Support (Planned Release)", desc: "ONTAP 9.20.1 is a planned release expected Q4 2026." }
 };
 
 export function getPlatformMaxDrives(model) {
