@@ -6,7 +6,7 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.21)
+## 🆕 New in this Version (v2.22)
 * **MetroCluster Auto-Detection & Topologies:** Automatically detects MetroCluster IP/FC configurations from ASUP logs, rendering dual-site split cabling graphs and replication paths.
 * **Advanced Best Practice Audits:** Added 5 new rules covering cluster switch RCF versions, front-end port MTU sizing (Jumbo Frames), MetroCluster aggregate SyncMirror status, site hardware symmetry, and Flash Pool SSD cache ratios.
 * **Interactive CLI Script Generator:** Renders a copy-pasteable ONTAP CLI command block in the reporting step to dynamically guide system remediation.
