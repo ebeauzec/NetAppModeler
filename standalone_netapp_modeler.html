@@ -9642,7 +9642,7 @@ function renderAggregateInventory(state) {
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
           <div>
             <strong style="color: #fff; font-size: 0.88rem;">${aggr.name}</strong> 
-            <span style="color: var(--color-muted); font-size: 0.8rem; margin-left: 6px;">[Node: ${aggr.node.toUpperCase()}, RAID: ${aggr.raidType.toUpperCase()}]</span>
+            <span style="color: var(--color-muted); font-size: 0.8rem; margin-left: 6px;">[Node: ${(aggr.node || 'N/A').toUpperCase()}, RAID: ${(aggr.raidType || 'N/A').toUpperCase()}]</span>
           </div>
           <div>
             <span class="status-badge ${badgeClass}" style="padding: 2px 6px; font-size: 0.7rem;">${utilPercent}% Used</span>
@@ -9759,8 +9759,8 @@ function generateReportAggregateInventoryHtml(state) {
       <tr>
         <td style="font-weight:700; color:#fff;">${aggr.name}</td>
         <td>
-          Node: ${aggr.node.toUpperCase()}<br>
-          <span style="font-size:0.75rem; color:var(--color-muted);">${aggr.raidType.toUpperCase()}</span>
+          Node: ${(aggr.node || 'N/A').toUpperCase()}<br>
+          <span style="font-size:0.75rem; color:var(--color-muted);">${(aggr.raidType || 'N/A').toUpperCase()}</span>
         </td>
         <td>
           <strong>${aggr.disksCount}x</strong> ${formatGB(aggr.diskSizeGB)} ${aggr.diskType}
@@ -12214,7 +12214,8 @@ function generateReport() {
   const cards = currentState.expansionCards || [];
   cards.forEach(c => {
     const cKey = typeof c === 'string' ? c : c.cardKey;
-    cardWatts += EXP_CARDS_CATALOG[cKey].power;
+    const cSpec = EXP_CARDS_CATALOG[cKey];
+    if (cSpec) cardWatts += (cSpec.power || 0);
   });
 
   if (shelfType !== "none") {
@@ -12242,8 +12243,8 @@ function generateReport() {
   const targetOntap = document.getElementById("target-ontap").value;
   const curVer = currentState.version.ontap;
   const baseCur = resolveBaseVersionKey(curVer);
-  const hops = UI_UPGRADE_HOPS[baseCur] ? UI_UPGRADE_HOPS[baseCur][targetOntap] : [];
-  let hopListText = `${baseCur} ➔ ` + (hops.length > 0 ? hops.join(" ➔ ") : "No upgrade required");
+  const hops = (UI_UPGRADE_HOPS[baseCur] && UI_UPGRADE_HOPS[baseCur][targetOntap]) ? UI_UPGRADE_HOPS[baseCur][targetOntap] : [];
+  let hopListText = `${baseCur} → ` + (hops.length > 0 ? hops.join(" → ") : "No intermediate hops required");
 
   // Determine Cabling Fix text
   const fixCable = document.getElementById("model-fix-cabling").checked;
@@ -12290,7 +12291,8 @@ function generateReport() {
     const listText = cards.map(c => {
       const cKey = typeof c === 'string' ? c : c.cardKey;
       const slotNum = typeof c === 'string' ? '?' : c.slot;
-      return `Slot ${slotNum}: ${EXP_CARDS_CATALOG[cKey].name}`;
+      const cardSpec = EXP_CARDS_CATALOG[cKey];
+      return `Slot ${slotNum}: ${cardSpec ? cardSpec.name : cKey}`;
     }).join(", ");
     actionSteps.push({
       num: stepCounter++,
