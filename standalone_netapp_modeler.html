@@ -10778,7 +10778,7 @@ function initStep4Inputs() {
   
   // Clear and dynamically populate supported shelves only
   shelfSelect.innerHTML = "<option value='none'>-- No Shelf Added --</option>";
-  profile.supportedShelves.forEach(shelfKey => {
+  (profile.supportedShelves || Object.keys(ALL_SHELVES_CATALOG)).forEach(shelfKey => {
     if (ALL_SHELVES_CATALOG[shelfKey]) {
       const opt = document.createElement("option");
       opt.value = shelfKey;
@@ -10800,7 +10800,7 @@ function initStep4Inputs() {
       `;
       unsupportedShelves.forEach(shelf => {
         const name = ALL_SHELVES_CATALOG[shelf].split(" (")[0];
-        let reason = profile.shelfErrors[shelf] || profile.shelfWarnings[shelf] || `Platform ${currentState.version.model} does not support ${name} shelves.`;
+        let reason = (profile.shelfErrors && profile.shelfErrors[shelf]) || (profile.shelfWarnings && profile.shelfWarnings[shelf]) || `Platform ${currentState.version.model} does not support ${name} shelves.`;
         let optionsTip = "";
         if (shelf === "ns224") {
           optionsTip = " To add NVMe-oF SSD capacity, switch to an NVMe-native platform (e.g. AFF A-series).";
@@ -10809,7 +10809,7 @@ function initStep4Inputs() {
         }
         html += `<li><strong>${name}:</strong> ${reason}${optionsTip}</li>`;
       });
-      const supportedNames = profile.supportedShelves.map(s => ALL_SHELVES_CATALOG[s] ? ALL_SHELVES_CATALOG[s].split(" (")[0] : s).join(", ");
+      const supportedNames = (profile.supportedShelves || []).map(s => ALL_SHELVES_CATALOG[s] ? ALL_SHELVES_CATALOG[s].split(" (")[0] : s).join(", ");
       html += `
           </ul>
           <div style="margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px solid rgba(245, 158, 11, 0.15); font-weight: 500; color: #8ec5fc;">
@@ -10825,8 +10825,9 @@ function initStep4Inputs() {
   const cardSelect = document.getElementById("add-pcie-card");
   cardSelect.innerHTML = "<option value='none'>-- Select Supported Card --</option>";
   
-  profile.supportedCards.forEach(cardKey => {
+  (profile.supportedCards || Object.keys(EXP_CARDS_CATALOG)).forEach(cardKey => {
     const cardSpec = EXP_CARDS_CATALOG[cardKey];
+    if (!cardSpec) return;
     const opt = document.createElement("option");
     opt.value = cardKey;
     opt.textContent = `${cardSpec.name} (${cardSpec.speed})`;
