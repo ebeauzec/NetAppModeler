@@ -1548,7 +1548,7 @@ function allocateHBACardsForState(state) {
     const is100G = cardSpec.speed && cardSpec.speed.includes("100G");
     
     const isGoodSlot = (s) => {
-      if (is100G && s.type.includes("x8")) return false;
+      if (is100G && (s.type || '').includes("x8")) return false;
       return true;
     };
 
@@ -1734,7 +1734,7 @@ function getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield
     let occupiedSlots = new Set();
     const simulateGetSlot = (cardSpec) => {
       const is100G = cardSpec.speed && cardSpec.speed.includes("100G");
-      const isGoodSlot = (s) => !(is100G && s.type.includes("x8"));
+      const isGoodSlot = (s) => !(is100G && (s.type || '').includes("x8"));
       
       let slot = slots.find(s => !occupiedSlots.has(s.num) && s.recType === cardSpec.type && isGoodSlot(s));
       if (slot) { occupiedSlots.add(slot.num); return { slot, warn: false }; }
@@ -3513,12 +3513,12 @@ function renderPortAuditTable(state, tableBodyId) {
     if (!node.ports) return;
     node.ports.forEach(port => {
       let role = "Data (NFS/CIFS)";
-      let speed = port.speed;
+      let speed = port.speed || "";
       let statusClass = port.status === "up" ? "compliant" : "critical";
-      let statusText = port.status.toUpperCase();
+      let statusText = (port.status || 'unknown').toUpperCase();
       let recommendation = "Port healthy and online.";
 
-      const portNameLower = port.name.toLowerCase();
+      const portNameLower = (port.name || "").toLowerCase();
       const speedLower = speed.toLowerCase();
       const typeLower = port.type ? port.type.toLowerCase() : "";
 
@@ -3545,7 +3545,7 @@ function renderPortAuditTable(state, tableBodyId) {
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td style="font-weight:600;">${node.name.toUpperCase()}</td>
+        <td style="font-weight:600;">${(node.name || "").toUpperCase()}</td>
         <td style="font-family:var(--font-mono); font-weight:700; color:var(--color-info);">${port.name}</td>
         <td>${role}</td>
         <td>${speed}</td>
@@ -3567,12 +3567,12 @@ function generateReportPortsHtml() {
     if (!node.ports) return;
     node.ports.forEach(port => {
       let role = "Data (NFS/CIFS)";
-      let speed = port.speed;
+      let speed = port.speed || "";
       let statusClass = port.status === "up" ? "compliant" : "critical";
-      let statusText = port.status.toUpperCase();
+      let statusText = (port.status || 'unknown').toUpperCase();
       let recommendation = "Port healthy and online.";
 
-      const portNameLower = port.name.toLowerCase();
+      const portNameLower = (port.name || "").toLowerCase();
       const typeLower = port.type ? port.type.toLowerCase() : "";
 
       if (typeLower.includes("cluster") || portNameLower === "e0a" || portNameLower === "e0b") {
@@ -3594,7 +3594,7 @@ function generateReportPortsHtml() {
 
       html += `
         <tr>
-          <td style="font-weight:600;">${node.name.toUpperCase()}</td>
+          <td style="font-weight:600;">${(node.name || "").toUpperCase()}</td>
           <td style="font-family:var(--font-mono); font-weight:700;">${port.name}</td>
           <td>${role}</td>
           <td>${speed}</td>
@@ -4000,7 +4000,7 @@ function populatePcieSlotDropdown(selectedCardKey) {
         const isTypeMatch = slot.recType === "any" || slot.recType === cardType;
         if (!isTypeMatch) {
           // If there is an idle/free slot optimized specifically for this card type, disable this sub-optimal slot
-          const hasBetterSlotFree = slots.some(s => !occupiedSlots.has(s.num) && s.recType === cardType && !(is100G && s.type.includes("x8")));
+          const hasBetterSlotFree = slots.some(s => !occupiedSlots.has(s.num) && s.recType === cardType && !(is100G && (s.type || '').includes("x8")));
           if (hasBetterSlotFree) {
             opt.disabled = true;
             labelSuffix = ` [Sub-optimal: Use Slot ${slots.find(s => !occupiedSlots.has(s.num) && s.recType === cardType).num}]`;
