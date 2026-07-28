@@ -19,56 +19,55 @@ def bundle():
         content = re.sub(r"\bexport\s+(const|let|var|function|class)\b", r"\1", content)
         return content
 
-    # 4. JS files: (path, wrap_in_block_scope)
-    # Block-wrapping gives each dependency file its own scope so cross-file
-    # const/let declarations can never collide in the single-script bundle.
-    # ui.js is NOT wrapped because it is the entry point and registers DOM listeners
-    # that must be accessible from HTML event attributes.
+    # 4. JS files in dependency order (flat concatenation - all share one scope)
+    # IMPORTANT: Any top-level name must be unique across ALL files.
+    # Known renames to prevent collision:
+    #   ONTAP_HOPS in ui.js -> UI_UPGRADE_HOPS  (compatibility.js owns ONTAP_HOPS)
+    #   ONTAP_LIFECYCLE in bestPractices.js -> BP_LIFECYCLE  (compatibility.js owns ONTAP_LIFECYCLE)
     js_files = [
-        ("js/jszip.min.js",     False),
-        ("js/demoData.js",      True),
-        ("js/parser.js",        True),
-        ("js/compatibility.js", True),
-        ("js/bestPractices.js", True),
-        ("js/ui.js",            False),
+        "js/jszip.min.js",
+        "js/demoData.js",
+        "js/parser.js",
+        "js/compatibility.js",
+        "js/bestPractices.js",
+        "js/ui.js",
     ]
 
-    # --- Pre-build collision detector (top-level names in unwrapped files only) ---
-    # Only ui.js is unwrapped, so only names declared in ui.js can collide with globals.
-    # We only need to check that ui.js does not re-declare names from jszip.
-    # All other inter-file collisions are impossible because they are block-scoped.
-    # This detector remains useful if wrap=False is ever added to more files.
+    # --- Build-time collision detector ---
+    # Checks for duplicate top-level declarations across source files.
+    # Run before bundling so errors are caught at build time, not browser runtime.
     seen = {}
-    for rel_path, wrap in js_files:
-        if wrap:
-            continue  # block-scoped files cannot collide with each other
-        path = os.path.join(base_dir, rel_path)
-        with open(path, "r", encoding="utf-8") as f:
+    errors = []
+    for rel_path in js_files:
+        if rel_path.endswith("jszip.min.js"):
+            continue
+        with open(os.path.join(base_dir, rel_path), "r", encoding="utf-8") as f:
             src = f.read()
         cleaned = clean_js(src)
         for line in cleaned.splitlines():
-            m = re.match(r'^(const|let|var|function)\s+([A-Za-z_][A-Za-z0-9_$]*)', line)
+            m = re.match(r'^(const|let|var|function)\s+([A-Za-z_][A-Za-z0-9_$]*)\b', line)
             if m:
                 name = m.group(2)
                 if name in seen and seen[name] != rel_path:
-                    raise SystemExit(
-                        f"\nBUILD ERROR: Top-level collision '{name}' in '{seen[name]}' AND '{rel_path}'.\n"
-                        f"Rename one of them before rebuilding.\n"
-                    )
-                seen[name] = rel_path
+                    errors.append(f"  COLLISION: '{name}' in '{seen[name]}' AND '{rel_path}'")
+                else:
+                    seen[name] = rel_path
+    if errors:
+        print("BUILD FAILED - Top-level name collisions detected:")
+        for e in errors:
+            print(e)
+        print("\nRename the duplicate identifiers before rebuilding.")
+        raise SystemExit(1)
+    # --- End collision detector ---
 
-    # 5. Build bundled JS
+    # 5. Build bundled JS (flat - all files share one global scope by design)
     parts = []
-    for rel_path, wrap in js_files:
+    for rel_path in js_files:
         with open(os.path.join(base_dir, rel_path), "r", encoding="utf-8") as f:
             content = f.read()
         if not rel_path.endswith("jszip.min.js"):
             content = clean_js(content)
-        if wrap:
-            content = f"// --- START {rel_path} ---\n{{\n{content}\n}}\n// --- END {rel_path} ---"
-        else:
-            content = f"// --- START {rel_path} ---\n{content}\n// --- END {rel_path} ---"
-        parts.append(content)
+        parts.append(f"// --- START {rel_path} ---\n{content}\n// --- END {rel_path} ---")
 
     js_code = "\n\n".join(parts)
 
