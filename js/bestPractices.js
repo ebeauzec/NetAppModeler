@@ -5,7 +5,7 @@
 
 import { getPlatformProfile, compareVersions, EXP_CARDS_CATALOG, PLATFORM_SLOT_DETAILS } from './compatibility.js';
 
-export const ONTAP_LIFECYCLE = {
+export const BP_LIFECYCLE = {
   "9.7": { status: "warning", label: "Self Service", desc: "ONTAP 9.7 is in Self Service. End of Limited Support was Oct 2024." },
   "9.8": { status: "warning", label: "Self Service", desc: "ONTAP 9.8 is in Self Service. End of Limited Support was Dec 2025." },
   "9.9.1": { status: "warning", label: "Self Service", desc: "ONTAP 9.9.1 is in Self Service. Limited Support ends Jun 2026." },
@@ -176,7 +176,7 @@ export function runAudit(systemState) {
   const verMatch = ontapVer.match(/^(\d+\.\d+(\.\d+)?)/);
   if (verMatch) baseVer = verMatch[1];
 
-  const lifecycle = ONTAP_LIFECYCLE[baseVer] || { status: "warning", label: "Unknown Support Lifecycle", desc: "Check NetApp Support Site for lifecycle details." };
+  const lifecycle = BP_LIFECYCLE[baseVer] || { status: "warning", label: "Unknown Support Lifecycle", desc: "Check NetApp Support Site for lifecycle details." };
   
   addReport(
     "BP_ONTAP_VERSION",
