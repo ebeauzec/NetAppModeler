@@ -1542,7 +1542,7 @@ function allocateHBACardsForState(state) {
     autoCards.forEach(c => {
       const dynamicPorts = getCardPorts(c.cardKey, c.slot);
       state.nodes.forEach(node => {
-        node.ports = node.ports.filter(p => !dynamicPorts.includes(p.name));
+        node.ports = node.ports.filter(p => !dynamicPorts.includes(p.name || ''));
       });
     });
     state.expansionCards = state.expansionCards.filter(c => !c.autoAdded);
@@ -4452,7 +4452,7 @@ function renderAddedCardsList() {
         cardEl.querySelector("button").addEventListener("click", () => {
           // Remove ports
           currentState.nodes.forEach(node => {
-            node.ports = node.ports.filter(p => !cardSpec.ports.includes(p.name));
+            node.ports = node.ports.filter(p => !(cardSpec.ports || []).includes(p.name || ''));
           });
 
           currentState.expansionCards = currentState.expansionCards.filter(c => c.slot !== slot.num);

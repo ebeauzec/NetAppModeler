@@ -578,7 +578,7 @@ export function runAudit(systemState) {
     if (!cardSpec) return;
     
     // Check if card is supported on the platform
-    if (!profile.supportedCards.includes(c.cardKey)) {
+    if (profile.supportedCards && !profile.supportedCards.includes(c.cardKey)) {
       cardWarnings.push(`Card ${cardSpec.name} is NOT officially supported on platform ${systemState.version.model}.`);
     }
     

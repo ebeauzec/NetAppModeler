@@ -5801,7 +5801,7 @@ function runAudit(systemState) {
     if (!cardSpec) return;
     
     // Check if card is supported on the platform
-    if (!profile.supportedCards.includes(c.cardKey)) {
+    if (profile.supportedCards && !profile.supportedCards.includes(c.cardKey)) {
       cardWarnings.push(`Card ${cardSpec.name} is NOT officially supported on platform ${systemState.version.model}.`);
     }
     
@@ -7830,7 +7830,7 @@ function allocateHBACardsForState(state) {
     autoCards.forEach(c => {
       const dynamicPorts = getCardPorts(c.cardKey, c.slot);
       state.nodes.forEach(node => {
-        node.ports = node.ports.filter(p => !dynamicPorts.includes(p.name));
+        node.ports = node.ports.filter(p => !dynamicPorts.includes(p.name || ''));
       });
     });
     state.expansionCards = state.expansionCards.filter(c => !c.autoAdded);
@@ -10740,7 +10740,7 @@ function renderAddedCardsList() {
         cardEl.querySelector("button").addEventListener("click", () => {
           // Remove ports
           currentState.nodes.forEach(node => {
-            node.ports = node.ports.filter(p => !cardSpec.ports.includes(p.name));
+            node.ports = node.ports.filter(p => !(cardSpec.ports || []).includes(p.name || ''));
           });
 
           currentState.expansionCards = currentState.expansionCards.filter(c => c.slot !== slot.num);
