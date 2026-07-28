@@ -1407,6 +1407,54 @@ function loadASUPData(input, isGreenfield = false) {
     isGreenfieldMode = isGreenfield;
     if (input && input.version) {
       currentState = input;
+      // --- State Normalizer: ensure all fields that runAudit/UI expect exist ---
+      // This guards against both partial ASUP parses and greenfield-generated states
+      currentState.shelves            = currentState.shelves            || [];
+      currentState.aggregates         = currentState.aggregates         || [];
+      currentState.spares             = currentState.spares             || [];
+      currentState.nodes              = currentState.nodes              || [];
+      currentState.licenses           = currentState.licenses           || [];
+      currentState.switches           = currentState.switches           || [];
+      currentState.expansionCards     = currentState.expansionCards     || [];
+      currentState.alerts             = currentState.alerts             || [];
+      currentState.parseWarnings      = currentState.parseWarnings      || [];
+      currentState.haStatus           = currentState.haStatus           || [];
+      currentState.brokenDisks        = currentState.brokenDisks        || [];
+      currentState.healthAlerts       = currentState.healthAlerts       || [];
+      currentState.snapmirrorRelationships = currentState.snapmirrorRelationships || [];
+      currentState.lifs               = currentState.lifs               || [];
+      currentState.mccNodes           = currentState.mccNodes           || [];
+      currentState.metrocluster       = currentState.metrocluster       || "none";
+      currentState.isADP              = currentState.isADP              || false;
+      if (!currentState.version)      currentState.version = { model: "Unknown", ontap: "9.14.1", serial: "N/A" };
+      // Ensure each shelf has required fields
+      currentState.shelves.forEach(s => {
+        s.model    = s.model    || "Unknown";
+        s.disks    = s.disks    || [];
+        s.cabling  = s.cabling  || "Multipath HA";
+        s.firmware = s.firmware || "N/A";
+      });
+      // Ensure each aggregate has required fields
+      currentState.aggregates.forEach(a => {
+        a.diskType = a.diskType || "SSD";
+        a.raidType = a.raidType || "RAID-DP";
+        a.node     = a.node     || "node-a";
+        a.disks    = a.disks    || [];
+        a.usableGB = a.usableGB || 0;
+        a.usedGB   = a.usedGB   || 0;
+        a.freeGB   = a.freeGB   || 0;
+      });
+      // Ensure each node has ports array
+      currentState.nodes.forEach(n => {
+        n.ports = n.ports || [];
+        n.ports.forEach(p => {
+          p.speed  = p.speed  || "";
+          p.status = p.status || "up";
+          p.name   = p.name   || "";
+          p.type   = p.type   || "data";
+        });
+      });
+      // --- End State Normalizer ---
       // Populate baseline alerts for manual configurations if not present
       if (!currentState.alerts) {
         currentState.alerts = [];
