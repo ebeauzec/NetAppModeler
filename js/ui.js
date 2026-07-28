@@ -1575,7 +1575,7 @@ function allocateHBACardsForState(state) {
     let roce = 0;
     let sas = 0;
     ports.forEach(p => {
-      const name = p.name.toLowerCase();
+      const name = (p.name || "").toLowerCase();
       const speed = (p.speed || "").toLowerCase();
       const portType = (p.type || "").toLowerCase();
       
@@ -1681,7 +1681,7 @@ function allocateHBACardsForState(state) {
         state.nodes.forEach(node => {
           if (!node.ports) node.ports = [];
           dynamicPorts.forEach(pName => {
-            const exists = node.ports.find(p => p.name.toLowerCase() === pName.toLowerCase());
+            const exists = node.ports.find(p => (p.name || "").toLowerCase() === (pName || "").toLowerCase());
             if (!exists) {
               node.ports.push({
                 name: pName,
@@ -4822,7 +4822,7 @@ function updateCapacityImpactDetails() {
         let roce = 0;
         let sas = 0;
         ports.forEach(p => {
-          const name = p.name.toLowerCase();
+          const name = (p.name || "").toLowerCase();
           const speed = (p.speed || "").toLowerCase();
           const portType = (p.type || "").toLowerCase();
           
