@@ -74,8 +74,7 @@ export function parseASUP(files) {
   }
   
   let isModelParsed = false;
-  const modelMatch = combinedText.match(/Model Name:\s*([^\r\n]+)/i) ||
-                     combinedText.match(/System Model:\s*([^\r\n]+)/i);
+  const modelMatch = combinedText.match(/(?:System Model|Model Name|Platform|system type)\s*:\s*([A-Za-z0-9 \-\/]+)/i);
   if (modelMatch) {
     data.version.model = modelMatch[1].trim();
     isModelParsed = true;
@@ -509,7 +508,7 @@ export function parseASUP(files) {
   }
 
   // --- 6. Parse Licenses ---
-  const licRegex = /^\s*([a-zA-Z0-9_\-]+)\s+(active|expired|disabled)(?:\s+\[Expired:\s*([^\]]+)\])?/gm;
+  const licRegex = /(?:^|\t|  )([A-Za-z][A-Za-z0-9_\-]+)\s+(active|expired|disabled|unlicensed)/gim;
   let licMatch;
   while ((licMatch = licRegex.exec(combinedText)) !== null) {
     const name = licMatch[1].trim();
@@ -747,6 +746,88 @@ export function parseASUP(files) {
   }
 
   data.alerts = extractASUPAlerts(combinedText, files);
+
+  // 3a. Storage Failover / HA Status
+  const sfMatches = [...combinedText.matchAll(/^(\S+)\s+(true|false)\s+(\S.*?)\s{2,}(\S.*?)$/gim)];
+  data.haStatus = sfMatches.map(m => ({
+    node: m[1].trim(),
+    enabled: m[2].toLowerCase() === 'true',
+    state: m[3].trim(),
+    partner: m[4].trim()
+  }));
+
+  // 3b. Broken Disks
+  const brokenSection = combinedText.match(/storage disk show.*?-broken[\s\S]*?(?=\n\n[A-Z]|$)/i);
+  data.brokenDisks = [];
+  if (brokenSection) {
+    const brokenMatches = [...brokenSection[0].matchAll(/(\S+:\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(broken|failed|prefailed)/gi)];
+    data.brokenDisks = brokenMatches.map(m => ({ disk: m[1], type: m[2], rpm: m[3], reason: m[4] }));
+  }
+
+  // 3c. System Health Alerts
+  const alertSection = combinedText.match(/health alert show[\s\S]*?(?=\n\n[A-Z]|$)/i);
+  data.healthAlerts = [];
+  if (alertSection) {
+    const alertMatches = [...alertSection[0].matchAll(/^\s*(\S+)\s+(\d+)\s+(error|warning|critical|notice)\s+(.+)$/gim)];
+    data.healthAlerts = alertMatches.map(m => ({ node: m[1], id: m[2], severity: m[3], description: m[4].trim() }));
+  }
+
+  // 3d. SnapMirror Relationships
+  data.snapmirrorRelationships = [];
+  const smMatches = [...combinedText.matchAll(/^(\S+:\S+)\s+(\S+:\S+)\s+(\S+)\s+(\d+\s+\S+)\s+(true|false|\-)/gim)];
+  if (smMatches.length > 0) {
+    data.snapmirrorRelationships = smMatches.map(m => ({
+      source: m[1],
+      destination: m[2],
+      status: m[3],
+      lag: m[4],
+      healthy: m[5].toLowerCase() === 'true'
+    }));
+  }
+
+  // 3e. Logical Interfaces (LIFs)
+  data.lifs = [];
+  const lifMatches = [...combinedText.matchAll(/^\s*(\S+)\s+(\S+)\s+(\/\d+|\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(up|down)\s+(up|down)/gim)];
+  data.lifs = lifMatches.map(m => ({
+    lif: m[1],
+    node: m[2],
+    address: m[3],
+    homeNode: m[4],
+    homePort: m[5],
+    statusAdmin: m[6],
+    statusOper: m[7],
+    isHome: m[2].trim().toLowerCase() === m[4].trim().toLowerCase()
+  }));
+
+  // 3f. Aggregate Space Usage
+  data.aggregates.forEach(agg => {
+    const spaceMatch = combinedText.match(new RegExp(agg.name + '\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+)%', 'i'));
+    if (spaceMatch) {
+      agg.totalSpace = spaceMatch[1];
+      agg.usedSpace = spaceMatch[2];
+      agg.usedPercent = parseFloat(spaceMatch[3]);
+    }
+  });
+
+  // 3g. MetroCluster Details
+  // Parse metrocluster node show for site/DR group info
+  const mccNodeMatches = [...combinedText.matchAll(/^(\S+)\s+(local|remote)\s+(\d+)\s+(\S+)\s+(configured|not-configured)/gim)];
+  if (mccNodeMatches.length > 0) {
+    data.mccNodes = mccNodeMatches.map(m => ({
+      node: m[1],
+      role: m[2], // local or remote
+      drGroupId: parseInt(m[3]),
+      partnerCluster: m[4],
+      configured: m[5] === 'configured'
+    }));
+  }
+  // Parse mediator
+  const mediatorMatch = combinedText.match(/mediator.*?IP.*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/i);
+  if (mediatorMatch) data.mccMediator = mediatorMatch[1];
+
+  // 3h. ADP Detection
+  // Detect ADP (Advanced Drive Partitioning)
+  data.isADP = /root-data|root-data-data|ADPv[12]/i.test(combinedText);
 
   return data;
 }

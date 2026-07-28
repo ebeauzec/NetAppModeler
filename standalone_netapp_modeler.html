@@ -937,7 +937,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.20</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.21</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2334,8 +2334,7 @@ function parseASUP(files) {
   }
   
   let isModelParsed = false;
-  const modelMatch = combinedText.match(/Model Name:\s*([^\r\n]+)/i) ||
-                     combinedText.match(/System Model:\s*([^\r\n]+)/i);
+  const modelMatch = combinedText.match(/(?:System Model|Model Name|Platform|system type)\s*:\s*([A-Za-z0-9 \-\/]+)/i);
   if (modelMatch) {
     data.version.model = modelMatch[1].trim();
     isModelParsed = true;
@@ -2769,7 +2768,7 @@ function parseASUP(files) {
   }
 
   // --- 6. Parse Licenses ---
-  const licRegex = /^\s*([a-zA-Z0-9_\-]+)\s+(active|expired|disabled)(?:\s+\[Expired:\s*([^\]]+)\])?/gm;
+  const licRegex = /(?:^|\t|  )([A-Za-z][A-Za-z0-9_\-]+)\s+(active|expired|disabled|unlicensed)/gim;
   let licMatch;
   while ((licMatch = licRegex.exec(combinedText)) !== null) {
     const name = licMatch[1].trim();
@@ -3008,6 +3007,88 @@ function parseASUP(files) {
 
   data.alerts = extractASUPAlerts(combinedText, files);
 
+  // 3a. Storage Failover / HA Status
+  const sfMatches = [...combinedText.matchAll(/^(\S+)\s+(true|false)\s+(\S.*?)\s{2,}(\S.*?)$/gim)];
+  data.haStatus = sfMatches.map(m => ({
+    node: m[1].trim(),
+    enabled: m[2].toLowerCase() === 'true',
+    state: m[3].trim(),
+    partner: m[4].trim()
+  }));
+
+  // 3b. Broken Disks
+  const brokenSection = combinedText.match(/storage disk show.*?-broken[\s\S]*?(?=\n\n[A-Z]|$)/i);
+  data.brokenDisks = [];
+  if (brokenSection) {
+    const brokenMatches = [...brokenSection[0].matchAll(/(\S+:\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(broken|failed|prefailed)/gi)];
+    data.brokenDisks = brokenMatches.map(m => ({ disk: m[1], type: m[2], rpm: m[3], reason: m[4] }));
+  }
+
+  // 3c. System Health Alerts
+  const alertSection = combinedText.match(/health alert show[\s\S]*?(?=\n\n[A-Z]|$)/i);
+  data.healthAlerts = [];
+  if (alertSection) {
+    const alertMatches = [...alertSection[0].matchAll(/^\s*(\S+)\s+(\d+)\s+(error|warning|critical|notice)\s+(.+)$/gim)];
+    data.healthAlerts = alertMatches.map(m => ({ node: m[1], id: m[2], severity: m[3], description: m[4].trim() }));
+  }
+
+  // 3d. SnapMirror Relationships
+  data.snapmirrorRelationships = [];
+  const smMatches = [...combinedText.matchAll(/^(\S+:\S+)\s+(\S+:\S+)\s+(\S+)\s+(\d+\s+\S+)\s+(true|false|\-)/gim)];
+  if (smMatches.length > 0) {
+    data.snapmirrorRelationships = smMatches.map(m => ({
+      source: m[1],
+      destination: m[2],
+      status: m[3],
+      lag: m[4],
+      healthy: m[5].toLowerCase() === 'true'
+    }));
+  }
+
+  // 3e. Logical Interfaces (LIFs)
+  data.lifs = [];
+  const lifMatches = [...combinedText.matchAll(/^\s*(\S+)\s+(\S+)\s+(\/\d+|\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(up|down)\s+(up|down)/gim)];
+  data.lifs = lifMatches.map(m => ({
+    lif: m[1],
+    node: m[2],
+    address: m[3],
+    homeNode: m[4],
+    homePort: m[5],
+    statusAdmin: m[6],
+    statusOper: m[7],
+    isHome: m[2].trim().toLowerCase() === m[4].trim().toLowerCase()
+  }));
+
+  // 3f. Aggregate Space Usage
+  data.aggregates.forEach(agg => {
+    const spaceMatch = combinedText.match(new RegExp(agg.name + '\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+)%', 'i'));
+    if (spaceMatch) {
+      agg.totalSpace = spaceMatch[1];
+      agg.usedSpace = spaceMatch[2];
+      agg.usedPercent = parseFloat(spaceMatch[3]);
+    }
+  });
+
+  // 3g. MetroCluster Details
+  // Parse metrocluster node show for site/DR group info
+  const mccNodeMatches = [...combinedText.matchAll(/^(\S+)\s+(local|remote)\s+(\d+)\s+(\S+)\s+(configured|not-configured)/gim)];
+  if (mccNodeMatches.length > 0) {
+    data.mccNodes = mccNodeMatches.map(m => ({
+      node: m[1],
+      role: m[2], // local or remote
+      drGroupId: parseInt(m[3]),
+      partnerCluster: m[4],
+      configured: m[5] === 'configured'
+    }));
+  }
+  // Parse mediator
+  const mediatorMatch = combinedText.match(/mediator.*?IP.*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/i);
+  if (mediatorMatch) data.mccMediator = mediatorMatch[1];
+
+  // 3h. ADP Detection
+  // Detect ADP (Advanced Drive Partitioning)
+  data.isADP = /root-data|root-data-data|ADPv[12]/i.test(combinedText);
+
   return data;
 }
 
@@ -3153,7 +3234,9 @@ const EXP_CARDS_CATALOG = {
   fc_hba_64g_2port: { name: "Dual-port 64Gb Fibre Channel HBA", type: "san", ports: ["0i", "0j"], speed: "64Gb FC", minOntap: "9.16.1", power: 28 },
   sas_hba_12g_4port: { name: "Quad-port 12G SAS Adapter", type: "storage", ports: ["0c", "0d", "0e", "0f"], speed: "12Gb SAS", minOntap: "9.1", power: 20 },
   roce_hba_100g_2port: { name: "Dual-port 100GbE NVMe-oF RoCE Adapter", type: "storage", ports: ["e0g", "e0h"], speed: "100GbE RoCE", minOntap: "9.8", power: 38 },
-  nvme_tcp_100g_2port: { name: "Dual-port 100GbE NVMe-over-TCP Adapter", type: "nic", ports: ["e2a", "e2b"], speed: "100GbE", minOntap: "9.10.1", power: 35 }
+  nvme_tcp_100g_2port: { name: "Dual-port 100GbE NVMe-over-TCP Adapter", type: "nic", ports: ["e2a", "e2b"], speed: "100GbE", minOntap: "9.10.1", power: 35 },
+  "nic_40g_2port": { label: "40GbE 2-Port NIC (X1146A)", ports: 2, speed: "40GbE", protocol: "ethernet", minOntap: "9.5" },
+  "nic_100g_2port_roce": { label: "100GbE RoCE 2-Port NIC (X91148A)", ports: 2, speed: "100GbE", protocol: "nvme_roce", minOntap: "9.10.1" }
 };
 
 const PLATFORM_SLOT_DETAILS = {
@@ -4516,7 +4599,38 @@ const NETAPP_PLATFORMS = {
     },
     supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
     maxPcieSlots: 2
-  }
+  },
+// === ASA A-Series (SAN-Only All-Flash) ===
+"ASA A150": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 128, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
+"ASA A250": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 256, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
+"ASA A400": { tier: "midrange", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"ASA A800": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 1536, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A900": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A1K": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A70": { tier: "midrange", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A90": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 1024, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+// === ASA C-Series (Capacity / QLC SAN-Only) ===
+"ASA C250": { tier: "entry", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA C400": { tier: "midrange", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA C800": { tier: "enterprise", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA r2": { tier: "enterprise", sanOnly: true, minOntap: "9.16.1", maxOntap: "9.16.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+// === AFF C-Series (Capacity Flash) ===
+"AFF C250": { tier: "entry", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"AFF C400": { tier: "midrange", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"AFF C800": { tier: "enterprise", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
+// === AFF A-Series (Missing entries) ===
+"AFF A200": { tier: "entry", minOntap: "9.4", maxOntap: "9.10.1", maxRamGB: 192, supportedShelves: ["ds2246", "ds460c", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"AFF A700": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.14.1", maxRamGB: 1536, supportedShelves: ["ns224", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
+"AFF A700s": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.12.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC"] },
+"AFF A30": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A50": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A70": { tier: "midrange", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A1K": { tier: "enterprise", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+// === FAS Legacy ===
+"FAS8020": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 256, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"FAS8040": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 512, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"FAS8060": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.7", maxRamGB: 768, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"FAS8080 EX": { tier: "enterprise", minOntap: "8.3", maxOntap: "9.7", maxRamGB: 1024, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] }
 };
 
 // Returns compatibility profile for a parsed model
@@ -4622,6 +4736,9 @@ function getUpgradeHopsConsiderations(currentVersion, targetVersion, controllerM
       "system switch ethernet show",
       "security config modify -supported-protocols TLSv1.2,TLSv1.3"
     ]},
+    { from: "9.9.1", to: "9.10.1", type: "direct" },
+    { from: "9.10.1", to: "9.11.1", type: "direct" },
+    { from: "9.11.1", to: "9.12.1", type: "direct" },
     { from: "9.9.1", to: "9.12.1", title: "Hop 9.9.1 ➔ 9.12.1 Considerations", directUpgrade: false, risks: [
       "Direct Upgrade Limit: Direct upgrade from 9.9.1 is supported ONLY if the cluster is currently running 9.9.1P13 or higher patch release; otherwise, an intermediate hop to ONTAP 9.10.1 is required.",
       "FAS2500 Hardware EOS: ONTAP 9.10.1+ completely removes kernel drivers for FAS2520, FAS2552, and FAS2554. DO NOT proceed if cluster contains these controller models.",
