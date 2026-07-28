@@ -4901,31 +4901,31 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
 // === ASA A-Series (SAN-Only All-Flash) ===
-"ASA A150": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 128, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
-"ASA A250": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 256, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
-"ASA A400": { tier: "midrange", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"ASA A800": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 1536, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A900": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A1K": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A70": { tier: "midrange", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A90": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 1024, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A150": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.17.1", maxRamGB: 128, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
+"ASA A250": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.17.1", maxRamGB: 256, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
+"ASA A400": { tier: "midrange", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.17.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"ASA A800": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.17.1", maxRamGB: 1536, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A900": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.17.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A1K": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.17.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A70": { tier: "midrange", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.17.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A90": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.17.1", maxRamGB: 1024, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
 // === ASA C-Series (Capacity / QLC SAN-Only) ===
-"ASA C250": { tier: "entry", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
-"ASA C400": { tier: "midrange", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
-"ASA C800": { tier: "enterprise", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
-"ASA r2": { tier: "enterprise", sanOnly: true, minOntap: "9.16.1", maxOntap: "9.16.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA C250": { tier: "entry", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.17.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA C400": { tier: "midrange", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.17.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA C800": { tier: "enterprise", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.17.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA r2": { tier: "enterprise", sanOnly: true, minOntap: "9.16.1", maxOntap: "9.17.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
 // === AFF C-Series (Capacity Flash) ===
-"AFF C250": { tier: "entry", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
-"AFF C400": { tier: "midrange", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
-"AFF C800": { tier: "enterprise", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
+"AFF C250": { tier: "entry", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.17.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"AFF C400": { tier: "midrange", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.17.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"AFF C800": { tier: "enterprise", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.17.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
 // === AFF A-Series (Missing entries) ===
 "AFF A200": { tier: "entry", minOntap: "9.4", maxOntap: "9.10.1", maxRamGB: 192, supportedShelves: ["ds2246", "ds460c", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "AFF A700": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.14.1", maxRamGB: 1536, supportedShelves: ["ns224", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
 "AFF A700s": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.12.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC"] },
-"AFF A30": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF A50": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF A70": { tier: "midrange", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF A1K": { tier: "enterprise", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A30": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.17.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A50": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.17.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A70": { tier: "midrange", minOntap: "9.15.1", maxOntap: "9.17.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A1K": { tier: "enterprise", minOntap: "9.15.1", maxOntap: "9.17.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
 // === FAS Legacy ===
 "FAS8020": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 256, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "FAS8040": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 512, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
@@ -6538,7 +6538,7 @@ function populateManualPlatformDropdown() {
     const selectedModel = select.value;
     const profile = getPlatformProfile(selectedModel);
     
-    const targetOptions = ["9.7", "9.8", "9.9.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1", "9.20.1"];
+    const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1"];
     
     targetOptions.forEach(optVal => {
       if (compareVersions(optVal, profile.maxOntap) <= 0) {
@@ -9835,7 +9835,7 @@ function initStep3Inputs() {
   const curVer = currentState.version.ontap;
   const profile = getPlatformProfile(currentState.version.model);
   
-  const targetOptions = ["9.7", "9.8", "9.9.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1", "9.20.1"];
+  const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1"];
   
   targetOptions.forEach(opt => {
     const isDowngrade = compareVersions(opt, curVer) < 0 && !curVer.startsWith(opt);

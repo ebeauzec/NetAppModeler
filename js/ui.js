@@ -302,7 +302,7 @@ function populateManualPlatformDropdown() {
     const selectedModel = select.value;
     const profile = getPlatformProfile(selectedModel);
     
-    const targetOptions = ["9.7", "9.8", "9.9.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1", "9.20.1"];
+    const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1"];
     
     targetOptions.forEach(optVal => {
       if (compareVersions(optVal, profile.maxOntap) <= 0) {
@@ -3599,7 +3599,7 @@ function initStep3Inputs() {
   const curVer = currentState.version.ontap;
   const profile = getPlatformProfile(currentState.version.model);
   
-  const targetOptions = ["9.7", "9.8", "9.9.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1", "9.20.1"];
+  const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1"];
   
   targetOptions.forEach(opt => {
     const isDowngrade = compareVersions(opt, curVer) < 0 && !curVer.startsWith(opt);
