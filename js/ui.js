@@ -1445,7 +1445,8 @@ function loadASUPData(input, isGreenfield = false) {
     // Ensure onboard storage ports are present in node.ports for auditing
     const profile = getPlatformProfile(currentState.version.model);
     if (profile && profile.ports && profile.ports.storage) {
-      const isAllNVMe = profile.supportedShelves.includes("ns224") && !profile.supportedShelves.includes("ds224c");
+      const shelves1448 = profile.supportedShelves || ["ns224"];
+      const isAllNVMe = shelves1448.includes("ns224") && !shelves1448.includes("ds224c");
       currentState.nodes.forEach(node => {
         if (!node.ports) node.ports = [];
         profile.ports.storage.forEach(p => {
@@ -1651,7 +1652,8 @@ function allocateHBACardsForState(state) {
 
 // Dynamic Disk Sizing helper
 function getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield) {
-  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || model.toUpperCase().includes("ASA") || !profile.supportedShelves.includes("ds224c"));
+  const _shelves = profile.supportedShelves || ["ns224"];
+  const isAllNVMe = _shelves.includes("ns224") && (model.toUpperCase().includes("AFF") || model.toUpperCase().includes("ASA") || !_shelves.includes("ds224c"));
   const maxDrives = getPlatformMaxDrives(model);
   
   const nvmeSizes = [
@@ -1823,7 +1825,8 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
     ontapSelect.value = startingOntap;
   }
 
-  const isAllNVMe = profile.supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || model.toUpperCase().includes("ASA") || !profile.supportedShelves.includes("ds224c"));
+  const supportedShelves = profile.supportedShelves || ["ns224"];
+  const isAllNVMe = supportedShelves.includes("ns224") && (model.toUpperCase().includes("AFF") || model.toUpperCase().includes("ASA") || !supportedShelves.includes("ds224c"));
   const optDisk = getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield);
   const shelfModel = isAllNVMe ? "NS224" : "DS224C";
   const diskType = optDisk.diskType;
@@ -1939,8 +1942,10 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
   }
 
   const expansionCards = [];
-  if (isGreenfield && profile.supportedLicenses.includes("FCP")) {
-    const hasOnboardSan = profile.ports.san && profile.ports.san.length > 0;
+  const supportedLicenses = profile.supportedLicenses || (profile.defaultProtocols ? profile.defaultProtocols.map(p => ({ name: p })) : []);
+  const licenseNames = profile.supportedLicenses ? profile.supportedLicenses : (profile.defaultProtocols || []);
+  if (isGreenfield && licenseNames.includes("FCP")) {
+    const hasOnboardSan = profile.ports && profile.ports.san && profile.ports.san.length > 0;
     if (!hasOnboardSan) {
       const pSlots = getPlatformSlots(model);
       const sanSlot = pSlots.find(s => s.recType === "san");
@@ -1979,11 +1984,11 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
       { name: "FlexClone", status: "active", details: "", serial: serial },
       { name: "FabricPool", status: "active", details: "", serial: serial },
       { name: "MetroCluster", status: (isGreenfield || mcType !== "none") ? "active" : "disabled", details: "", serial: serial }
-    ].filter(lic => profile.supportedLicenses.includes(lic.name))
+    ].filter(lic => licenseNames.includes(lic.name))
   };
 
   // Add onboard SAN ports if platform has them
-  if (profile.ports.san && profile.ports.san.length > 0) {
+  if (profile.ports && profile.ports.san && profile.ports.san.length > 0) {
     state.nodes.forEach(node => {
       profile.ports.san.forEach(p => {
         node.ports.push({ name: p, status: "up", speed: "16Gb FC", duplex: "full", type: "fc" });
@@ -4450,7 +4455,7 @@ function initStep4Inputs() {
   const unsupportedInfo = document.getElementById("unsupported-shelves-info");
   if (unsupportedInfo) {
     unsupportedInfo.innerHTML = "";
-    const unsupportedShelves = Object.keys(ALL_SHELVES_CATALOG).filter(s => !profile.supportedShelves.includes(s));
+    const unsupportedShelves = Object.keys(ALL_SHELVES_CATALOG).filter(s => !(profile.supportedShelves || []).includes(s));
     if (unsupportedShelves.length > 0) {
       let html = `
         <div style="background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.3); padding: 0.75rem; border-radius: var(--radius-md); font-size: 0.8rem; line-height: 1.4; color: var(--color-text);">
@@ -4659,9 +4664,9 @@ function updateCapacityImpactDetails() {
   const profile = getPlatformProfile(currentState.version.model);
   const targetOntap = document.getElementById("target-ontap").value || currentState.version.ontap;
   
-  let isSupported = profile.supportedShelves.includes(type);
-  let errorMsg = profile.shelfErrors[type];
-  const warningMsg = profile.shelfWarnings[type];
+  let isSupported = (profile.supportedShelves || []).includes(type);
+  let errorMsg = profile.shelfErrors ? profile.shelfErrors[type] : undefined;
+  const warningMsg = profile.shelfWarnings ? profile.shelfWarnings[type] : undefined;
 
   // Validate shelf version compatibility
   if (type === "ns224" && compareVersions(targetOntap, "9.8") < 0) {
@@ -4686,7 +4691,7 @@ function updateCapacityImpactDetails() {
   // Validate platform supports MetroCluster if MC is checked
   let mcNoticeHtml = "";
   if (isMetroCluster) {
-    if (!profile.supportedLicenses.includes("MetroCluster")) {
+    if (!(profile.supportedLicenses || []).includes("MetroCluster")) {
       errorMsg = `Platform ${currentState.version.model} is not certified for MetroCluster DR configurations.`;
       isSupported = false;
     } else {
@@ -5310,7 +5315,7 @@ function runModelingCalculations() {
   const isSANLicensedModeled = modeledState.licenses.some(l => l.name === "FCP" && l.status === "active");
   if (isSANLicensedModeled) {
     const profile = getPlatformProfile(modeledState.version.model);
-    if (profile.ports.san && profile.ports.san.length > 0) {
+    if (profile && profile.ports && profile.ports.san && profile.ports.san.length > 0) {
       modeledState.nodes.forEach(node => {
         profile.ports.san.forEach(p => {
           const exists = node.ports.find(port => port.name === p);
