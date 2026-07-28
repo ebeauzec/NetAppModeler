@@ -241,7 +241,7 @@ function setupSplashModal() {
   
   let dismissedVersion = "false";
   try {
-    dismissedVersion = localStorage.getItem("splash-dismissed-v2.20");
+    dismissedVersion = localStorage.getItem("splash-dismissed-v2.21");
   } catch (e) {
     console.warn("localStorage is not accessible:", e);
   }
@@ -255,7 +255,7 @@ function setupSplashModal() {
   closeSplashBtn.addEventListener("click", () => {
     splashModal.classList.add("hidden");
     try {
-      localStorage.setItem("splash-dismissed-v2.20", "true");
+      localStorage.setItem("splash-dismissed-v2.21", "true");
     } catch (e) {
       console.warn("localStorage write failed:", e);
     }
@@ -1050,25 +1050,34 @@ function setupWizardListeners() {
 
 // --- Upload / Demo Selection ---
 function setupUploadListeners() {
-  document.getElementById("demo-fas8300-btn").addEventListener("click", () => {
-    const state = parseASUP(DEMO_DATA.fas8300.files);
-    state.expansionCards = [];
-    state.metrocluster = "none";
-    loadASUPData(state);
-  });
+  const fas8300Btn = document.getElementById("demo-fas8300-btn");
+  if (fas8300Btn) {
+    fas8300Btn.addEventListener("click", () => {
+      const state = parseASUP(DEMO_DATA.fas8300.files);
+      state.expansionCards = [];
+      state.metrocluster = "none";
+      loadASUPData(state);
+    });
+  }
 
-  document.getElementById("demo-affa400-btn").addEventListener("click", () => {
-    const state = parseASUP(DEMO_DATA.aff_a400.files);
-    state.expansionCards = [];
-    state.metrocluster = "none";
-    loadASUPData(state);
-  });
+  const affA400Btn = document.getElementById("demo-affa400-btn");
+  if (affA400Btn) {
+    affA400Btn.addEventListener("click", () => {
+      const state = parseASUP(DEMO_DATA.aff_a400.files);
+      state.expansionCards = [];
+      state.metrocluster = "none";
+      loadASUPData(state);
+    });
+  }
 
-  document.getElementById("demo-metrocluster-btn").addEventListener("click", () => {
-    const state = parseASUP(DEMO_DATA.metrocluster_ip.files);
-    state.expansionCards = [];
-    loadASUPData(state);
-  });
+  const mccBtn = document.getElementById("demo-metrocluster-btn");
+  if (mccBtn) {
+    mccBtn.addEventListener("click", () => {
+      const state = parseASUP(DEMO_DATA.metrocluster_ip.files);
+      state.expansionCards = [];
+      loadASUPData(state);
+    });
+  }
 
   const asaA400Btn = document.getElementById("demo-asa-a400-btn");
   if (asaA400Btn) {
@@ -1088,21 +1097,27 @@ function setupUploadListeners() {
     });
   }
 
-  document.getElementById("load-manual-platform-btn").addEventListener("click", () => {
-    const model = document.getElementById("manual-platform-select").value;
-    const ontap = document.getElementById("manual-ontap-select").value;
-    const capacityTB = parseFloat(document.getElementById("manual-capacity").value) || 50;
-    const nodesCount = parseInt(document.getElementById("manual-nodes-select").value) || 2;
-    generatePlatformBaseline(model, ontap, capacityTB, nodesCount, false);
-  });
+  const loadManualBtn = document.getElementById("load-manual-platform-btn");
+  if (loadManualBtn) {
+    loadManualBtn.addEventListener("click", () => {
+      const model = document.getElementById("manual-platform-select").value;
+      const ontap = document.getElementById("manual-ontap-select").value;
+      const capacityTB = parseFloat(document.getElementById("manual-capacity").value) || 50;
+      const nodesCount = parseInt(document.getElementById("manual-nodes-select").value) || 2;
+      generatePlatformBaseline(model, ontap, capacityTB, nodesCount, false);
+    });
+  }
 
-  document.getElementById("load-greenfield-btn").addEventListener("click", () => {
-    const model = document.getElementById("manual-platform-select").value;
-    const ontap = document.getElementById("manual-ontap-select").value;
-    const capacityTB = parseFloat(document.getElementById("manual-capacity").value) || 50;
-    const nodesCount = parseInt(document.getElementById("manual-nodes-select").value) || 2;
-    generatePlatformBaseline(model, ontap, capacityTB, nodesCount, true);
-  });
+  const loadGreenfieldBtn = document.getElementById("load-greenfield-btn");
+  if (loadGreenfieldBtn) {
+    loadGreenfieldBtn.addEventListener("click", () => {
+      const model = document.getElementById("manual-platform-select").value;
+      const ontap = document.getElementById("manual-ontap-select").value;
+      const capacityTB = parseFloat(document.getElementById("manual-capacity").value) || 50;
+      const nodesCount = parseInt(document.getElementById("manual-nodes-select").value) || 2;
+      generatePlatformBaseline(model, ontap, capacityTB, nodesCount, true);
+    });
+  }
 
   dropZone.addEventListener("click", () => fileInput.click());
   
@@ -6431,9 +6446,10 @@ function generateReport() {
     }
   }
 
-  document.getElementById("print-report-btn").addEventListener("click", () => {
-    window.print();
-  });
+  const printReportBtn = document.getElementById("print-report-btn");
+  if (printReportBtn) {
+    printReportBtn.addEventListener("click", () => window.print());
+  }
 
   const cliCodePre = document.getElementById("cli-script-code");
   if (cliCodePre) {
