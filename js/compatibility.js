@@ -4,18 +4,24 @@
  */
 
 export const EXP_CARDS_CATALOG = {
-  nic_10g_2port: { name: "Dual-port 10GbE SFP+ NIC", type: "nic", ports: ["e0e", "e0f"], speed: "10GbE", minOntap: "9.1", power: 15 },
-  nic_25g_4port: { name: "Quad-port 25GbE SFP28 NIC", type: "nic", ports: ["e0g", "e0h", "e0i", "e0j"], speed: "25GbE", minOntap: "9.3", power: 22 },
-  nic_100g_2port: { name: "Dual-port 100GbE NIC", type: "nic", ports: ["e1a", "e1b"], speed: "100GbE", minOntap: "9.8", power: 35 },
-  nic_200g_2port: { name: "Dual-port 200GbE NIC", type: "nic", ports: ["e1a", "e1b"], speed: "200GbE", minOntap: "9.16.1", power: 45 },
-  fc_hba_16g_2port: { name: "Dual-port 16Gb Fibre Channel HBA", type: "san", ports: ["0g", "0h"], speed: "16Gb FC", minOntap: "9.1", power: 18 },
-  fc_hba_32g_2port: { name: "Dual-port 32Gb Fibre Channel HBA", type: "san", ports: ["0i", "0j"], speed: "32Gb FC", minOntap: "9.5", power: 25 },
-  fc_hba_64g_2port: { name: "Dual-port 64Gb Fibre Channel HBA", type: "san", ports: ["0i", "0j"], speed: "64Gb FC", minOntap: "9.16.1", power: 28 },
-  sas_hba_12g_4port: { name: "Quad-port 12G SAS Adapter", type: "storage", ports: ["0c", "0d", "0e", "0f"], speed: "12Gb SAS", minOntap: "9.1", power: 20 },
-  roce_hba_100g_2port: { name: "Dual-port 100GbE NVMe-oF RoCE Adapter", type: "storage", ports: ["e0g", "e0h"], speed: "100GbE RoCE", minOntap: "9.8", power: 38 },
-  nvme_tcp_100g_2port: { name: "Dual-port 100GbE NVMe-over-TCP Adapter", type: "nic", ports: ["e2a", "e2b"], speed: "100GbE", minOntap: "9.10.1", power: 35 },
-  "nic_40g_2port": { label: "40GbE 2-Port NIC (X1146A)", ports: 2, speed: "40GbE", protocol: "ethernet", minOntap: "9.5" },
-  "nic_100g_2port_roce": { label: "100GbE RoCE 2-Port NIC (X91148A)", ports: 2, speed: "100GbE", protocol: "nvme_roce", minOntap: "9.10.1" }
+  // === Ethernet NICs ===
+  nic_10g_2port:        { name: "Dual-port 10GbE SFP+ NIC (X1117A)",            type: "nic",     ports: ["e0e","e0f"],           speed: "10GbE",       minOntap: "9.1",    power: 15 },
+  nic_25g_4port:        { name: "Quad-port 25GbE SFP28 NIC (X1146A)",           type: "nic",     ports: ["e0g","e0h","e0i","e0j"], speed: "25GbE",       minOntap: "9.3",    power: 22 },
+  nic_40g_2port:        { name: "Dual-port 40GbE QSFP+ NIC (X1146A)",           type: "nic",     ports: ["e0e","e0f"],           speed: "40GbE",       minOntap: "9.5",    power: 20 },
+  nic_100g_2port:       { name: "Dual-port 100GbE QSFP28 NIC (X91148A)",        type: "nic",     ports: ["e1a","e1b"],           speed: "100GbE",      minOntap: "9.8",    power: 35 },
+  nic_100g_4port:       { name: "Quad-port 100GbE SFP28 NIC (X91144A)",         type: "nic",     ports: ["e1a","e1b","e1c","e1d"], speed: "100GbE",      minOntap: "9.10.1", power: 45 },
+  nic_200g_2port:       { name: "Dual-port 200GbE QSFP56 NIC (X91160A)",        type: "nic",     ports: ["e1a","e1b"],           speed: "200GbE",      minOntap: "9.16.1", power: 45 },
+  // === Fibre Channel HBAs ===
+  fc_hba_16g_2port:     { name: "Dual-port 16Gb Fibre Channel HBA (X1132A)",    type: "san",     ports: ["0g","0h"],             speed: "16Gb FC",     minOntap: "9.1",    power: 18 },
+  fc_hba_32g_2port:     { name: "Dual-port 32Gb Fibre Channel HBA (X2106A)",    type: "san",     ports: ["0i","0j"],             speed: "32Gb FC",     minOntap: "9.5",    power: 25 },
+  fc_hba_64g_2port:     { name: "Dual-port 64Gb Fibre Channel HBA (X2107A)",    type: "san",     ports: ["0i","0j"],             speed: "64Gb FC",     minOntap: "9.14.1", power: 28 },
+  // === SAS Storage Adapters ===
+  sas_hba_12g_4port:    { name: "Quad-port 12G SAS Host Adapter (X1107A)",      type: "storage", ports: ["0c","0d","0e","0f"],   speed: "12Gb SAS",    minOntap: "9.1",    power: 20 },
+  // === NVMe / RoCE Storage Adapters ===
+  roce_hba_100g_2port:  { name: "Dual-port 100GbE NVMe-oF RoCE Adapter (X91148A)", type: "storage", ports: ["e0g","e0h"],      speed: "100GbE RoCE", minOntap: "9.8",    power: 38 },
+  roce_hba_100g_2port_v2: { name: "Dual-port 100GbE RoCE NS224 Shelf Adapter (X60141A)", type: "storage", ports: ["e8a","e8b"], speed: "100GbE RoCE", minOntap: "9.12.1", power: 38 },
+  nvme_tcp_100g_2port:  { name: "Dual-port 100GbE NVMe/TCP Host Adapter (X91148A)", type: "nic",  ports: ["e2a","e2b"],         speed: "100GbE",      minOntap: "9.10.1", power: 35 },
+  nvme_fc_32g_2port:    { name: "Dual-port 32Gb NVMe/FC HBA (X2106A)",           type: "san",     ports: ["0i","0j"],             speed: "32Gb FC",     minOntap: "9.9.1",  power: 25 },
 };
 
 export const PLATFORM_SLOT_DETAILS = {
@@ -62,11 +68,23 @@ export const PLATFORM_SLOT_DETAILS = {
     { num: 5, type: "PCIe Gen4 x16", recType: "storage", rec: "High-speed 100GbE NVMe-oF RoCE storage adapter" },
     { num: 6, type: "PCIe Gen4 x16", recType: "storage", rec: "High-speed 100GbE NVMe-oF RoCE storage adapter" }
   ],
+  5: [
+    { num: 1, type: "PCIe Gen4 x16", recType: "nic",     rec: "Primary 100GbE data/cluster networking" },
+    { num: 2, type: "PCIe Gen4 x16", recType: "nic",     rec: "Secondary 100GbE data/cluster networking" },
+    { num: 3, type: "PCIe Gen4 x16", recType: "san",     rec: "32Gb/16Gb Fibre Channel SAN HBA" },
+    { num: 4, type: "PCIe Gen4 x16", recType: "storage", rec: "100GbE NVMe-oF RoCE adapter" },
+    { num: 5, type: "PCIe Gen4 x8",  recType: "storage", rec: "12Gb SAS or auxiliary 25GbE NIC" }
+  ],
   4: [
     { num: 1, type: "PCIe Gen3 x16", recType: "nic", rec: "Primary 100GbE high-bandwidth network adapter" },
     { num: 2, type: "PCIe Gen3 x16", recType: "storage", rec: "100GbE NVMe-oF RoCE sync / storage HBA" },
     { num: 3, type: "PCIe Gen3 x8",  recType: "san", rec: "SAN Target HBA (32Gb/16Gb Fibre Channel)" },
     { num: 4, type: "PCIe Gen3 x8",  recType: "storage", rec: "12Gb SAS storage shelf expansion adapter" }
+  ],
+  3: [
+    { num: 1, type: "PCIe Gen4 x16", recType: "nic",     rec: "Primary 100GbE/25GbE data or RoCE storage networking" },
+    { num: 2, type: "PCIe Gen4 x16", recType: "san",     rec: "32Gb/16Gb Fibre Channel SAN HBA" },
+    { num: 3, type: "PCIe Gen4 x8",  recType: "storage", rec: "12Gb SAS or 100GbE RoCE shelf adapter" }
   ],
   2: [
     { num: 1, type: "PCIe Gen3 x16", recType: "nic", rec: "Primary 100G/25G network or RoCE storage card" },
@@ -182,7 +200,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 10
   },
   "AFF A800": {
-    maxOntap: "9.13.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -301,7 +319,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A300": {
-    maxOntap: "9.13.1",
+    maxOntap: "9.15.1",
     supportedShelves: ["ds224c", "ns224"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -351,7 +369,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A220": {
-    maxOntap: "9.13.1",
+    maxOntap: "9.15.1",
     supportedShelves: ["ds224c"],
     unsupportedShelves: ["ns224", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -586,7 +604,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 10
   },
   "FAS9000": {
-    maxOntap: "9.13.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -698,7 +716,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2720": {
-    maxOntap: "9.13.1",
+    maxOntap: "9.14.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds212c": "LFF HDD expansion supported." },
@@ -719,7 +737,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2750": {
-    maxOntap: "9.13.1",
+    maxOntap: "9.15.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SFF expansion supported." },
@@ -1111,7 +1129,7 @@ export const NETAPP_PLATFORMS = {
     cpus: 16
   },
   "ASA A800": {
-    maxOntap: "9.13.1",
+    maxOntap: "9.17.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -1635,3 +1653,29 @@ export function compareVersions(v1, v2) {
   }
   return 0;
 }
+
+
+export const ONTAP_LIFECYCLE = {
+  "9.7": { status: "end_of_support", endDate: "2023-07", notes: "ONTAP 9.7 reached End of Support July 2023." },
+  "9.8": { status: "end_of_support", endDate: "2024-01", notes: "ONTAP 9.8 reached End of Support January 2024." },
+  "9.9.1": { status: "end_of_support", endDate: "2024-07", notes: "ONTAP 9.9.1 reached End of Support July 2024." },
+  "9.10.1": { status: "end_of_support", endDate: "2025-01", notes: "ONTAP 9.10.1 reached End of Support January 2025." },
+  "9.11.1": { status: "end_of_support", endDate: "2025-07", notes: "ONTAP 9.11.1 reached End of Support July 2025." },
+  "9.12.1": { status: "limited_support", endDate: "2026-01", notes: "ONTAP 9.12.1 in Limited Support. Plan upgrade to 9.14.1+." },
+  "9.13.1": { status: "limited_support", endDate: "2026-07", notes: "ONTAP 9.13.1 in Limited Support. Upgrade to 9.14.1+ recommended." },
+  "9.14.1": { status: "active", endDate: "2027-01", notes: "ONTAP 9.14.1 in Full Support." },
+  "9.15.1": { status: "active", endDate: "2027-07", notes: "ONTAP 9.15.1 in Full Support." },
+  "9.16.1": { status: "active", endDate: "2028-01", notes: "ONTAP 9.16.1 — Latest GA release. Full Support." },
+  "9.17.1": { status: "planned", endDate: "2028-07", notes: "ONTAP 9.17.1 — Planned future release. Use for forward capacity planning only." },
+  "9.18.1": { status: "planned", endDate: "2029-01", notes: "ONTAP 9.18.1 — Planned future release." }
+};
+
+export const ONTAP_HOPS = {
+  "9.10.1": { "9.14.1": ["9.12.1"] },
+  "9.11.1": { "9.14.1": ["9.12.1"] },
+  "9.12.1": { "9.13.1": [], "9.14.1": ["9.13.1"] },
+  "9.13.1": { "9.14.1": [] },
+  "9.14.1": { "9.15.1": [], "9.16.1": ["9.15.1"] },
+  "9.15.1": { "9.16.1": [] },
+  "9.16.1": { "9.17.1": [] }
+};
