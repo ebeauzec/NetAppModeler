@@ -2343,7 +2343,9 @@ Shelf 1: NS224 (S/N: NS224-000001) v0120 (Latest: v0130)
     Disk 20: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0021)
     Disk 21: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0022)
     Disk 22: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0023)
-    Disk 23: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0024)`,`SYSCONFIG-R`: `Aggregate aggr0_a1 (online, raid_dp) (block-checksum)
+    Disk 23: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0024)`,
+
+      "SYSCONFIG-R": `Aggregate aggr0_a1 (online, raid_dp) (block-checksum)
     Size: 2200 GB, Usable: 1800 GB, Used: 1500 GB, Free: 300 GB
     RAID Group rg0 (dual parity, active)
         Disks: 3 (1.9TB NVMe SSD)
@@ -2389,7 +2391,9 @@ Spare Disks (node-b1):
     NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD) - 1 spares
 
 Spare Disks (node-b2):
-    NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD) - 1 spares`,`LICENSE`: `Base Licenses:
+    NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD) - 1 spares`,
+
+      "LICENSE": `Base Licenses:
 System Serial Number: 900000111111 (node-a1)
   Cluster     active
   NFS         active
@@ -2398,13 +2402,19 @@ System Serial Number: 900000111111 (node-a1)
   iSCSI       active
   SnapMirror  active
   FlexClone   active
-  MetroCluster active`,`NETPORT`: `Node   Port   IPspace   Broadcast Domain   Link   MTU   Admin/Oper
+  MetroCluster active`,
+
+      "NETPORT": `Node   Port   IPspace   Broadcast Domain   Link   MTU   Admin/Oper
 node-a1 e0a    Default   Cluster            up     9000  auto/25000
 node-a1 e0b    Default   Cluster            up     9000  auto/25000
 node-a1 e0c    Default   Default            up     9000  auto/25000
-node-a1 e0d    Default   Default            up     9000  auto/25000`,`SWITCHES`: `===== Ethernet Switch Show =====
+node-a1 e0d    Default   Default            up     9000  auto/25000`,
+
+      "SWITCHES": `===== Ethernet Switch Show =====
 Switch Name: CSW-NEXUS-01 Model: Nexus 9336C-FX2 Version: 9.3(8)
-Switch Name: CSW-NEXUS-02 Model: Nexus 9336C-FX2 Version: 9.3(8)`,`METROCLUSTER-SHOW`: `===== METROCLUSTER SHOW =====
+Switch Name: CSW-NEXUS-02 Model: Nexus 9336C-FX2 Version: 9.3(8)`,
+
+      "METROCLUSTER-SHOW": `===== METROCLUSTER SHOW =====
 Cluster        Partner Cluster        Configuration State
 -------------- ---------------------- -------------------
 cluster-a      cluster-b              configured
@@ -2418,7 +2428,9 @@ DR Group ID  Cluster     Node      DR Partner Node
 1            local-site  node-a1   node-b1
 1            local-site  node-a2   node-b2
 1            remote-site node-b1   node-a1
-1            remote-site node-b2   node-a2`}
+1            remote-site node-b2   node-a2`
+    }
+  }
 };
 
 const demoASA_A400 = {
