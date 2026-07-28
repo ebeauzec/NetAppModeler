@@ -184,6 +184,36 @@
               </select>
             </div>
           </div>
+
+          <div class="asup-help-box" style="margin-top: 2rem; width: 100%; max-width: 650px; border-top: 1px dashed var(--border-color); padding-top: 1.5rem; text-align: left;">
+            <details style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; cursor: pointer;">
+              <summary style="font-weight: 600; color: #fff; font-size: 0.88rem; display: flex; align-items: center; gap: 8px; outline: none; user-select: none;">
+                <span>ℹ️</span> How to collect and upload Multi-Node AutoSupport bundles?
+              </summary>
+              <div style="margin-top: 0.75rem; font-size: 0.82rem; color: var(--color-muted); line-height: 1.5; cursor: default;">
+                <p style="margin-bottom: 0.75rem;">
+                  <strong>Consolidation & Merge Logic:</strong> AutoSupport messages are typically generated at the individual node level. If your cluster contains multiple nodes, you can select and upload the ASUP files or compressed archives (<code>.zip</code> or <code>.gz</code>) for <strong>all nodes together</strong>. The modeler automatically parses, concatenates, and de-duplicates storage controller nodes, switches, shelves, drives, aggregates, and spares to build a consolidated, unified cluster-wide view.
+                </p>
+                <p style="margin-bottom: 0.75rem;">
+                  <strong>Supported Ingestion Formats:</strong> Raw text files extracted from AutoSupport mail bundles or compressed zip/gz archives containing the following ONTAP diagnostic outputs:
+                </p>
+                <ul style="margin-bottom: 0.75rem; padding-left: 1.25rem;">
+                  <li><code>VERSION</code> - Identifies the active ONTAP software release and system model type.</li>
+                  <li><code>SYSCONFIG-A</code> - Extracts motherboard RAM capacity, CPU counts, PCIe slots, cabled shelves, and disk details.</li>
+                  <li><code>SYSCONFIG-R</code> - Discovers aggregate layouts, RAID groups, spare allocations, and disk-level firmware.</li>
+                  <li><code>LICENSE</code> - Checks for active, expired, or missing feature licenses.</li>
+                  <li><code>NETPORT</code> - Captures physical network interfaces, negotiated link speeds, and MTU values.</li>
+                  <li><code>METROCLUSTER-SHOW</code> - Detects DR configuration types (MetroCluster IP or FC).</li>
+                  <li><code>SWITCHES</code> - Discovers cluster switches cabled and Reference Configuration File (RCF) versions.</li>
+                </ul>
+                <p style="margin-bottom: 0;">
+                  <strong>Manual Log Collection Options:</strong>
+                  <br>• <strong>System Manager (GUI):</strong> Navigate to <strong>Cluster > Support > AutoSupport</strong>, select nodes, and select <em>Invoke</em> to send or download logs.
+                  <br>• <strong>ONTAP CLI (SSH):</strong> Run <code>system node autosupport invoke -node * -type all -message "manual"</code> to generate logs, or run individual commands (like <code>sysconfig -a</code> or <code>sysconfig -r</code>) to capture text blocks.
+                </p>
+              </div>
+            </details>
+          </div>
         </div>
       </section>
 

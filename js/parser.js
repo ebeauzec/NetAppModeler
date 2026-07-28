@@ -142,13 +142,17 @@ export function parseASUP(files) {
   let nodeMatch;
   const nodeNames = [];
   while ((nodeMatch = nodeRegex.exec(combinedText)) !== null) {
+    const id = nodeMatch[1];
     const name = nodeMatch[2].trim();
-    data.nodes.push({
-      id: nodeMatch[1],
-      name: name,
-      serial: nodeMatch[3]
-    });
-    nodeNames.push(name);
+    const serial = nodeMatch[3];
+    if (!data.nodes.some(n => n.id === id || n.name.toLowerCase() === name.toLowerCase())) {
+      data.nodes.push({
+        id: id,
+        name: name,
+        serial: serial
+      });
+      nodeNames.push(name);
+    }
   }
 
   // Fallback nodes if not found
@@ -197,17 +201,21 @@ export function parseASUP(files) {
 
   while ((shelfMatch = shelfRegex.exec(combinedText)) !== null) {
     const shelfId = shelfMatch[1];
-    const shelfObj = {
-      id: shelfId,
-      model: shelfMatch[2].toUpperCase(),
-      serial: shelfMatch[3],
-      firmware: shelfMatch[4],
-      latestFirmware: shelfMatch[5] || shelfMatch[4],
-      cabling: "Multipath HA", // Default
-      disks: []
-    };
-    data.shelves.push(shelfObj);
-    shelfMap.set(shelfId, shelfObj);
+    const model = shelfMatch[2].toUpperCase();
+    const serial = shelfMatch[3];
+    if (!data.shelves.some(s => s.serial === serial || s.id === shelfId)) {
+      const shelfObj = {
+        id: shelfId,
+        model: model,
+        serial: serial,
+        firmware: shelfMatch[4],
+        latestFirmware: shelfMatch[5] || shelfMatch[4],
+        cabling: "Multipath HA", // Default
+        disks: []
+      };
+      data.shelves.push(shelfObj);
+      shelfMap.set(shelfId, shelfObj);
+    }
   }
 
   // Parse cabling loops
@@ -229,6 +237,7 @@ export function parseASUP(files) {
     const shelfText = shelfSplit[i + 1] || "";
     const shelf = shelfMap.get(shelfId);
     if (!shelf) continue;
+    if (shelf.disks && shelf.disks.length > 0) continue;
 
      const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),(?:\s*FW:\s*([^,\s)]+),)?\s*S\/N:\s*([^)]+)\)/ig;
      let diskMatch;
@@ -254,16 +263,19 @@ export function parseASUP(files) {
     const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),(?:\s*FW:\s*([^,\s)]+),)?\s*S\/N:\s*([^)]+)\)/ig;
     let diskMatch;
     while ((diskMatch = diskRegex.exec(combinedText)) !== null) {
-      const sizeGB = parseSizeToGB(diskMatch[3]);
-      looseDisks.push({
-        slot: parseInt(diskMatch[1]),
-        model: diskMatch[2],
-        sizeStr: diskMatch[3],
-        sizeGB: sizeGB,
-        type: diskMatch[4].trim(),
-        firmware: diskMatch[5] ? diskMatch[5].trim() : "NA01",
-        serial: diskMatch[6].trim()
-      });
+      const serial = diskMatch[6].trim();
+      if (!looseDisks.some(d => d.serial === serial)) {
+        const sizeGB = parseSizeToGB(diskMatch[3]);
+        looseDisks.push({
+          slot: parseInt(diskMatch[1]),
+          model: diskMatch[2],
+          sizeStr: diskMatch[3],
+          sizeGB: sizeGB,
+          type: diskMatch[4].trim(),
+          firmware: diskMatch[5] ? diskMatch[5].trim() : "NA01",
+          serial: serial
+        });
+      }
     }
 
     // 2. Try sysconfig -a format: 0a.10   NETAPP   X343_S163A960ATE NA01 960.0GB S/N: SN
@@ -271,18 +283,21 @@ export function parseASUP(files) {
       const sysconfigRegex = /(\d+[a-z]+)\.(\d+)\s+NETAPP\s+([^\s]+)\s+([^\s]+)\s+([\d.]+)(GB|TB|MB)\s+.*S\/N:\s*([^\s\r\n]+)/ig;
       let sysMatch;
       while ((sysMatch = sysconfigRegex.exec(combinedText)) !== null) {
-        const sizeVal = sysMatch[5] + sysMatch[6];
-        const sizeGB = parseSizeToGB(sizeVal);
-        const type = sysMatch[3].includes("X371") || sysMatch[3].includes("X343") || sysMatch[3].includes("NVMe") ? "NVMe SSD" : "SAS HDD";
-        looseDisks.push({
-          slot: parseInt(sysMatch[2]),
-          model: sysMatch[3],
-          sizeStr: sizeVal,
-          sizeGB: sizeGB,
-          type: type,
-          firmware: sysMatch[4].trim(),
-          serial: sysMatch[7].trim()
-        });
+        const serial = sysMatch[7].trim();
+        if (!looseDisks.some(d => d.serial === serial)) {
+          const sizeVal = sysMatch[5] + sysMatch[6];
+          const sizeGB = parseSizeToGB(sizeVal);
+          const type = sysMatch[3].includes("X371") || sysMatch[3].includes("X343") || sysMatch[3].includes("NVMe") ? "NVMe SSD" : "SAS HDD";
+          looseDisks.push({
+            slot: parseInt(sysMatch[2]),
+            model: sysMatch[3],
+            sizeStr: sizeVal,
+            sizeGB: sizeGB,
+            type: type,
+            firmware: sysMatch[4].trim(),
+            serial: serial
+          });
+        }
       }
     }
 
@@ -353,6 +368,7 @@ export function parseASUP(files) {
       if (!headerMatch) continue;
       
       const aggrName = headerMatch[1];
+      if (data.aggregates.some(a => a.name === aggrName)) continue;
       const aggrStatus = headerMatch[2];
       
       let raidType = "raid_dp";
@@ -455,14 +471,23 @@ export function parseASUP(files) {
   const sparesRegex = /Spare Disks\s*\(([^)]+)\):\s*[\r\n]+\s*NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^)]+)\)\s*-\s*(\d+)\s*spares/ig;
   let sparesMatch;
   while ((sparesMatch = sparesRegex.exec(combinedText)) !== null) {
-    data.spares.push({
-      node: sparesMatch[1].trim(),
-      model: sparesMatch[2].trim(),
-      sizeStr: sparesMatch[3],
-      sizeGB: parseSizeToGB(sparesMatch[3]),
-      type: sparesMatch[4].trim(),
-      count: parseInt(sparesMatch[5])
-    });
+    const node = sparesMatch[1].trim();
+    const model = sparesMatch[2].trim();
+    const sizeStr = sparesMatch[3];
+    const sizeGB = parseSizeToGB(sizeStr);
+    const type = sparesMatch[4].trim();
+    const count = parseInt(sparesMatch[5]);
+    const existing = data.spares.find(s => s.node === node && s.model === model && s.sizeGB === sizeGB);
+    if (!existing) {
+      data.spares.push({
+        node,
+        model,
+        sizeStr,
+        sizeGB,
+        type,
+        count
+      });
+    }
   }
 
   // Fallback spares if none parsed
