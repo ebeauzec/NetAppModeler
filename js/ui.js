@@ -1,6 +1,6 @@
 import { DEMO_DATA, demoASA_A400, demoAFF_C800 } from './demoData.js';
 import { parseASUP, formatGB, parseSizeToGB } from './parser.js';
-import { runAudit, calculateComplianceScore, ONTAP_LIFECYCLE, getPlatformMaxDrives } from './bestPractices.js';
+import { runAudit, calculateComplianceScore, BP_LIFECYCLE, getPlatformMaxDrives } from './bestPractices.js';
 import { getPlatformProfile, getUpgradeHopsConsiderations, NETAPP_PLATFORMS, EXP_CARDS_CATALOG, compareVersions, getPlatformSlots } from './compatibility.js';
 
 // --- Application State ---
