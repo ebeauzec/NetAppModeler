@@ -8190,20 +8190,29 @@ function untar(arrayBuffer) {
 }
 
 function mapASUPFile(baseName, text) {
+  if (!text || text.trim().length < 10) return;
+
   const sections = splitUnifiedASUP(text);
   if (Object.keys(sections).length > 1) {
     Object.keys(sections).forEach(secName => {
       mapASUPFile(secName, sections[secName]);
     });
+    // Also store full text as fallback so parser can scan the whole thing
+    uploadedFiles["ALL"] = (uploadedFiles["ALL"] || "") + "\n" + text;
     return;
   }
 
   const upper = baseName.toUpperCase();
   const lowerText = text.toLowerCase();
+  let matched = false;
 
-  if (upper.includes("VERSION") || lowerText.includes("netapp release")) {
+  // Always store the full content under "ALL" so the parser can scan everything
+  uploadedFiles["ALL"] = (uploadedFiles["ALL"] || "") + "\n" + text;
+
+  if (upper.includes("VERSION") || lowerText.includes("netapp release") || lowerText.includes("ontap version:")) {
     if (!lowerText.includes("system id") && !lowerText.includes("slot")) {
       uploadedFiles["VERSION"] = text;
+      matched = true;
     }
   }
   
@@ -8211,20 +8220,59 @@ function mapASUPFile(baseName, text) {
       (upper.includes("SYSCONFIG") && !upper.includes("-R") && !upper.includes("_R") && !upper.includes("SYSCONFIG-R")) ||
       (lowerText.includes("system id") && (lowerText.includes("slot") || lowerText.includes("adapter") || lowerText.includes("processor") || lowerText.includes("shelf")))) {
     uploadedFiles["SYSCONFIG-A"] = text;
+    matched = true;
   } 
   
   if (upper.includes("SYSCONFIG-R") || upper.includes("SYSCONFIG -R") || upper.includes("SYSCONFIG_R") ||
-      (lowerText.includes("aggregate") && lowerText.includes("raid_dp") && lowerText.includes("spare disks"))) {
+      (lowerText.includes("aggregate") && (lowerText.includes("raid_dp") || lowerText.includes("raid-dp") || lowerText.includes("raid_tec")) && lowerText.includes("spare disks"))) {
     uploadedFiles["SYSCONFIG-R"] = text;
+    matched = true;
   } 
   
-  if (upper.includes("LICENSE") || (lowerText.includes("system serial number") && lowerText.includes("active") && lowerText.includes("cluster"))) {
+  if (upper.includes("LICENSE") || upper.includes("LICENSE SHOW") ||
+      (lowerText.includes("serial number") && lowerText.includes("active") && lowerText.includes("cluster"))) {
     uploadedFiles["LICENSE"] = text;
+    matched = true;
   } 
   
-  if (upper.includes("NETPORT") || upper.includes("NETWORK-PORT") || upper.includes("NET-PORT") || 
+  if (upper.includes("NETPORT") || upper.includes("NETWORK-PORT") || upper.includes("NET-PORT") || upper.includes("NETWORK PORT") ||
       (lowerText.includes("port") && lowerText.includes("duplex") && lowerText.includes("cluster-interconnect"))) {
     uploadedFiles["NETPORT"] = text;
+    matched = true;
+  }
+
+  if (upper.includes("STORAGE DISK") || upper.includes("DISK SHOW") ||
+      (lowerText.includes("disk") && lowerText.includes("firmware") && (lowerText.includes("prefail") || lowerText.includes("broken") || lowerText.includes("spare")))) {
+    uploadedFiles["STORAGE-DISK"] = text;
+    matched = true;
+  }
+
+  if (upper.includes("STORAGE AGGREGATE") || upper.includes("AGGR SHOW") || upper.includes("AGGREGATE SHOW") ||
+      (lowerText.includes("aggr") && (lowerText.includes("online") || lowerText.includes("state")) && lowerText.includes("total"))) {
+    uploadedFiles["AGGR-SHOW"] = text;
+    matched = true;
+  }
+
+  if (upper.includes("STORAGE FAILOVER") || upper.includes("HA STATUS") || upper.includes("FAILOVER SHOW") ||
+      (lowerText.includes("storage failover") && lowerText.includes("enabled"))) {
+    uploadedFiles["HA-STATUS"] = text;
+    matched = true;
+  }
+
+  if (upper.includes("METROCLUSTER") || lowerText.includes("metrocluster show") || lowerText.includes("dr group")) {
+    uploadedFiles["METROCLUSTER"] = text;
+    matched = true;
+  }
+
+  if (upper.includes("SNAPMIRROR") || (lowerText.includes("snapmirror") && lowerText.includes("destination"))) {
+    uploadedFiles["SNAPMIRROR"] = text;
+    matched = true;
+  }
+
+  if (upper.includes("NETWORK INTERFACE") || upper.includes("LIF") ||
+      (lowerText.includes("lif") && lowerText.includes("home-node") && lowerText.includes("status"))) {
+    uploadedFiles["NETWORK-INTERFACE"] = text;
+    matched = true;
   }
 }
 
