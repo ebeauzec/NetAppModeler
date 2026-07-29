@@ -50,7 +50,18 @@ export function parseASUP(files) {
     expansionCards: [],
     parseWarnings: [],
     metrocluster: "none",
-    switches: []
+    switches: [],
+    dataSources: {},       // Per-section source tracking: 'parsed'|'inferred'|'default'|'missing'
+    missingSections: [],   // Sections not found in ASUP text
+    missingCritical: [],   // Critical fields blocking analysis
+    missingImportant: [],  // Important but non-blocking fields
+    mergeConflicts: [],    // Conflicts when merging multiple ASUPs
+    fileManifest: []       // Source file metadata
+  };
+
+  // Helper: record data source for a section
+  const setSource = (key, source, confidence, note = '') => {
+    data.dataSources[key] = { source, confidence, note };
   };
 
   const lowerText = combinedText.toLowerCase();
@@ -1026,4 +1037,275 @@ function extractASUPAlerts(combinedText, files) {
   }
 
   return alerts;
+}
+
+// =============================================================================
+// MULTI-ASUP ENGINE: Section Coverage, Merge, Inference, Confidence
+// =============================================================================
+
+/**
+ * Scans raw ASUP text and returns which major sections are present.
+ * @param {string} text - Raw text content of one ASUP file
+ * @returns {{found: Array, missing: Array, coverage: number}}
+ */
+export function getSectionCoverage(text) {
+  if (!text) return { found: [], missing: [], coverage: 0 };
+  const lText = text.toLowerCase();
+  const sections = [
+    { id: 'VERSION',       label: 'ONTAP Version',      patterns: ['netapp release', 'ontap version:'] },
+    { id: 'SYSCONFIG-A',   label: 'Hardware Config',    patterns: ['system id:', 'system memory', 'system model'] },
+    { id: 'SYSCONFIG-R',   label: 'RAID/Aggregates',    patterns: ['aggregate ', 'raid group', 'spare disks'] },
+    { id: 'LICENSE',       label: 'Software Licenses',  patterns: [' active', ' expired', 'unlicensed', 'license show'] },
+    { id: 'NETPORT',       label: 'Network Ports',      patterns: ['e0a', 'e0b', 'cluster-interconnect', 'network port'] },
+    { id: 'METROCLUSTER',  label: 'MetroCluster',       patterns: ['metrocluster', 'mcc-ip', 'dr group'] },
+    { id: 'SWITCHES',      label: 'Cluster Switches',   patterns: ['cluster switch', 'bes-53248', 'nexus 93', 'rcf version'] },
+    { id: 'SHELF-INFO',    label: 'Disk Shelves',       patterns: ['shelf ', 'iom', 's/n:', 'disk '] },
+    { id: 'SP-FIRMWARE',   label: 'SP/BMC Firmware',    patterns: ['service processor', 'sp firmware', 'bmc firmware'] },
+    { id: 'DISK-FIRMWARE', label: 'Disk Firmware',      patterns: ['disk firmware', 'fw:', 'disk show'] },
+    { id: 'HA-STATUS',     label: 'HA/Failover Status', patterns: ['storage failover', 'ha-mode', 'ha state'] },
+    { id: 'HEALTH',        label: 'System Health',      patterns: ['health alert', 'system health', 'ems'] },
+  ];
+  const found = [], missing = [];
+  sections.forEach(sec => {
+    const hit = sec.patterns.some(p => lText.includes(p));
+    (hit ? found : missing).push({ id: sec.id, label: sec.label });
+  });
+  return { found, missing, coverage: Math.round((found.length / sections.length) * 100) };
+}
+
+/**
+ * Merges parse results from multiple ASUP files into a single cluster state.
+ * @param {Array} results - Array of { filename, state, coverage } from per-file parseASUP calls
+ * @returns {Object} Merged cluster state
+ */
+export function mergeClusterASUPs(results) {
+  if (!results || results.length === 0) return null;
+  if (results.length === 1) {
+    const r = results[0];
+    r.state.fileManifest = [{ filename: r.filename, nodeNames: (r.state.nodes||[]).map(n => n.name), coverage: r.coverage || 0 }];
+    return r.state;
+  }
+
+  // Use the most complete parse as the base
+  const sorted = [...results].sort((a, b) => (b.coverage || 0) - (a.coverage || 0));
+  const base = JSON.parse(JSON.stringify(sorted[0].state));
+  base.mergeConflicts = base.mergeConflicts || [];
+  base.fileManifest = results.map(r => ({
+    filename: r.filename,
+    nodeNames: (r.state.nodes || []).map(n => n.name),
+    coverage: r.coverage || 0
+  }));
+
+  // Merge nodes (union, deduplicate by ID or name)
+  const allNodes = [];
+  results.forEach(r => {
+    (r.state.nodes || []).forEach(node => {
+      const exists = allNodes.some(n => n.id === node.id || n.name.toLowerCase() === node.name.toLowerCase());
+      if (!exists && node.name !== 'node-a' && node.name !== 'node-b') {
+        allNodes.push({ ...node, _sourceFile: r.filename });
+      }
+    });
+  });
+  if (allNodes.length > 1) base.nodes = allNodes;
+
+  // Merge shelves (union by serial)
+  const allShelves = [];
+  results.forEach(r => {
+    (r.state.shelves || []).forEach(shelf => {
+      const exists = allShelves.find(s =>
+        (shelf.serial && shelf.serial !== 'AUTO-DISCOVERED' && shelf.serial !== 'MOCK-SHELF-001' && s.serial === shelf.serial) ||
+        (s.id === shelf.id && shelf.serial !== 'MOCK-SHELF-001')
+      );
+      if (!exists && shelf.serial !== 'MOCK-SHELF-001') {
+        allShelves.push(shelf);
+      } else if (exists && (shelf.disks || []).length > (exists.disks || []).length) {
+        Object.assign(exists, shelf);
+      }
+    });
+  });
+  if (allShelves.length > 0) base.shelves = allShelves;
+
+  // Merge aggregates (union by name)
+  const allAggr = [];
+  results.forEach(r => {
+    (r.state.aggregates || []).forEach(agg => {
+      if (!allAggr.some(a => a.name === agg.name)) allAggr.push(agg);
+    });
+  });
+  if (allAggr.length > 0) base.aggregates = allAggr;
+
+  // Merge spares (union by node+size)
+  const allSpares = [];
+  results.forEach(r => {
+    (r.state.spares || []).forEach(spare => {
+      if (!allSpares.some(s => s.node === spare.node && s.sizeGB === spare.sizeGB)) allSpares.push(spare);
+    });
+  });
+  if (allSpares.length > 0) base.spares = allSpares;
+
+  // Merge licenses (prefer active)
+  const allLic = [];
+  results.forEach(r => {
+    (r.state.licenses || []).forEach(lic => {
+      const ex = allLic.find(l => l.name.toUpperCase() === lic.name.toUpperCase());
+      if (!ex) allLic.push(lic);
+      else if (lic.status === 'active' && ex.status !== 'active') Object.assign(ex, lic);
+    });
+  });
+  if (allLic.length > 0) base.licenses = allLic;
+
+  // Merge switches (union by hostname)
+  const allSw = [];
+  results.forEach(r => {
+    (r.state.switches || []).forEach(sw => {
+      if (!allSw.some(s => s.hostname && sw.hostname && s.hostname.toLowerCase() === sw.hostname.toLowerCase())) allSw.push(sw);
+    });
+  });
+  if (allSw.length > 0) base.switches = allSw;
+
+  // ONTAP version conflict check
+  const versions = results.map(r => r.state.version.ontap).filter(v => v !== '9.7P12');
+  const uniqueVersions = [...new Set(versions)];
+  if (uniqueVersions.length > 1) {
+    base.mergeConflicts.push({
+      field: 'ontapVersion', severity: 'critical',
+      message: 'ONTAP version mismatch across files: ' + uniqueVersions.join(' vs ') +
+        '. Verify these are from the same cluster. Using: ' + uniqueVersions[0],
+      values: uniqueVersions
+    });
+    base.version.ontap = uniqueVersions[0];
+  }
+
+  // Merge dataSources: prefer higher rank
+  const rank = { parsed: 3, user: 3, inferred: 2, default: 1, missing: 0 };
+  results.forEach(r => {
+    Object.entries(r.state.dataSources || {}).forEach(([key, ds]) => {
+      const ex = base.dataSources[key];
+      if (!ex || rank[ds.source] > rank[ex.source]) base.dataSources[key] = ds;
+    });
+  });
+
+  // Collect parse warnings from all files
+  base.parseWarnings = [];
+  results.forEach(r => {
+    (r.state.parseWarnings || []).forEach(w => {
+      if (!base.parseWarnings.some(pw => pw.section === w.section)) base.parseWarnings.push(w);
+    });
+  });
+
+  return base;
+}
+
+/**
+ * Uses platform + ONTAP knowledge to fill in data gaps with intelligent inferences.
+ * @param {Object} state - Current cluster state (mutated in place)
+ * @param {Object} profile - Platform profile from NETAPP_PLATFORMS
+ * @returns {Object} Updated state
+ */
+export function inferMissingData(state, profile) {
+  if (!state || !profile) return state;
+  if (!state.dataSources) state.dataSources = {};
+  if (!state.parseWarnings) state.parseWarnings = [];
+
+  const rank = { parsed: 3, user: 3, inferred: 2, default: 1, missing: 0 };
+  const setInferred = (key, note) => {
+    const ex = state.dataSources[key];
+    if (!ex || rank[ex.source] < 2) state.dataSources[key] = { source: 'inferred', confidence: 0.7, note };
+  };
+
+  const model = (state.version && state.version.model) || '';
+  const nodeCount = (state.nodes && state.nodes.length) || 2;
+
+  // Infer switch type from platform tier and node count
+  if (!state.switches || state.switches.length === 0 || (state.dataSources.switches && state.dataSources.switches.source === 'default')) {
+    let swModel = 'BES-53248';
+    if (profile.tier === 'enterprise' || nodeCount > 4 ||
+        model.includes('A900') || model.includes('A1K') || model.includes('A800') || model.includes('A90')) {
+      swModel = 'Nexus 9336C-FX2';
+    }
+    if (!state.switches || state.switches.length === 0) {
+      state.switches = [
+        { model: swModel, hostname: 'cs1', firmware: null, rcfVersion: null },
+        { model: swModel, hostname: 'cs2', firmware: null, rcfVersion: null }
+      ];
+    }
+    setInferred('switches', 'Inferred from platform tier + node count. Verify against actual switch labels in rack.');
+    state.parseWarnings.push({ section: 'Cluster Switches', message: 'Switch type inferred as ' + swModel + ' from platform profile. Verify actual switch model and firmware.' });
+  }
+
+  // Infer cluster name from node hostname (strip node suffix)
+  if (!state.clusterName && state.nodes && state.nodes.length > 0) {
+    const firstName = state.nodes[0].name || '';
+    const guess = firstName.replace(/[-_](0?[12]|node[12]|[ab])$/i, '');
+    if (guess && guess !== firstName) {
+      state.clusterName = guess;
+      setInferred('clusterName', 'Stripped node suffix from first node hostname: ' + firstName);
+    }
+  }
+
+  // Infer RAM from platform profile if at default (128 GB)
+  if (state.nodes && state.nodes.every(n => n.memoryGB === 128 || !n.memoryGB) && profile.maxRamGB) {
+    const inferredRam = Math.round(profile.maxRamGB * 0.5);
+    state.nodes.forEach(n => { if (n.memoryGB === 128 || !n.memoryGB) n.memoryGB = inferredRam; });
+    setInferred('nodeRam', 'Set to 50% of platform max RAM (' + profile.maxRamGB + ' GB). Verify via: system node show -fields node,memory-size');
+  }
+
+  // Tag missing critical fields
+  state.missingCritical = [];
+  if (!state.dataSources.ontapVersion || state.dataSources.ontapVersion.source === 'default') {
+    state.missingCritical.push({
+      field: 'ontapVersion', label: 'ONTAP Version',
+      reason: 'Cannot assess upgrade path, firmware requirements, or feature support without the current ONTAP version.',
+      promptType: 'select',
+      promptOptions: ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.15.1','9.16.1']
+    });
+  }
+  if (!state.dataSources.model || state.dataSources.model.source === 'default') {
+    state.missingCritical.push({
+      field: 'model', label: 'Platform Model',
+      reason: 'Cannot determine supported shelves, PCIe cards, firmware requirements, or upgrade constraints without the controller model.',
+      promptType: 'text', placeholder: 'e.g. AFF A400, FAS8300, ASA A800'
+    });
+  }
+
+  // Tag missing important fields
+  state.missingImportant = [];
+  if (!state.spFirmware || state.spFirmware.length === 0) {
+    state.missingImportant.push({
+      field: 'spFirmware', label: 'SP/BMC Firmware Version',
+      reason: 'Needed to check Service Processor firmware compliance. Run: system node show-detail -fields sp-version',
+      promptType: 'text', placeholder: 'e.g. 1.9.2.7'
+    });
+  }
+  if (!state.switches || !state.switches.some(sw => sw.firmware)) {
+    state.missingImportant.push({
+      field: 'switchFirmware', label: 'Cluster Switch Model & Firmware',
+      reason: 'Needed to verify switch firmware and RCF compliance before ONTAP upgrade. Run: system cluster-switch show',
+      promptType: 'text', placeholder: 'e.g. BES-53248 / EFOS 3.10.0.3'
+    });
+  }
+
+  return state;
+}
+
+/**
+ * Computes an overall data confidence score (0-100) for the cluster state.
+ * @param {Object} state - Cluster state with dataSources
+ * @returns {number} Confidence percentage
+ */
+export function computeOverallConfidence(state) {
+  if (!state || !state.dataSources) return 30;
+  const weights = {
+    ontapVersion: 25, model: 20, nodes: 15, shelves: 10,
+    aggregates: 8, licenses: 7, switches: 5, spFirmware: 4,
+    diskFirmware: 3, serial: 3
+  };
+  const scores = { parsed: 1.0, user: 1.0, inferred: 0.65, default: 0.3, missing: 0.0 };
+  let totalWeight = 0, weighted = 0;
+  Object.entries(weights).forEach(([key, w]) => {
+    totalWeight += w;
+    const ds = state.dataSources[key];
+    weighted += (ds ? (scores[ds.source] || 0) : 0) * w;
+  });
+  return Math.round((weighted / totalWeight) * 100);
 }

@@ -1,5 +1,6 @@
 import { DEMO_DATA, demoASA_A400, demoAFF_C800 } from './demoData.js';
-import { parseASUP, formatGB, parseSizeToGB } from './parser.js';
+import { parseASUP, formatGB, parseSizeToGB, getSectionCoverage, mergeClusterASUPs, inferMissingData, computeOverallConfidence } from './parser.js';
+
 import { runAudit, calculateComplianceScore, BP_LIFECYCLE, getPlatformMaxDrives } from './bestPractices.js';
 import { getPlatformProfile, getUpgradeHopsConsiderations, NETAPP_PLATFORMS, EXP_CARDS_CATALOG, compareVersions, getPlatformSlots } from './compatibility.js';
 
@@ -1367,18 +1368,28 @@ async function processTarFile(file) {
   });
 }
 
+// Per-file ingestion state: tracks each uploaded file independently
+let _perFileResults = [];
+
 async function handleFiles(fileList) {
   if (fileList.length === 0) return;
-  uploadedFiles = {};
-  
+
   const dropZoneText = dropZone.querySelector("p");
-  const originalText = dropZoneText.textContent;
-  dropZoneText.textContent = "Processing and extracting archive bundle...";
+  const originalText = dropZoneText ? dropZoneText.textContent : '';
+  if (dropZoneText) dropZoneText.textContent = `Processing ${fileList.length} file(s)…`;
 
   try {
+    // ── Per-file parse: each file gets its own uploadedFiles map ────────────
+    _perFileResults = [];
+
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
       const name = file.name.toLowerCase();
+      const fileUploadedFiles = {};
+
+      // Helper: store into this file's own bucket
+      const origUploadedFiles = uploadedFiles;
+      uploadedFiles = fileUploadedFiles;
 
       if (name.endsWith(".zip")) {
         await processZipFile(file);
@@ -1389,17 +1400,117 @@ async function handleFiles(fileList) {
       } else {
         await processRawFile(file);
       }
+
+      uploadedFiles = origUploadedFiles; // restore global
+      Object.assign(uploadedFiles, fileUploadedFiles); // also keep global merged
+
+      // Parse this file independently
+      const fileState = parseASUP(fileUploadedFiles);
+
+      // Compute section coverage for this file
+      const allFileText = Object.values(fileUploadedFiles).join('\n');
+      const coverage = (typeof getSectionCoverage === 'function')
+        ? getSectionCoverage(allFileText)
+        : { found: [], missing: [], coverage: 0 };
+
+      _perFileResults.push({
+        filename: file.name,
+        state: fileState,
+        coverage: coverage.coverage,
+        sectionsFound: coverage.found,
+        sectionsMissing: coverage.missing,
+        nodeNames: fileState.nodes.map(n => n.name).filter(n => n !== 'node-a' && n !== 'node-b')
+      });
     }
-    const state = parseASUP(uploadedFiles);
-    state.expansionCards = [];
-    state.metrocluster = "none";
-    loadASUPData(state);
+
+    // ── Merge all per-file results into a single cluster state ──────────────
+    let mergedState;
+    if (typeof mergeClusterASUPs === 'function' && _perFileResults.length > 1) {
+      mergedState = mergeClusterASUPs(_perFileResults);
+    } else {
+      mergedState = _perFileResults.length > 0 ? _perFileResults[0].state : parseASUP(uploadedFiles);
+    }
+
+    // ── Run inference engine to fill missing data from platform knowledge ───
+    const platformProfile = getPlatformProfile(mergedState.version.model);
+    if (typeof inferMissingData === 'function' && platformProfile) {
+      mergedState = inferMissingData(mergedState, platformProfile);
+    }
+
+    mergedState.expansionCards = mergedState.expansionCards || [];
+    if (!mergedState.metrocluster || mergedState.metrocluster === 'none') {
+      mergedState.metrocluster = 'none';
+    }
+
+    loadASUPData(mergedState);
+
+    // Render file status grid in Step 1 below drop zone
+    renderFileStatusGrid(_perFileResults);
+
   } catch (error) {
     console.error(error);
-    alert(`Error loading bundle: ${error.message}`);
+    alert(`Error loading ASUP bundle: ${error.message}\n\nTip: Ensure file is a valid ASUP text, ZIP, or TAR.GZ archive.`);
   } finally {
-    dropZoneText.textContent = originalText;
+    if (dropZoneText) dropZoneText.textContent = originalText;
   }
+}
+
+// ── File Status Grid: shown below drop zone after upload ────────────────────
+function renderFileStatusGrid(results) {
+  let grid = document.getElementById('file-status-grid');
+  if (!grid) {
+    grid = document.createElement('div');
+    grid.id = 'file-status-grid';
+    grid.style.cssText = 'margin-top:1rem; width:100%; max-width:650px; display:flex; flex-direction:column; gap:0.5rem;';
+    const dropZoneParent = dropZone ? dropZone.parentNode : document.getElementById('step1');
+    if (dropZoneParent) {
+      const insertAfter = dropZone || dropZoneParent.firstChild;
+      if (insertAfter && insertAfter.nextSibling) {
+        dropZoneParent.insertBefore(grid, insertAfter.nextSibling);
+      } else {
+        dropZoneParent.appendChild(grid);
+      }
+    }
+  }
+  if (!results || results.length === 0) { grid.innerHTML = ''; return; }
+
+  const sourceBadge = (r) => {
+    const pct = r.coverage || 0;
+    if (pct >= 70) return { icon: '✅', color: '#22c55e', bg: 'rgba(34,197,94,0.1)', label: `Good (${pct}% coverage)` };
+    if (pct >= 40) return { icon: '⚠️', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: `Partial (${pct}% coverage)` };
+    return { icon: '❌', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: `Limited (${pct}% coverage)` };
+  };
+
+  grid.innerHTML = `
+    <div style="font-size:0.8rem; font-weight:700; color:#94a3b8; margin-bottom:0.25rem; text-transform:uppercase; letter-spacing:0.05em;">
+      Files Loaded (${results.length})
+    </div>
+    ${results.map(r => {
+      const badge = sourceBadge(r);
+      const nodeLabel = r.nodeNames && r.nodeNames.length > 0
+        ? r.nodeNames.slice(0, 2).join(', ') + (r.nodeNames.length > 2 ? ` +${r.nodeNames.length - 2}` : '')
+        : 'Node unknown';
+      const foundLabels = (r.sectionsFound || []).slice(0, 4).map(s => s.label).join(', ');
+      const missingLabels = (r.sectionsMissing || []).slice(0, 3).map(s => s.label).join(', ');
+      return `
+        <div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.6rem 0.85rem; background:rgba(0,0,0,0.25); border:1px solid ${badge.color}33; border-radius:8px; border-left:3px solid ${badge.color};">
+          <div style="font-size:1rem; flex-shrink:0; margin-top:1px;">${badge.icon}</div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:0.8rem; font-weight:600; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${r.filename}</div>
+            <div style="font-size:0.72rem; color:#94a3b8; margin-top:1px;">
+              Nodes: <strong style="color:#c7d2fe;">${nodeLabel}</strong>
+              ${foundLabels ? `&nbsp;·&nbsp; ✓ ${foundLabels}` : ''}
+            </div>
+            ${missingLabels ? `<div style="font-size:0.7rem; color:#fca5a5; margin-top:1px;">⚠ Not found: ${missingLabels}</div>` : ''}
+          </div>
+          <div style="font-size:0.7rem; padding:2px 7px; border-radius:10px; background:${badge.bg}; color:${badge.color}; white-space:nowrap; font-weight:600; flex-shrink:0;">${badge.label}</div>
+        </div>`;
+    }).join('')}
+    ${results.length > 1 ? `
+    <div style="font-size:0.72rem; color:#94a3b8; text-align:center; margin-top:0.25rem;">
+      ✓ Data from ${results.length} files merged into a single cluster view
+    </div>` : ''}
+  `;
 }
 
 function loadASUPData(input, isGreenfield = false) {
@@ -1513,7 +1624,10 @@ function loadASUPData(input, isGreenfield = false) {
     }
     
     renderCurrentAuditDashboard();
-    
+    renderDataQualityPanel(currentState);
+    renderCriticalGapsPanel(currentState);
+    renderMergeConflicts(currentState);
+
     if (isGreenfieldMode) {
       initStep3Inputs();
       initStep4Inputs();
@@ -1524,7 +1638,7 @@ function loadASUPData(input, isGreenfield = false) {
       showPanel(2);
     }
     updateWizardProgress();
-    
+
     prevBtn.classList.remove("hidden");
     nextBtn.classList.remove("hidden");
   } catch (error) {
@@ -1532,6 +1646,200 @@ function loadASUPData(input, isGreenfield = false) {
     alert(`Error parsing AutoSupport Bundle: ${error.message}\n\nStack:\n${(error.stack||'').split('\n').slice(0,5).join('\n')}`);
   }
 }
+
+// ── Data Quality Panel: shown at top of Step 2 after parse ──────────────────
+function renderDataQualityPanel(state) {
+  const panel = document.getElementById('data-quality-panel');
+  if (!panel || !state) return;
+
+  const ds = state.dataSources || {};
+  const overall = (typeof computeOverallConfidence === 'function') ? computeOverallConfidence(state) : 70;
+  const fileManifest = state.fileManifest || [];
+  const mergeConflicts = state.mergeConflicts || [];
+
+  const sourceIcon = (key) => {
+    const s = ds[key];
+    if (!s) return '<span style="color:#64748b;">⬜ Unknown</span>';
+    if (s.source === 'parsed' || s.source === 'user') return '<span style="color:#22c55e;">✅ Parsed</span>';
+    if (s.source === 'inferred') return '<span style="color:#f59e0b;">🔶 Inferred</span>';
+    if (s.source === 'default') return '<span style="color:#94a3b8;">⬛ Default</span>';
+    return '<span style="color:#ef4444;">❌ Missing</span>';
+  };
+
+  const barColor = overall >= 75 ? '#22c55e' : overall >= 45 ? '#f59e0b' : '#ef4444';
+  const barLabel = overall >= 75 ? 'Good' : overall >= 45 ? 'Partial' : 'Low';
+
+  const sectionsHtml = [
+    ['ontapVersion', 'ONTAP Version'], ['model', 'Platform Model'], ['serial', 'Serial Number'],
+    ['nodes', 'Node Topology'], ['shelves', 'Disk Shelves'], ['aggregates', 'Aggregates'],
+    ['licenses', 'Licenses'], ['switches', 'Cluster Switches'], ['spFirmware', 'SP/BMC Firmware'],
+    ['diskFirmware', 'Disk Firmware']
+  ].map(([key, label]) => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:0.25rem 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:0.75rem;">
+      <span style="color:#94a3b8;">${label}</span>
+      ${sourceIcon(key)}
+    </div>
+  `).join('');
+
+  const filesHtml = fileManifest.length > 0 ? `
+    <div style="margin-top:0.6rem; font-size:0.72rem; color:#94a3b8;">
+      <strong style="color:#c7d2fe;">Source files:</strong>
+      ${fileManifest.map(f => `
+        <div style="display:flex; justify-content:space-between; margin-top:0.2rem;">
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:65%;">${f.filename}</span>
+          <span style="color:${f.coverage >= 60 ? '#22c55e' : f.coverage >= 35 ? '#f59e0b' : '#ef4444'};">${f.coverage || 0}% coverage</span>
+        </div>
+      `).join('')}
+    </div>
+  ` : '';
+
+  const conflictsHtml = mergeConflicts.length > 0 ? `
+    <div style="margin-top:0.75rem; padding:0.5rem 0.75rem; background:rgba(239,68,68,0.07); border:1px solid rgba(239,68,68,0.25); border-radius:6px; font-size:0.72rem; color:#fca5a5;">
+      <strong>⚠ Merge conflicts detected:</strong>
+      ${mergeConflicts.map(c => `<div style="margin-top:0.2rem; color:#fca5a5;">${c.message}</div>`).join('')}
+    </div>
+  ` : '';
+
+  panel.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+      <div>
+        <div style="font-size:0.82rem; font-weight:700; color:#818cf8; margin-bottom:0.2rem;">📊 Data Quality Report</div>
+        <div style="font-size:0.72rem; color:#94a3b8;">
+          ${fileManifest.length > 0 ? `${fileManifest.length} file(s) loaded and merged` : 'Single ASUP or manual configuration'}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:1.25rem; font-weight:800; color:${barColor};">${overall}%</div>
+        <div style="font-size:0.68rem; color:#94a3b8; font-weight:600;">${barLabel} confidence</div>
+      </div>
+    </div>
+    <div style="background:rgba(0,0,0,0.2); border-radius:4px; height:6px; margin-bottom:0.75rem; overflow:hidden;">
+      <div style="width:${overall}%; height:100%; background:${barColor}; border-radius:4px; transition:width 0.6s;"></div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1rem;">
+      ${sectionsHtml}
+    </div>
+    ${filesHtml}
+    ${conflictsHtml}
+    <div style="margin-top:0.5rem; font-size:0.68rem; color:#64748b; line-height:1.4;">
+      🔶 Inferred = deduced from platform/version knowledge &nbsp;·&nbsp; ⬛ Default = placeholder — verify before proceeding
+    </div>
+  `;
+  panel.classList.remove('hidden');
+}
+
+// ── Critical Gaps Panel: prompts user for fields that cannot be inferred ─────
+function renderCriticalGapsPanel(state) {
+  const panel = document.getElementById('critical-gaps-panel');
+  if (!panel || !state) return;
+
+  const critical = state.missingCritical || [];
+  const important = state.missingImportant || [];
+
+  if (critical.length === 0 && important.length === 0) {
+    panel.classList.add('hidden');
+    return;
+  }
+
+  const renderInput = (gap, isCritical) => {
+    const savedVal = localStorage.getItem('gap_' + gap.field) || '';
+    if (gap.promptType === 'select') {
+      return `<select id="gap-input-${gap.field}" onchange="applyGapValue('${gap.field}', this.value)"
+        style="flex:1; background:rgba(0,0,0,0.4); color:#fff; border:1px solid ${isCritical?'#ef4444':'#f59e0b'}40; padding:6px 10px; border-radius:6px; font-size:0.78rem;">
+        <option value="">-- Select --</option>
+        ${(gap.promptOptions || []).map(o => `<option value="${o}" ${savedVal===o?'selected':''}>${o}</option>`).join('')}
+      </select>`;
+    }
+    return `<input type="text" id="gap-input-${gap.field}" value="${savedVal}"
+      placeholder="${gap.placeholder || ''}"
+      onchange="applyGapValue('${gap.field}', this.value)"
+      style="flex:1; background:rgba(0,0,0,0.4); color:#fff; border:1px solid ${isCritical?'#ef4444':'#f59e0b'}40; padding:6px 10px; border-radius:6px; font-size:0.78rem;" />`;
+  };
+
+  const gapHtml = (gaps, isCritical) => gaps.map(gap => `
+    <div style="padding:0.6rem 0.75rem; background:rgba(0,0,0,0.15); border-radius:6px; border-left:3px solid ${isCritical?'#ef4444':'#f59e0b'};">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+        <span style="font-size:0.78rem; font-weight:600; color:${isCritical?'#fca5a5':'#fde68a'};">${isCritical?'🔴':'🟡'} ${gap.label}</span>
+        ${isCritical ? '<span style="font-size:0.65rem; background:rgba(239,68,68,0.15); color:#fca5a5; padding:1px 6px; border-radius:4px;">Required</span>' : '<span style="font-size:0.65rem; background:rgba(245,158,11,0.12); color:#fde68a; padding:1px 6px; border-radius:4px;">Recommended</span>'}
+      </div>
+      <div style="font-size:0.72rem; color:#94a3b8; margin-bottom:0.4rem; line-height:1.4;">${gap.reason}</div>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        ${renderInput(gap, isCritical)}
+        <button onclick="applyGapValue('${gap.field}', document.getElementById('gap-input-${gap.field}').value)"
+          style="padding:6px 12px; background:${isCritical?'rgba(239,68,68,0.2)':'rgba(245,158,11,0.15)'}; color:${isCritical?'#fca5a5':'#fde68a'}; border:1px solid ${isCritical?'#ef4444':'#f59e0b'}40; border-radius:6px; font-size:0.72rem; cursor:pointer; white-space:nowrap;">
+          Apply
+        </button>
+        ${!isCritical ? `<button onclick="skipGap('${gap.field}')" style="padding:6px 10px; background:transparent; color:#64748b; border:1px solid rgba(255,255,255,0.08); border-radius:6px; font-size:0.72rem; cursor:pointer; white-space:nowrap;">I don't know</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  panel.innerHTML = `
+    <div style="font-size:0.82rem; font-weight:700; color:#f59e0b; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.5rem;">
+      <span>⚠️</span> <span>Missing Data — Complete to Improve Analysis</span>
+    </div>
+    <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:0.75rem; line-height:1.4;">
+      The following information could not be found in the uploaded ASUP. Providing it will produce a more accurate action plan.
+      <strong style="color:#fde68a;">Red fields are required for a complete audit. Yellow fields are recommended.</strong>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+      ${gapHtml(critical, true)}
+      ${gapHtml(important, false)}
+    </div>
+  `;
+  panel.classList.remove('hidden');
+}
+
+// ── Merge Conflict Banner ────────────────────────────────────────────────────
+function renderMergeConflicts(state) {
+  const banner = document.getElementById('merge-conflicts-banner');
+  if (!banner || !state || !state.mergeConflicts || state.mergeConflicts.length === 0) {
+    if (banner) banner.classList.add('hidden');
+    return;
+  }
+  const criticals = state.mergeConflicts.filter(c => c.severity === 'critical');
+  if (criticals.length === 0) { banner.classList.add('hidden'); return; }
+  banner.innerHTML = `
+    <div style="display:flex; align-items:flex-start; gap:0.5rem;">
+      <span style="font-size:1rem; flex-shrink:0;">🔴</span>
+      <div>
+        <strong style="color:#fca5a5; font-size:0.85rem;">Multi-File Conflict Detected</strong>
+        ${criticals.map(c => `<div style="font-size:0.78rem; color:#fef08a; margin-top:0.25rem;">${c.message}</div>`).join('')}
+      </div>
+    </div>
+  `;
+  banner.classList.remove('hidden');
+}
+
+// ── Gap Apply/Skip Handlers ──────────────────────────────────────────────────
+function applyGapValue(field, value) {
+  if (!value || !currentState) return;
+  localStorage.setItem('gap_' + field, value);
+  if (field === 'ontapVersion') currentState.version.ontap = value;
+  else if (field === 'model') currentState.version.model = value;
+  else if (field === 'spFirmware') currentState.spFirmware = [{ node: 'cluster', version: value }];
+  else if (field === 'switchFirmware') {
+    if (currentState.switches && currentState.switches.length > 0) {
+      currentState.switches.forEach(sw => { sw.firmware = value; });
+    } else {
+      currentState.switches = [{ model: value, hostname: 'cs1', firmware: value, rcfVersion: null }];
+    }
+  }
+  if (!currentState.dataSources) currentState.dataSources = {};
+  currentState.dataSources[field] = { source: 'user', confidence: 1.0, note: 'User-provided via gap prompt' };
+  // Remove from missingCritical/missingImportant
+  if (currentState.missingCritical) currentState.missingCritical = currentState.missingCritical.filter(g => g.field !== field);
+  if (currentState.missingImportant) currentState.missingImportant = currentState.missingImportant.filter(g => g.field !== field);
+  renderDataQualityPanel(currentState);
+  renderCriticalGapsPanel(currentState);
+}
+
+function skipGap(field) {
+  if (!currentState) return;
+  if (currentState.missingImportant) currentState.missingImportant = currentState.missingImportant.filter(g => g.field !== field);
+  renderCriticalGapsPanel(currentState);
+}
+
 
 function allocateHBACardsForState(state) {
   if (!state || !state.shelves || state.shelves.length === 0) return;
