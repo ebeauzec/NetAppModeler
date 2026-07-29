@@ -37,7 +37,7 @@
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.27</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.28</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -492,6 +492,10 @@
           <div>
             <div class="form-group">
               <label for="target-ontap">Target ONTAP Operating System Version</label>
+              <div style="font-size:0.78rem; color:var(--color-muted); margin-bottom:0.5rem; line-height:1.5;">
+                💡 <strong>What is this?</strong> ONTAP is the operating system that runs on your NetApp controllers, similar to Windows or Linux on a regular server. Newer versions contain security patches, bug fixes, and support for newer hardware. Staying on old versions is a security and stability risk.
+                <br>Select the version you want to <em>upgrade to</em>. The tool will calculate the safest upgrade path automatically.
+              </div>
               <select id="target-ontap" class="form-control">
                 <!-- Injected dynamically -->
               </select>
@@ -509,16 +513,17 @@
               <div id="hop-considerations-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
                 <!-- Injected dynamically by UI.js -->
               </div>
-            </div>
-
-            <div class="form-group" style="margin-top: 2rem;">
+                     <div class="form-group" style="margin-top: 2rem;">
               <label>Remediation Operations</label>
-              
+              <div style="font-size:0.78rem; color:var(--color-muted); margin-bottom:0.75rem; line-height:1.5;">
+                💡 Select which corrective actions you want included in the generated action plan. Both are recommended. Deselect only if you have already addressed that area.
+              </div>
+
               <label id="firmware-card" class="checkbox-card">
                 <input type="checkbox" id="model-upgrade-firmware" checked>
                 <div class="checkbox-content">
-                  <h4>Upgrade Controller & Storage Shelf Firmware</h4>
-                  <p>Updates system shelf bios and loop controllers to latest qualified baselines.</p>
+                  <h4>Upgrade Controller &amp; Storage Shelf Firmware</h4>
+                  <p>Updates disk drives, shelf modules (IOM), and controller SP/BMC chips to the latest NetApp-qualified firmware versions. <strong>Required before any ONTAP upgrade.</strong> This runs automatically in the background without interrupting data access.</p>
                 </div>
               </label>
 
@@ -526,10 +531,11 @@
                 <input type="checkbox" id="model-fix-cabling" checked>
                 <div class="checkbox-content">
                   <h4>Remediate Cabling to Multipath HA</h4>
-                  <p>Corrects single-path loop wiring errors to restore dual path redundancy.</p>
+                  <p>If any disk shelves are connected to the controllers via only ONE cable path, this adds the second path. <strong>A shelf with only one cable path will go offline if that cable fails</strong> — this is a single point of failure (SPOF) and a serious risk to data availability.</p>
                 </div>
               </label>
             </div>
+     </div>
           </div>
 
           <!-- Licenses Entitlements Column -->
@@ -558,6 +564,10 @@
           <div>
             <div class="form-group">
               <label for="shelf-type" style="font-weight: 600;">Add Disk Shelf Expansion Stack</label>
+              <div style="font-size:0.78rem; color:var(--color-muted); margin-bottom:0.5rem; line-height:1.5;">
+                💡 <strong>What is a disk shelf?</strong> A disk shelf is a rack-mounted unit (typically 2U or 4U tall) that holds disk drives. Adding shelves increases your storage capacity. Select the type that matches your platform — different controllers support different shelf types.
+                <br><strong>NS224</strong> = NVMe SSD shelves (fastest, all-flash). <strong>DS224C</strong> = SAS SSD/HDD shelves (high capacity). <strong>DS460C</strong> = High-density SAS HDD (maximum raw capacity, 60 drives).
+              </div>
               <select id="shelf-type" class="form-control">
                 <option value="none">-- No Shelf Added --</option>
               </select>
@@ -566,7 +576,10 @@
 
             <div id="shelf-expansion-details" class="hidden">
               <div class="form-group">
-                <label for="disk-size">Disk Drive Media & Sizing</label>
+                <label for="disk-size">Disk Drive Media &amp; Sizing</label>
+                <div style="font-size:0.78rem; color:var(--color-muted); margin-bottom:0.5rem; line-height:1.5;">
+                  💡 Select the drive capacity and type to populate this shelf with. <strong>Larger drives = more capacity but similar cost per drive.</strong> All drives in a shelf must be the same type. Mix different drive sizes across shelves, not within a shelf.
+                </div>
                 <select id="disk-size" class="form-control">
                   <!-- Dynamically populated based on shelf -->
                 </select>
@@ -586,25 +599,41 @@
 
               <div class="form-group">
                 <label for="disk-count" style="font-weight: 600;">Total Quantity of Disk Drives to Insert</label>
+                <div style="font-size:0.78rem; color:var(--color-muted); margin-bottom:0.5rem; line-height:1.5;">
+                  💡 You don’t have to fill a shelf completely. However, <strong>keep at least 2 drives as spare reserves</strong> — spares allow automatic recovery if a drive fails. Fewer spares = higher data loss risk.
+                </div>
                 <input type="number" id="disk-count" class="form-control" min="2" max="192" value="24">
                 <span id="disk-count-hint" style="font-size: 0.8rem; color: var(--color-muted); display: block; margin-top: 4px;">-</span>
               </div>
 
               <div class="form-group">
                 <label for="disk-allocation">Drive Assignment Strategy</label>
+                <div style="font-size:0.78rem; color:var(--color-muted); margin-bottom:0.5rem; line-height:1.5;">
+                  💡 <strong>What happens to the new drives?</strong>
+                  <ul style="margin:0.4rem 0 0 1rem; padding:0; line-height:1.7;">
+                    <li><strong>Add as Spare Reserves</strong> — Drives sit ready but unused. If a production drive fails, a spare automatically replaces it. <em>No new usable capacity is added.</em></li>
+                    <li><strong>Expand Existing Aggregate</strong> — Add drives to an existing storage pool to increase its size. Good for growing a volume that is running out of space.</li>
+                    <li><strong>Create New Aggregate</strong> — Create a new independent storage pool from the new drives. Good for separating workloads or supporting a new project.</li>
+                  </ul>
+                </div>
                 <select id="disk-allocation" class="form-control">
                   <option value="spare">Add as Spare Reserves (No capacity change)</option>
                   <option value="expand">Expand Existing Active Aggregate</option>
                   <option value="new">Create New RAID-DP Aggregate</option>
                 </select>
                 <div id="new-aggr-fields" class="hidden" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                  <div style="font-size:0.78rem; color:var(--color-muted); margin-bottom:0.35rem; line-height:1.5;">
+                    💡 <strong>Aggregate name:</strong> Use a descriptive name like <code>aggr1_node1</code>. Avoid spaces and special characters.
+                    <br><strong>RAID-DP</strong> (recommended) = 2 parity drives protect against 2 simultaneous disk failures. <strong>RAID-TEC</strong> = 3 parity drives, use for very large disks (10TB+). <strong>RAID-4</strong> = legacy, 1 parity, avoid unless required.
+                    <br><strong>RAID group size:</strong> Typically 16–20 for SSD, 12–16 for HDD. Larger groups = more capacity efficiency but slower rebuild if a drive fails.
+                  </div>
                   <input type="text" id="new-aggr-name" placeholder="New aggregate name (e.g. aggr1_node1)" class="form-control" style="background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-md);">
                   <select id="new-aggr-raid" class="form-control" style="background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-md);">
-                    <option value="raid_dp">RAID-DP (Default)</option>
-                    <option value="raid_tec">RAID-TEC (Triple Parity)</option>
-                    <option value="raid4">RAID-4 (Legacy)</option>
+                    <option value="raid_dp">RAID-DP — Recommended (2 parity drives, tolerates 2 disk failures)</option>
+                    <option value="raid_tec">RAID-TEC — Triple Parity (best for large drives 10TB+, tolerates 3 failures)</option>
+                    <option value="raid4">RAID-4 — Legacy (1 parity, avoid unless required for compatibility)</option>
                   </select>
-                  <input type="number" id="new-aggr-rgsize" placeholder="RAID group size (e.g. 16)" min="8" max="28" class="form-control" style="background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-md);">
+                  <input type="number" id="new-aggr-rgsize" placeholder="RAID group size (e.g. 16 for SSD, 12 for HDD)" min="8" max="28" class="form-control" style="background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-md);">
                 </div>
               </div>
 
@@ -619,9 +648,19 @@
               </div>
             </div>
 
-            <!-- PCIe Card Modeler Section (NEW) -->
+            <!-- PCIe Card Modeler Section -->
             <div class="form-group" style="margin-top: 2rem; border-top: 1px dashed var(--border-color); padding-top: 1.5rem;">
               <label for="add-pcie-card" style="font-weight: 600;">Add PCIe Interface Expansion Card</label>
+              <div style="font-size:0.78rem; color:var(--color-muted); margin-bottom:0.5rem; line-height:1.5;">
+                💡 <strong>What is a PCIe card?</strong> Expansion cards add new capabilities or ports to the controllers. Common types:
+                <ul style="margin:0.3rem 0 0 1rem; padding:0; line-height:1.6;">
+                  <li><strong>Storage HBA (Host Bus Adapter)</strong> — Adds extra SAS or NVMe ports to connect more disk shelves than the onboard ports support.</li>
+                  <li><strong>FC (Fibre Channel)</strong> — Adds high-speed SAN connectivity for block-storage clients (VMware, databases).</li>
+                  <li><strong>Ethernet (10/25/100GbE)</strong> — Adds network ports for NAS (NFS/CIFS) data traffic or cluster interconnect.</li>
+                  <li><strong>NVMe-oF</strong> — Adds ultra-low-latency NVMe over Fabrics connectivity for the highest-performance workloads.</li>
+                </ul>
+                <span style="color:#fca5a5;"><strong>⚠️ Installing PCIe cards requires controller shutdown and HA takeover</strong> — this is a physical, hands-on operation. Plan for a maintenance window.</span>
+              </div>
               <div style="display:flex; gap:10px; margin-bottom:0.75rem;">
                 <select id="add-pcie-card" class="form-control" style="background: rgba(0,0,0,0.2); flex: 2;">
                   <option value="none">-- Select Supported Card --</option>
@@ -974,7 +1013,7 @@
     </div>
   </div>
 
-  <!-- Splash Screen Modal Overlay (What's New in v2.27) -->
+  <!-- Splash Screen Modal Overlay (What's New in v2.28) -->
   <div id="splash-modal" class="modal-overlay no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 11000; backdrop-filter: blur(8px);">
     <div class="modal-content" style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(15,23,42,0.95) 100%); border: 1.5px solid var(--color-primary); border-radius: var(--radius-lg); padding: 2.5rem; width: 550px; box-shadow: 0 25px 50px -12px rgba(6,182,212,0.3); position: relative; max-height: 85vh; overflow-y: auto;">
       
@@ -985,7 +1024,7 @@
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.27</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.28</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
@@ -1029,7 +1068,7 @@
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary" 
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.27','true')}catch(e){}" 
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.28','true')}catch(e){}" 
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
