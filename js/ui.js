@@ -4388,9 +4388,9 @@ function updateUpgradeHopTimeline() {
       card.style.padding = "0.75rem";
       card.style.textAlign = "left";
       
-      const risksHtml = hop.risks.map(r => `<li>${r}</li>`).join("");
-      const reqsHtml = hop.preReqs.map(r => `<li>${r}</li>`).join("");
-      const cmdsHtml = hop.commands.map(c => `<code>${c}</code>`).join("<br>");
+      const risksHtml = (hop.risks || []).map(r => `<li>${r}</li>`).join("");
+      const reqsHtml = (hop.preReqs || []).map(r => `<li>${r}</li>`).join("");
+      const cmdsHtml = (hop.commands || []).map(c => `<code>${c}</code>`).join("<br>");
       
       card.innerHTML = `
         <h4 style="margin-top:0; margin-bottom:0.5rem; color:#fde047; font-size:0.9rem; display:flex; align-items:center; gap:0.5rem;">

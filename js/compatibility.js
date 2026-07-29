@@ -1542,9 +1542,36 @@ export function getUpgradeHopsConsiderations(currentVersion, targetVersion, cont
       "system switch ethernet show",
       "security config modify -supported-protocols TLSv1.2,TLSv1.3"
     ]},
-    { from: "9.9.1", to: "9.10.1", type: "direct" },
-    { from: "9.10.1", to: "9.11.1", type: "direct" },
-    { from: "9.11.1", to: "9.12.1", type: "direct" },
+    { from: "9.9.1", to: "9.10.1", title: "Hop 9.9.1 ➤ 9.10.1 Considerations", directUpgrade: true, risks: [
+      "S3 Object Storage: ONTAP 9.10.1 introduces native S3 object store. Review if any existing volume names conflict with S3 bucket namespace requirements.",
+      "AutoSupport HTTPS Enforcement: Transport defaults change to HTTPS. Proxy configs using HTTP-only paths will stop delivering ASUPs."
+    ], preReqs: [
+      "Review existing volume and LUN naming for S3 namespace conflicts.",
+      "Validate AutoSupport proxy configuration supports HTTPS."
+    ], commands: [
+      "system node autosupport show -fields transport",
+      "volume show -fields name"
+    ]},
+    { from: "9.10.1", to: "9.11.1", title: "Hop 9.10.1 ➤ 9.11.1 Considerations", directUpgrade: true, risks: [
+      "SnapLock Compliance Enhancements: ONTAP 9.11.1 enforces stricter SnapLock audit log retention. Existing audit logs must be migrated.",
+      "Multi-Admin Verification Preview: MAV is introduced as an optional feature. Enabling it locks high-risk CLI commands behind quorum approval."
+    ], preReqs: [
+      "Review SnapLock audit log configuration before upgrade.",
+      "Plan for MAV enablement if required by compliance policies."
+    ], commands: [
+      "snaplock log show",
+      "security multi-admin-verification show"
+    ]},
+    { from: "9.11.1", to: "9.12.1", title: "Hop 9.11.1 ➤ 9.12.1 Considerations", directUpgrade: true, risks: [
+      "AFF A300 / FAS8200 Warning: ONTAP 9.12.1 is the last supported release for AFF A300 and FAS8200 platforms. Plan hardware refresh if these models are present.",
+      "Consistency Group GA: Consistency Groups become GA in 9.12.1 and can affect volume move behavior. Review CG policies before upgrading."
+    ], preReqs: [
+      "Confirm platform model support; AFF A300/FAS8200 cannot go beyond 9.12.1.",
+      "Review any consistency group or application set configurations."
+    ], commands: [
+      "system node show -fields model",
+      "consistency-group show"
+    ]},
     { from: "9.9.1", to: "9.12.1", title: "Hop 9.9.1 ➔ 9.12.1 Considerations", directUpgrade: false, risks: [
       "Direct Upgrade Limit: Direct upgrade from 9.9.1 is supported ONLY if the cluster is currently running 9.9.1P13 or higher patch release; otherwise, an intermediate hop to ONTAP 9.10.1 is required.",
       "FAS2500 Hardware EOS: ONTAP 9.10.1+ completely removes kernel drivers for FAS2520, FAS2552, and FAS2554. DO NOT proceed if cluster contains these controller models.",
@@ -1624,13 +1651,16 @@ export function getUpgradeHopsConsiderations(currentVersion, targetVersion, cont
   // Filter hops that apply to the current upgrade span
   hopSequence.forEach(hop => {
     if (compareVersions(currentVersion, hop.to) < 0 && compareVersions(targetVersion, hop.to) >= 0) {
-      considerations.push({
-        title: hop.title,
-        directUpgrade: hop.directUpgrade,
-        risks: hop.risks,
-        preReqs: hop.preReqs,
-        commands: hop.commands
-      });
+      // Only push hops that have full content (skip stub-only entries with no title)
+      if (hop.title) {
+        considerations.push({
+          title: hop.title || `Hop → ${hop.to}`,
+          directUpgrade: hop.directUpgrade !== false,
+          risks:   Array.isArray(hop.risks)   ? hop.risks   : [],
+          preReqs: Array.isArray(hop.preReqs) ? hop.preReqs : [],
+          commands: Array.isArray(hop.commands) ? hop.commands : []
+        });
+      }
     }
   });
 
