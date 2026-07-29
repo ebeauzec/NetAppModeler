@@ -1081,6 +1081,15 @@ function setupUploadListeners() {
     });
   }
 
+  const a1kMccBtn = document.getElementById("demo-a1k-mcc-btn");
+  if (a1kMccBtn) {
+    a1kMccBtn.addEventListener("click", () => {
+      const state = parseASUP(DEMO_DATA.metrocluster_a1k.files);
+      state.expansionCards = [];
+      loadASUPData(state);
+    });
+  }
+
   const asaA400Btn = document.getElementById("demo-asa-a400-btn");
   if (asaA400Btn) {
     asaA400Btn.addEventListener("click", () => {

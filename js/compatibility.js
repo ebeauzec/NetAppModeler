@@ -144,10 +144,10 @@ export const NETAPP_PLATFORMS = {
     maxFirmware: "v20.1",
     description: "High-end NVMe-oF All Flash storage controller.",
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
-      san: ["0e", "0f"],
-      storage: ["e0g", "e0h"] // NVMe (RoCE)
+      cluster: ["e1a", "e1b"],          // 100GbE onboard cluster interconnect
+      data:    ["e0c", "e0d", "e0e", "e0f"],
+      san:     ["e0g", "e0h"],
+      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b", "e5a", "e5b"] // PCIe RoCE 100G for NS224
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 11
