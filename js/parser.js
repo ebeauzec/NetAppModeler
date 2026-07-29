@@ -201,20 +201,51 @@ export function parseASUP(files) {
   data.metrocluster = metrocluster;
 
   // --- 2. Parse Nodes ---
+  // Broad node parsing: handles multiple real ASUP formats
+  // Pattern 1: "System ID: 1234567890 (nodename); System Serial Number: 1234567890 (nodename)"
+  // Pattern 2: "System ID: 1234567890 (nodename); System Serial Number: 1234567890" (no trailing hostname)
+  // Pattern 3: tabular node show output
   const nodeRegex = /System ID:\s*(\d+)\s*\(([^)]+)\);\s*System Serial Number:\s*(\d+)/ig;
+  const nodeRegex2 = /System ID:\s*(\d+)\s*\(([^)]+)\)/ig; // minimal match
   let nodeMatch;
   const nodeNames = [];
+  // First pass: full match with serial
   while ((nodeMatch = nodeRegex.exec(combinedText)) !== null) {
     const id = nodeMatch[1];
     const name = nodeMatch[2].trim();
     const serial = nodeMatch[3];
     if (!data.nodes.some(n => n.id === id || n.name.toLowerCase() === name.toLowerCase())) {
-      data.nodes.push({
-        id: id,
-        name: name,
-        serial: serial
-      });
+      data.nodes.push({ id, name, serial });
       nodeNames.push(name);
+    }
+  }
+  // Second pass: try minimal pattern for any remaining nodes not yet found
+  if (data.nodes.length === 0) {
+    while ((nodeMatch = nodeRegex2.exec(combinedText)) !== null) {
+      const id = nodeMatch[1];
+      const name = nodeMatch[2].trim();
+      // Skip if name looks like a generic label
+      if (name.length < 3 || name.match(/^(local|remote|node|controller)$/i)) continue;
+      if (!data.nodes.some(n => n.id === id || n.name.toLowerCase() === name.toLowerCase())) {
+        // Try to find serial from nearby text
+        const nearby = combinedText.substring(combinedText.indexOf(nodeMatch[0]), combinedText.indexOf(nodeMatch[0]) + 200);
+        const serialNearby = nearby.match(/Serial Number:\s*(\d{5,})/i);
+        data.nodes.push({ id, name, serial: serialNearby ? serialNearby[1] : data.version.serial });
+        nodeNames.push(name);
+      }
+    }
+  }
+  // Third pass: try node show tabular format "nodename  system-id  serial-number ..."
+  if (data.nodes.length === 0) {
+    const nodeShowRegex = /^([a-z][a-z0-9\-\.]+)\s+(\d{9,12})\s+(\d{10,12})/gim;
+    while ((nodeMatch = nodeShowRegex.exec(combinedText)) !== null) {
+      const name = nodeMatch[1].trim();
+      const id = nodeMatch[2].trim();
+      const serial = nodeMatch[3].trim();
+      if (!data.nodes.some(n => n.id === id || n.name.toLowerCase() === name.toLowerCase())) {
+        data.nodes.push({ id, name, serial });
+        nodeNames.push(name);
+      }
     }
   }
 
@@ -252,6 +283,12 @@ export function parseASUP(files) {
       data.nodes.push({ id: "536870913", name: "node-b", serial: data.version.serial + "B" });
       nodeNames.push("node-a", "node-b");
     }
+  }
+
+  if (data.nodes.some(n => !n.id.startsWith('53687'))) {
+    setSource('nodes', 'parsed', 1.0, `${data.nodes.length} controller node(s) parsed from System ID output`);
+  } else if (data.nodes.length > 0) {
+    setSource('nodes', 'default', 0.3, 'Node IDs not found; using default HA pair fallback');
   }
 
   // Assign site A/B to parsed nodes based on MCC DR group output
@@ -315,7 +352,8 @@ export function parseASUP(files) {
   });
 
   // --- 3. Parse Shelves & Cabling ---
-  const shelfRegex = /Shelf\s+(\d+):\s+([\w\-]+)\s+\(S\/N:\s*([^)]+)\)\s+(v\d+)(?:\s+\(Latest:\s*(v\d+)\))?/ig;
+  // Broad shelf regex: handles v-prefixed and bare firmware versions, SN: and S/N: variants
+  const shelfRegex = /Shelf\s+(\d+):\s+([\w\-]+)\s+\((?:S\/N|SN):\s*([^)]+)\)\s+(v?[0-9][0-9A-Z._]*)(?:\s+\(Latest:\s*(v?[0-9][0-9A-Z._]*)\))?/ig;
   let shelfMatch;
   const shelfMap = new Map();
 
@@ -336,6 +374,31 @@ export function parseASUP(files) {
       data.shelves.push(shelfObj);
       shelfMap.set(shelfId, shelfObj);
     }
+  }
+
+  // Secondary shelf scan: tabular 'storage shelf show' format
+  // e.g.: "0.shelf0   DS224C   normal   ..."
+  if (data.shelves.length === 0) {
+    const tabShelfRegex = /^\s*(\S+\.shelf\d+|shelf[\-_ ]?\d+|\d+\.\d+)\s+(DS[0-9]+C|NS224|DS212C|DS460C)\s+(normal|ok|online)/gim;
+    let tabMatch;
+    while ((tabMatch = tabShelfRegex.exec(combinedText)) !== null) {
+      const shelfId = tabMatch[1].replace(/\D+/g, '') || String(data.shelves.length + 1);
+      const model = tabMatch[2].toUpperCase();
+      if (!data.shelves.some(s => s.id === shelfId)) {
+        const shelfObj = {
+          id: shelfId, model, serial: `AUTO-DISC-${shelfId}`,
+          firmware: 'unknown', latestFirmware: 'unknown', cabling: 'Multipath HA', disks: []
+        };
+        data.shelves.push(shelfObj);
+        shelfMap.set(shelfId, shelfObj);
+      }
+    }
+  }
+
+  if (data.shelves.length > 0) {
+    setSource('shelves', 'parsed', 1.0, `${data.shelves.length} disk shelf(ves) parsed from SYSCONFIG output`);
+  } else {
+    setSource('shelves', 'default', 0.2, 'No shelf inventory found in ASUP text; shelf data is estimated');
   }
 
   // Parse cabling loops
@@ -617,6 +680,13 @@ export function parseASUP(files) {
     });
   }
 
+  const aggrParsed = data.aggregates.some(a => !a.name.startsWith('aggr_data_'));
+  if (aggrParsed) {
+    setSource('aggregates', 'parsed', 1.0, `${data.aggregates.length} aggregate(s) parsed from SYSCONFIG-R output`);
+  } else if (data.aggregates.length > 0) {
+    setSource('aggregates', 'default', 0.2, 'Aggregate layout not found; using default aggregate layout');
+  }
+
   // --- 5. Parse Spares ---
   const sparesRegex = /Spare Disks\s*\(([^)]+)\):\s*[\r\n]+\s*NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^)]+)\)\s*-\s*(\d+)\s*spares/ig;
   let sparesMatch;
@@ -659,7 +729,23 @@ export function parseASUP(files) {
   }
 
   // --- 6. Parse Licenses ---
-  const licRegex = /(?:^|\t|  )([A-Za-z][A-Za-z0-9_\-]+)\s+(active|expired|disabled|unlicensed)/gim;
+  // ONTAP 9.x+ license table format: "PackageName  type  description  expiration"
+  // Also handles: "feature   active/expired   [Expired: date]"
+  const licTableRegex = /^\s*([A-Za-z][A-Za-z0-9_\-]{1,30})\s+(site|license|capacity|demo)\s+[A-Za-z0-9_\-\s]+?\s*(-|\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})\s*$/gim;
+  let licTblMatch;
+  while ((licTblMatch = licTableRegex.exec(combinedText)) !== null) {
+    const name = licTblMatch[1].trim();
+    const expiry = licTblMatch[3] ? licTblMatch[3].trim() : '-';
+    const status = expiry !== '-' && expiry !== '' ? 'expired' : 'active';
+    if (!['Package', 'Feature', 'Owner', 'Description', 'Type', 'Expiration', 'Serial', 'Base'].includes(name)) {
+      if (!data.licenses.some(l => l.name.toUpperCase() === name.toUpperCase())) {
+        data.licenses.push({ name, status, details: expiry !== '-' ? `Expires: ${expiry}` : '', serial: data.version.serial });
+      }
+    }
+  }
+
+  // Broad license match: "  NFS   active" or "NFS\tactive" or "NFS active"
+  const licRegex = /^[ \t]{0,6}([A-Za-z][A-Za-z0-9_\-]{1,30})[ \t]+(active|expired|disabled|unlicensed)/gim;
   let licMatch;
   while ((licMatch = licRegex.exec(combinedText)) !== null) {
     const name = licMatch[1].trim();
@@ -733,6 +819,15 @@ export function parseASUP(files) {
         serial: data.version.serial
       });
     });
+  }
+
+  const licParsed = data.licenses.some(l => l.status === 'active' && !['Cluster','NFS','CIFS','FCP','iSCSI','SnapMirror','FlexClone'].every(n => data.licenses.find(x=>x.name===n)));
+  if (data.licenses.length > 0 && !isDemoMode) {
+    const hasRealLicenses = data.licenses.some(l => l.name.match(/SnapMirror|FlexClone|FabricPool|MetroCluster|NVMe|S3|SnapCenter|SnapRestore|SnapVault/i));
+    setSource('licenses', hasRealLicenses ? 'parsed' : 'default', hasRealLicenses ? 0.9 : 0.2,
+      hasRealLicenses ? `${data.licenses.length} license(s) parsed from LICENSE section` : 'License section not found; using default active entitlement set');
+  } else if (data.licenses.length > 0) {
+    setSource('licenses', 'parsed', 0.9, `${data.licenses.length} license(s) parsed`);
   }
 
   // --- 7. Parse Ports ---
@@ -844,6 +939,32 @@ export function parseASUP(files) {
     }
   });
 
+  // Also try to parse actual switch names and firmware from 'system switch ethernet show' or 'network device-discovery show'
+  const switchShowRegex = /(?:Switch Name:|Switch:)\s*(\S+)[^\n]*Model:\s*(\S[^\n]+?)\s*(?:Version:|Firmware:|FW:)?\s*([\d]+[\d.()A-Za-z\-]*)?(?:\r?\n|$)/ig;
+  let swShowMatch;
+  while ((swShowMatch = switchShowRegex.exec(combinedText)) !== null) {
+    const swName = swShowMatch[1].trim();
+    const swModel = swShowMatch[2].trim();
+    const swVer = swShowMatch[3] ? swShowMatch[3].trim() : null;
+    if (!switches.some(s => s.name === swName)) {
+      switches.push({ name: swName, model: swModel, version: swVer || 'unknown', role: 'cluster-switch' });
+    }
+  }
+
+  // Parse system switch ethernet show tabular format
+  // cs1  cluster-network  192.168.1.1  BES-53248
+  const swEthernetRegex = /^([a-z][a-z0-9\-]+)\s+(?:cluster-network|storage-network|management)\s+\S+\s+([A-Z][A-Za-z0-9\-]+)/gim;
+  let swEthMatch;
+  while ((swEthMatch = swEthernetRegex.exec(combinedText)) !== null) {
+    const swName = swEthMatch[1].trim();
+    const modelHint = swEthMatch[2].trim();
+    // Map model hint to a known model
+    const knownModel = switchPatterns.find(p => p.regex.test(modelHint));
+    if (knownModel && !switches.some(s => s.name === swName)) {
+      switches.push({ name: swName, model: knownModel.model, version: knownModel.defaultVer, role: 'cluster-switch' });
+    }
+  }
+
   // Fallback to default cluster switches
   if (switches.length === 0) {
     if (!isDemoMode) {
@@ -857,6 +978,10 @@ export function parseASUP(files) {
   }
 
   data.switches = switches;
+
+  const switchesParsed = switches.some(s => !s.name.startsWith('CSW-BES-0') || s.version !== '1.3.0.1');
+  setSource('switches', switchesParsed ? 'parsed' : 'default', switchesParsed ? 0.8 : 0.2,
+    switchesParsed ? `${switches.length} switch(es) detected in ASUP text` : 'No switch model found; using default cluster switch profile');
 
   // --- 9. Parse PCIe Expansion Cards from sysconfig -a ---
   const slotCardRegex = /slot\s+(\d+):\s+([^\r\n]+)/ig;
@@ -1001,6 +1126,9 @@ export function parseASUP(files) {
     });
   }
 
+  setSource('spFirmware', data.spFirmware.length > 0 ? 'parsed' : 'missing', data.spFirmware.length > 0 ? 0.9 : 0,
+    data.spFirmware.length > 0 ? `${data.spFirmware.length} SP/BMC firmware record(s) found` : 'No service-processor show output found in ASUP');
+
   // === Parse: Disk Firmware Versions ===
   // Source: storage disk show -fields model,firmware-revision  OR  storage disk firmware show
   data.diskFirmware = [];
@@ -1021,6 +1149,9 @@ export function parseASUP(files) {
       });
     });
   }
+
+  setSource('diskFirmware', data.diskFirmware.length > 0 ? 'parsed' : 'missing', data.diskFirmware.length > 0 ? 0.9 : 0,
+    data.diskFirmware.length > 0 ? `${data.diskFirmware.length} disk firmware record(s) found` : 'No disk firmware output in ASUP; disk firmware shown is from shelf disk data where available');
 
   // === Parse: ACP (Alternate Control Path) Status ===
   // Source: storage acp show
