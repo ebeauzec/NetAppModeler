@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.49)
+# NetApp AutoSupport Analyzer & Modeler (v2.50)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,7 +6,7 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.49)
+## 🆕 New in this Version (v2.50)
 * **Hardware & Firmware Database Refresh:** Accurate ONTAP 9.x lifecycle support status, ASA R2 models added, AFF C Gen2 series added, FAS Gen latest, firmware version updates for all SP/BMC and shelves.
 * **Data accuracy fixes:** AFF C-series minOntap, AFX 2K platform, 9.19.1 GA date, DATA_SOURCES.md
 * **MetroCluster Auto-Detection & Topologies:** Automatically detects MetroCluster IP/FC configurations from ASUP logs, rendering dual-site split cabling graphs and replication paths.
@@ -127,6 +127,7 @@ This project is the sole and exclusive intellectual property of **Eugene Beauzec
 This tool is a configuration estimator/auditing helper only. All hardware topologies, firmware upgrades, and CLI scripts must be validated by certified systems engineers against official NetApp guides before execution. The author assumes no responsibility for actions taken based on this tool's outputs.
 
 Copyright © 2026 Eugene Beauzec. All Rights Reserved.
+
 
 
 
