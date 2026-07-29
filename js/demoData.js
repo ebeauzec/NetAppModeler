@@ -285,7 +285,21 @@ Shelf 1: NS224 (S/N: NS224-000001) v0120 (Latest: v0130)
     Disk 20: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0021)
     Disk 21: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0022)
     Disk 22: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0023)
-    Disk 23: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0024)`,
+    Disk 23: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0024)
+
+Shelf 2: NS224 (S/N: NS224-000002) v0130 (Latest: v0130)
+    Disk 0: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0101)
+    Disk 1: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0102)
+    Disk 2: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0103)
+    Disk 3: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0104)
+    Disk 4: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0105)
+    Disk 5: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0106)
+    Disk 6: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0107)
+    Disk 7: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0108)
+    Disk 8: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0109)
+    Disk 9: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0110)
+    Disk 10: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0111)
+    Disk 11: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0112)`,
 
       "SYSCONFIG-R": `Aggregate aggr0_a1 (online, raid_dp) (block-checksum)
     Size: 2200 GB, Usable: 1800 GB, Used: 1500 GB, Free: 300 GB
@@ -371,7 +385,7 @@ Cluster        Partner Cluster        Configuration State
 -------------- ---------------------- -------------------
 cluster-a      cluster-b              configured
 
-MetroCluster IP Configuration Status: configured
+MetroCluster IP Configuration Status: configured (metrocluster show)
 
 metrocluster node show
 

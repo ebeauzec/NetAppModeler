@@ -405,7 +405,7 @@ export const NETAPP_PLATFORMS = {
       "ds460c": "HDD expansion is unsupported on AFF arrays.",
       "ds2246": "DS2246 legacy SAS-2 shelf is not supported."
     },
-    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
     maxFirmware: "v11.7",
     description: "Legacy entry All-Flash controller (End of Support on ONTAP 9.15.1+).",
     ports: {
@@ -593,7 +593,7 @@ export const NETAPP_PLATFORMS = {
       "ds460c": "HDD shelves not supported.",
       "ds2246": "Legacy 6G SAS not supported."
     },
-    supportedLicenses: ["Cluster", "NFS", "CIFS", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
     maxFirmware: "v11.7",
     description: "Legacy entry All Flash array with limited licensing protocols (no FCP).",
     ports: {
@@ -730,7 +730,7 @@ export const NETAPP_PLATFORMS = {
       "ns224": "FAS2820 does not support NVMe expansion shelves.",
       "ds2246": "Legacy 6G SAS is not supported."
     },
-    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
     maxFirmware: "v16.1",
     description: "Entry hybrid storage array.",
     ports: {
@@ -751,7 +751,7 @@ export const NETAPP_PLATFORMS = {
       "ns224": "FAS2720 does not support NVMe shelves.",
       "ds2246": "DS2246 is a legacy SAS-2 shelf and is unsupported."
     },
-    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
     maxFirmware: "v11.7",
     description: "Legacy entry LFF hybrid array (End of Support on ONTAP 9.15.1+).",
     ports: {
@@ -772,7 +772,7 @@ export const NETAPP_PLATFORMS = {
       "ns224": "FAS2750 does not support NVMe shelves.",
       "ds2246": "Legacy 6G SAS not supported."
     },
-    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
     maxFirmware: "v11.7",
     description: "Legacy entry SFF hybrid array (End of Support on ONTAP 9.15.1+).",
     ports: {
