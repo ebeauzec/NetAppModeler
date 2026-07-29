@@ -110,6 +110,9 @@
             <input type="file" id="file-input" multiple class="hidden" accept=".zip,.tar.gz,.tgz,.gz,.txt,.log,.xml,*">
           </div>
 
+          <!-- File upload status tiles — populated by renderFileStatusGrid() after each upload -->
+          <div id="file-status-grid" style="margin-top:1rem; width:100%; max-width:650px; display:flex; flex-direction:column; gap:0.5rem;"></div>
+
           <div class="demo-selector">
             <div class="demo-title">Or choose a high-fidelity Demo System Profile:</div>
             <div class="demo-buttons">

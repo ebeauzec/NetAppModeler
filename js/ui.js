@@ -1634,21 +1634,8 @@ Accepted formats: plain text, .zip, .tar.gz / .tgz`;
 
 // ── File Status Grid: shown below drop zone after upload ────────────────────
 function renderFileStatusGrid(results) {
-  let grid = document.getElementById('file-status-grid');
-  if (!grid) {
-    grid = document.createElement('div');
-    grid.id = 'file-status-grid';
-    grid.style.cssText = 'margin-top:1rem; width:100%; max-width:650px; display:flex; flex-direction:column; gap:0.5rem;';
-    const dropZoneParent = dropZone ? dropZone.parentNode : document.getElementById('step1');
-    if (dropZoneParent) {
-      const insertAfter = dropZone || dropZoneParent.firstChild;
-      if (insertAfter && insertAfter.nextSibling) {
-        dropZoneParent.insertBefore(grid, insertAfter.nextSibling);
-      } else {
-        dropZoneParent.appendChild(grid);
-      }
-    }
-  }
+  const grid = document.getElementById('file-status-grid');
+  if (!grid) return;
   if (!results || results.length === 0) { grid.innerHTML = ''; return; }
 
   const sourceBadge = (r) => {
