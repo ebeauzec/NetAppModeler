@@ -12110,7 +12110,9 @@ function initStep4Inputs() {
       `;
       unsupportedShelves.forEach(shelf => {
         const name = ALL_SHELVES_CATALOG[shelf].split(" (")[0];
-        let reason = (profile.shelfErrors && profile.shelfErrors[shelf]) || (profile.shelfWarnings && profile.shelfWarnings[shelf]) || `Platform ${currentState.version.model} does not support ${name} shelves.`;
+        const modelDisplay = (currentState.version && currentState.version.model && isNaN(currentState.version.model))
+          ? currentState.version.model : 'This platform';
+        let reason = (profile.shelfErrors && profile.shelfErrors[shelf]) || (profile.shelfWarnings && profile.shelfWarnings[shelf]) || `${modelDisplay} does not support ${name} shelves.`;
         let optionsTip = "";
         if (shelf === "ns224") {
           optionsTip = " To add NVMe-oF SSD capacity, switch to an NVMe-native platform (e.g. AFF A-series).";
@@ -12222,7 +12224,11 @@ function updateCapacityImpactDetails() {
   });
 
   // Calculate target (After)
-  const isMetroCluster = currentState.metrocluster && currentState.metrocluster !== "none";
+  // isMetroCluster: true only if BOTH the state says MCC AND the UI checkbox is checked
+  // This prevents stale demo state from triggering MCC rules on a non-MCC session
+  const mccCheckbox = document.getElementById('deploy-metrocluster');
+  const isMetroCluster = !!(currentState.metrocluster && currentState.metrocluster !== 'none'
+    && mccCheckbox && mccCheckbox.checked);
   const mult = isMetroCluster ? 2 : 1;
   
   let shelfCount = 0;
@@ -12337,9 +12343,13 @@ function updateCapacityImpactDetails() {
 
   // Validate platform supports MetroCluster if MC is checked
   let mcNoticeHtml = "";
-  if (isMetroCluster) {
+  const _mccCb = document.getElementById('deploy-metrocluster');
+  const _mccActive = !!(currentState.metrocluster && currentState.metrocluster !== 'none' && _mccCb && _mccCb.checked);
+  if (_mccActive) {
     if (!(profile.supportedLicenses || []).includes("MetroCluster")) {
-      errorMsg = `Platform ${currentState.version.model} is not certified for MetroCluster DR configurations.`;
+      const modelDisplay = (currentState.version && currentState.version.model && isNaN(currentState.version.model))
+        ? currentState.version.model : 'This platform';
+      errorMsg = `${modelDisplay} is not certified for MetroCluster DR configurations.`;
       isSupported = false;
     } else {
       mcNoticeHtml = `
