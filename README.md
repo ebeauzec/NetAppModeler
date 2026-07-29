@@ -6,7 +6,7 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.31)
+## 🆕 New in this Version (v2.32)
 * **Hardware & Firmware Database Refresh:** Accurate ONTAP 9.x lifecycle support status, ASA R2 models added, AFF C Gen2 series added, FAS Gen latest, firmware version updates for all SP/BMC and shelves.
 * **Data accuracy fixes:** AFF C-series minOntap, AFX 2K platform, 9.19.1 GA date, DATA_SOURCES.md
 * **MetroCluster Auto-Detection & Topologies:** Automatically detects MetroCluster IP/FC configurations from ASUP logs, rendering dual-site split cabling graphs and replication paths.

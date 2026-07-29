@@ -6,8 +6,8 @@
 export const EXP_CARDS_CATALOG = {
   // === Ethernet NICs ===
   nic_10g_2port:        { name: "Dual-port 10GbE SFP+ NIC (X1117A)",            type: "nic",     ports: ["e0e","e0f"],           speed: "10GbE",       minOntap: "9.1",    power: 15 },
-  nic_25g_4port:        { name: "Quad-port 25GbE SFP28 NIC (X1146A)",           type: "nic",     ports: ["e0g","e0h","e0i","e0j"], speed: "25GbE",       minOntap: "9.3",    power: 22 },
-  nic_40g_2port:        { name: "Dual-port 40GbE QSFP+ NIC (X1146A)",           type: "nic",     ports: ["e0e","e0f"],           speed: "40GbE",       minOntap: "9.5",    power: 20 },
+  nic_25g_4port:        { name: "Quad-port 25GbE SFP28 NIC (X1146A)",           type: "nic",     ports: ["e1a","e1b","e1c","e1d"], speed: "25GbE",       minOntap: "9.3",    power: 22 },
+  nic_40g_2port:        { name: "Dual-port 40GbE QSFP+ NIC (X1146A)",           type: "nic",     ports: ["e1a","e1b"],           speed: "40GbE",       minOntap: "9.5",    power: 20 },
   nic_100g_2port:       { name: "Dual-port 100GbE QSFP28 NIC (X91148A)",        type: "nic",     ports: ["e1a","e1b"],           speed: "100GbE",      minOntap: "9.8",    power: 35 },
   nic_100g_4port:       { name: "Quad-port 100GbE SFP28 NIC (X91144A)",         type: "nic",     ports: ["e1a","e1b","e1c","e1d"], speed: "100GbE",      minOntap: "9.10.1", power: 45 },
   nic_200g_2port:       { name: "Dual-port 200GbE QSFP56 NIC (X91160A)",        type: "nic",     ports: ["e1a","e1b"],           speed: "200GbE",      minOntap: "9.16.1", power: 45 },
@@ -18,7 +18,7 @@ export const EXP_CARDS_CATALOG = {
   // === SAS Storage Adapters ===
   sas_hba_12g_4port:    { name: "Quad-port 12G SAS Host Adapter (X1107A)",      type: "storage", ports: ["0c","0d","0e","0f"],   speed: "12Gb SAS",    minOntap: "9.1",    power: 20 },
   // === NVMe / RoCE Storage Adapters ===
-  roce_hba_100g_2port:  { name: "Dual-port 100GbE NVMe-oF RoCE Adapter (X91148A)", type: "storage", ports: ["e0g","e0h"],      speed: "100GbE RoCE", minOntap: "9.8",    power: 38 },
+  roce_hba_100g_2port:  { name: "Dual-port 100GbE NVMe-oF RoCE Adapter (X91148A)", type: "storage", ports: ["e3a","e3b"],      speed: "100GbE RoCE", minOntap: "9.8",    power: 38 },
   roce_hba_100g_2port_v2: { name: "Dual-port 100GbE RoCE NS224 Shelf Adapter (X60141A)", type: "storage", ports: ["e8a","e8b"], speed: "100GbE RoCE", minOntap: "9.12.1", power: 38 },
   nvme_tcp_100g_2port:  { name: "Dual-port 100GbE NVMe/TCP Host Adapter (X91148A)", type: "nic",  ports: ["e2a","e2b"],         speed: "100GbE",      minOntap: "9.10.1", power: 35 },
   nvme_fc_32g_2port:    { name: "Dual-port 32Gb NVMe/FC HBA (X2106A)",           type: "san",     ports: ["0i","0j"],             speed: "32Gb FC",     minOntap: "9.9.1",  power: 25 },
