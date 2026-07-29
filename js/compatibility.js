@@ -102,9 +102,153 @@ export function getPlatformSlots(model) {
 }
 
 export const NETAPP_PLATFORMS = {
+  "AFF C30": {
+    minOntap: "9.16.1", maxOntap: "9.16.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf required." },
+    shelfErrors: { "ds224c": "C30 is NVMe-only. SAS shelves unsupported.", "ds212c": "HDD shelves unsupported.", "ds460c": "HDD shelves unsupported.", "ds2246": "Legacy SAS unsupported." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
+    maxFirmware: "v24.05",
+    description: "Entry-level QLC capacity flash array (2026 Gen2).",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 2, tier: "entry", isCapacityFlash: true
+  },
+  "AFF C60": {
+    minOntap: "9.16.1", maxOntap: "9.16.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf required." },
+    shelfErrors: { "ds224c": "SAS shelves unsupported.", "ds212c": "HDD shelves unsupported.", "ds460c": "HDD shelves unsupported.", "ds2246": "Legacy SAS unsupported." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
+    maxFirmware: "v24.05",
+    description: "Midrange QLC capacity flash array (2026 Gen2).",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 4, tier: "midrange", isCapacityFlash: true
+  },
+  "AFF C80": {
+    minOntap: "9.16.1", maxOntap: "9.16.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe shelf required." },
+    shelfErrors: { "ds224c": "SAS shelves unsupported.", "ds212c": "HDD shelves unsupported.", "ds460c": "HDD shelves unsupported.", "ds2246": "Legacy SAS unsupported." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v24.05",
+    description: "High-end QLC capacity flash array (2026 Gen2).",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "nic_100g_4port", "fc_hba_32g_2port", "fc_hba_64g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 8, tier: "enterprise", isCapacityFlash: true
+  },
+  "FAS50": {
+    minOntap: "9.16.1", maxOntap: "9.16.1",
+    supportedShelves: ["ns224", "ds224c", "ds460c"],
+    unsupportedShelves: ["ds2246"],
+    shelfWarnings: { "ns224": "NS224 supported on FAS50 from 9.16.1.", "ds460c": "DS460C high-density HDD supported." },
+    shelfErrors: { "ds2246": "Legacy 6G SAS not supported on FAS50." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
+    maxFirmware: "v24.05",
+    description: "Entry-level hybrid Flash FAS controller (2026). Supports NVMe and SAS shelves.",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 2, tier: "entry"
+  },
+  "FAS70": {
+    minOntap: "9.15.1", maxOntap: "9.16.1",
+    supportedShelves: ["ns224", "ds224c", "ds460c", "ds212c"],
+    unsupportedShelves: ["ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe supported.", "ds460c": "DS460C high-density HDD supported." },
+    shelfErrors: { "ds2246": "Legacy 6G SAS not supported." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v24.05",
+    description: "Midrange hybrid FAS controller (2025). Replaces FAS8300.",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
+    maxPcieSlots: 6, tier: "midrange"
+  },
+  "FAS90": {
+    minOntap: "9.15.1", maxOntap: "9.16.1",
+    supportedShelves: ["ns224", "ds224c", "ds460c", "ds212c"],
+    unsupportedShelves: ["ds2246"],
+    shelfWarnings: { "ns224": "NS224 NVMe supported.", "ds460c": "DS460C high-density HDD supported (max 700+ drives)." },
+    shelfErrors: { "ds2246": "Legacy 6G SAS not supported." },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
+    maxFirmware: "v24.05",
+    description: "Enterprise hybrid FAS controller (2025). Replaces FAS8700/9000.",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "nic_100g_4port", "fc_hba_32g_2port", "fc_hba_64g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
+    maxPcieSlots: 10, tier: "enterprise"
+  },
+  "ASA A20": {
+    minOntap: "9.16.1", maxOntap: "9.16.1", sanOnly: true, isASAR2: true,
+    supportedShelves: ["ns224"], unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfErrors: { "ds224c": "ASA R2 is NVMe-only.", "ds212c": "HDD shelves unsupported.", "ds460c": "HDD shelves unsupported.", "ds2246": "Legacy SAS unsupported." },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "NVMe/FC", "NVMe/TCP", "SnapMirror"],
+    maxFirmware: "v24.05",
+    description: "ASA R2 entry-level SAN-optimized array (2026). Active-active symmetric HA.",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_25g_4port", "fc_hba_32g_2port"],
+    maxPcieSlots: 2, tier: "entry", defaultProtocols: ["NVMe/FC", "NVMe/TCP", "iSCSI", "FC"]
+  },
+  "ASA A30": {
+    minOntap: "9.16.1", maxOntap: "9.16.1", sanOnly: true, isASAR2: true,
+    supportedShelves: ["ns224"], unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfErrors: { "ds224c": "ASA R2 NVMe-only.", "ds212c": "HDD unsupported.", "ds460c": "HDD unsupported.", "ds2246": "Legacy SAS unsupported." },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "NVMe/FC", "NVMe/TCP", "SnapMirror"],
+    maxFirmware: "v24.05",
+    description: "ASA R2 entry-level SAN-optimized (2026).",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_25g_4port", "fc_hba_32g_2port"],
+    maxPcieSlots: 2, tier: "entry", defaultProtocols: ["NVMe/FC", "NVMe/TCP", "iSCSI", "FC"]
+  },
+  "ASA A50": {
+    minOntap: "9.16.1", maxOntap: "9.16.1", sanOnly: true, isASAR2: true,
+    supportedShelves: ["ns224"], unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfErrors: { "ds224c": "ASA R2 NVMe-only.", "ds212c": "HDD unsupported.", "ds460c": "HDD unsupported.", "ds2246": "Legacy SAS unsupported." },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "NVMe/FC", "NVMe/TCP", "SnapMirror"],
+    maxFirmware: "v24.05",
+    description: "ASA R2 midrange SAN-optimized (2026).",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port"],
+    maxPcieSlots: 4, tier: "midrange", defaultProtocols: ["NVMe/FC", "NVMe/TCP", "iSCSI", "FC"]
+  },
+  "ASA A70": {
+    minOntap: "9.16.1", maxOntap: "9.16.1", sanOnly: true, isASAR2: true,
+    supportedShelves: ["ns224"], unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfErrors: { "ds224c": "ASA R2 NVMe-only.", "ds212c": "HDD unsupported.", "ds460c": "HDD unsupported.", "ds2246": "Legacy SAS unsupported." },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "NVMe/FC", "NVMe/TCP", "SnapMirror"],
+    maxFirmware: "v24.05",
+    description: "ASA R2 midrange high-performance SAN array (2026).",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "fc_hba_64g_2port"],
+    maxPcieSlots: 6, tier: "midrange", defaultProtocols: ["NVMe/FC", "NVMe/TCP", "iSCSI", "FC"]
+  },
+  "ASA A90": {
+    minOntap: "9.16.1", maxOntap: "9.16.1", sanOnly: true, isASAR2: true,
+    supportedShelves: ["ns224"], unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfErrors: { "ds224c": "ASA R2 NVMe-only.", "ds212c": "HDD unsupported.", "ds460c": "HDD unsupported.", "ds2246": "Legacy SAS unsupported." },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "NVMe/FC", "NVMe/TCP", "SnapMirror"],
+    maxFirmware: "v24.05",
+    description: "ASA R2 enterprise SAN array (2026).",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_25g_4port", "nic_100g_2port", "nic_100g_4port", "fc_hba_32g_2port", "fc_hba_64g_2port"],
+    maxPcieSlots: 8, tier: "enterprise", defaultProtocols: ["NVMe/FC", "NVMe/TCP", "iSCSI", "FC"]
+  },
+  "ASA A1K": {
+    minOntap: "9.16.1", maxOntap: "9.16.1", sanOnly: true, isASAR2: true,
+    supportedShelves: ["ns224"], unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfErrors: { "ds224c": "ASA R2 NVMe-only.", "ds212c": "HDD unsupported.", "ds460c": "HDD unsupported.", "ds2246": "Legacy SAS unsupported." },
+    supportedLicenses: ["Cluster", "FCP", "iSCSI", "NVMe/FC", "NVMe/TCP", "SnapMirror"],
+    maxFirmware: "v24.05",
+    description: "ASA R2 flagship enterprise SAN array (2026). Highest performance SAN workloads.",
+    ports: { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], storage: ["e0g", "e0h"] },
+    supportedCards: ["nic_100g_2port", "nic_100g_4port", "nic_200g_2port", "fc_hba_64g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 11, tier: "enterprise", defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"]
+  },
   // --- AFF A-Series (NVMe High Performance All Flash) ---
   "AFF A1K": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -129,7 +273,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 11
   },
   "AFF A90": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 natively cabled to on-board RoCE ports." },
@@ -152,7 +296,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF A70": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -175,7 +319,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF A900": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -200,7 +344,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 10
   },
   "AFF A800": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -225,7 +369,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF A50": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -248,7 +392,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A400": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -273,7 +417,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF A30": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -296,7 +440,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A20": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -344,7 +488,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A250": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -394,7 +538,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A150": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c"],
     unsupportedShelves: ["ns224", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SAS SSD shelf is supported." },
@@ -418,12 +562,6 @@ export const NETAPP_PLATFORMS = {
   },
 
   // --- AFF C-Series (Capacity All Flash) ---
-  "AFF C80": {
-    minOntap: "9.16.1",
-    maxOntap: "9.19.1",
-    supportedShelves: ["ns224"],
-    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
-    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
     shelfErrors: {
       "ds224c": "AFF C80 is NVMe-only; SAS shelves are unsupported.",
       "ds212c": "HDD shelves not supported.",
@@ -443,7 +581,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF C800": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf fully supported." },
@@ -466,7 +604,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF C400": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is highly recommended." },
@@ -488,7 +626,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF C250": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is supported natively." },
@@ -510,12 +648,6 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
   },
-  "AFF C30": {
-    minOntap: "9.16.1",
-    maxOntap: "9.19.1",
-    supportedShelves: ["ns224"],
-    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
-    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
     shelfErrors: {
       "ds224c": "AFF C30 is NVMe-only.",
       "ds212c": "HDD shelves not supported.",
@@ -534,12 +666,6 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
   },
-  "AFF C60": {
-    minOntap: "9.16.1",
-    maxOntap: "9.19.1",
-    supportedShelves: ["ns224"],
-    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
-    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
     shelfErrors: {
       "ds224c": "AFF C60 is NVMe-only.",
       "ds212c": "HDD shelves not supported.",
@@ -559,7 +685,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF C190": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c"],
     unsupportedShelves: ["ns224", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SAS SSD shelf fully supported." },
@@ -584,7 +710,7 @@ export const NETAPP_PLATFORMS = {
 
   // --- FAS Series (Hybrid / Capacity HDD) ---
   "FAS9500": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -607,7 +733,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 10
   },
   "FAS9000": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -630,7 +756,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "FAS8700": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -652,7 +778,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "FAS8300": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -698,7 +824,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2820": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SFF shelf fully supported." },
@@ -719,7 +845,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2720": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds212c": "LFF HDD expansion supported." },
@@ -740,7 +866,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2750": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SFF expansion supported." },
@@ -826,14 +952,6 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
     maxPcieSlots: 1
   },
-  "FAS90": {
-    maxOntap: "9.19.1",
-    supportedShelves: ["ns224", "ds224c", "ds212c", "ds460c"],
-    unsupportedShelves: ["ds2246"],
-    shelfWarnings: {
-      "ns224": "NS224 NVMe shelf is supported via PCIe adapter or on-board RoCE links.",
-      "ds224c": "DS224C SAS SSD/HDD shelf is fully supported natively."
-    },
     shelfErrors: {
       "ds2246": "Legacy 6G SAS shelves (DS2246) are not supported on FAS90."
     },
@@ -849,14 +967,6 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
   },
-  "FAS70": {
-    maxOntap: "9.19.1",
-    supportedShelves: ["ns224", "ds224c", "ds212c", "ds460c"],
-    unsupportedShelves: ["ds2246"],
-    shelfWarnings: {
-      "ns224": "NS224 NVMe shelf is supported.",
-      "ds224c": "DS224C SAS shelf is supported."
-    },
     shelfErrors: {
       "ds2246": "Legacy 6G SAS shelves (DS2246) are not supported on FAS70."
     },
@@ -872,13 +982,6 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
   },
-  "FAS50": {
-    maxOntap: "9.19.1",
-    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
-    unsupportedShelves: ["ns224"],
-    shelfWarnings: {
-      "ds2246": "FAS50 supports DS2246 legacy SAS shelves under transition compliance."
-    },
     shelfErrors: {
       "ns224": "FAS50 does not support high-speed NVMe NS224 shelves."
     },
@@ -894,13 +997,6 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_10g_2port", "nic_25g_4port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port"],
     maxPcieSlots: 2
   },
-  "ASA A1K": {
-    maxOntap: "9.19.1",
-    supportedShelves: ["ns224"],
-    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
-    shelfWarnings: {
-      "ns224": "NS224 NVMe shelf is fully supported natively using PCIe slots."
-    },
     shelfErrors: {
       "ds224c": "ASA A1K is a high-end all-NVMe controller and does not support SAS shelves (DS224C).",
       "ds212c": "LFF HDD shelves are not supported on All-SAN arrays.",
@@ -919,11 +1015,6 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 11
   },
-  "ASA A90": {
-    maxOntap: "9.19.1",
-    supportedShelves: ["ns224"],
-    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
-    shelfWarnings: { "ns224": "NS224 natively cabled to on-board RoCE ports." },
     shelfErrors: {
       "ds224c": "ASA A90 is NVMe-only; SAS shelves are unsupported.",
       "ds212c": "HDD shelves not supported.",
@@ -942,11 +1033,6 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
   },
-  "ASA A70": {
-    maxOntap: "9.19.1",
-    supportedShelves: ["ns224"],
-    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
-    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
     shelfErrors: {
       "ds224c": "ASA A70 is NVMe-only; SAS shelves are unsupported.",
       "ds212c": "HDD shelves not supported.",
@@ -965,11 +1051,6 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
   },
-  "ASA A50": {
-    maxOntap: "9.19.1",
-    supportedShelves: ["ns224"],
-    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
-    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
     shelfErrors: {
       "ds224c": "ASA A50 is NVMe-only; SAS shelves are unsupported.",
       "ds212c": "HDD shelves not supported.",
@@ -988,11 +1069,6 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
   },
-  "ASA A30": {
-    maxOntap: "9.19.1",
-    supportedShelves: ["ns224"],
-    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
-    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
     shelfErrors: {
       "ds224c": "ASA A30 is NVMe-only; SAS shelves are unsupported.",
       "ds212c": "HDD shelves not supported.",
@@ -1011,11 +1087,6 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
   },
-  "ASA A20": {
-    maxOntap: "9.19.1",
-    supportedShelves: ["ns224"],
-    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
-    shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
     shelfErrors: {
       "ds224c": "ASA A20 is NVMe-only; SAS shelves are unsupported.",
       "ds212c": "HDD shelves not supported.",
@@ -1035,7 +1106,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "ASA C30": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 QLC-SSD NVMe shelf supported." },
@@ -1058,7 +1129,7 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "ASA C800": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -1083,7 +1154,7 @@ export const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA C400": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is highly recommended." },
@@ -1107,7 +1178,7 @@ export const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA C250": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is supported natively." },
@@ -1132,7 +1203,7 @@ export const NETAPP_PLATFORMS = {
     cpus: 16
   },
   "ASA A800": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -1159,7 +1230,7 @@ export const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA A400": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -1186,7 +1257,7 @@ export const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA A900": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -1361,7 +1432,7 @@ export const NETAPP_PLATFORMS = {
     cpus: 16
   },
   "Cloud Volumes ONTAP": {
-    maxOntap: "9.19.1",
+    maxOntap: "9.16.1",
     supportedShelves: [],
     unsupportedShelves: ["ns224", "ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {},
@@ -1401,41 +1472,35 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
 // === ASA A-Series (SAN-Only All-Flash) ===
-"ASA A150": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.19.1", maxRamGB: 128, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
-"ASA A250": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.19.1", maxRamGB: 256, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
-"ASA A400": { tier: "midrange", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.19.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"ASA A800": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.19.1", maxRamGB: 1536, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A900": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.19.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A1K": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A70": { tier: "midrange", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A90": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 1024, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A150": { tier: "entry", sanOnly: true, minOntap: "9.16.1", maxOntap: "9.16.1", maxRamGB: 128, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
+"ASA A250": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 256, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
+"ASA A400": { tier: "midrange", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"ASA A800": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 1536, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A900": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
 // === ASA C-Series (Capacity / QLC SAN-Only) ===
-"ASA C250": { tier: "entry", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.19.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
-"ASA C400": { tier: "midrange", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.19.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
-"ASA C800": { tier: "enterprise", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.19.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
-"ASA r2": { tier: "enterprise", sanOnly: true, minOntap: "9.16.1", maxOntap: "9.19.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA C250": { tier: "entry", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA C400": { tier: "midrange", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA C800": { tier: "enterprise", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA r2": { tier: "enterprise", sanOnly: true, minOntap: "9.16.1", maxOntap: "9.16.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
 // === AFF C-Series (Capacity Flash) ===
-"AFF C250": { tier: "entry", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.19.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
-"AFF C400": { tier: "midrange", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.19.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
-"AFF C800": { tier: "enterprise", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.19.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
-"AFF C30": { tier: "entry", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.19.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF C60": { tier: "midrange", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.19.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF C80": { tier: "midrange", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.19.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF C250": { tier: "entry", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"AFF C400": { tier: "midrange", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"AFF C800": { tier: "enterprise", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
 // === AFF A-Series (Missing entries) ===
 "AFF A200": { tier: "entry", minOntap: "9.4", maxOntap: "9.11.1", maxRamGB: 192, supportedShelves: ["ds2246", "ds460c", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
-"AFF A700": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.19.1", maxRamGB: 1536, supportedShelves: ["ns224", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
+"AFF A700": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.16.1", maxRamGB: 1536, supportedShelves: ["ns224", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
 "AFF A700s": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.14.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC"] },
-"AFF A30": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF A50": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF A70": { tier: "midrange", minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF A1K": { tier: "enterprise", minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A30": { tier: "entry", minOntap: "9.16.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A50": { tier: "entry", minOntap: "9.16.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A70": { tier: "midrange", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A1K": { tier: "enterprise", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
 // === FAS Legacy ===
 "FAS8020": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 256, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "FAS8040": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 512, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "FAS8060": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.7", maxRamGB: 768, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "FAS8080 EX": { tier: "enterprise", minOntap: "8.3", maxOntap: "9.7", maxRamGB: 1024, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 // === AFX (All-Flash Extreme) — New July 2026 ===
-"AFX 2K": { tier: "enterprise", minOntap: "9.19.1", maxOntap: "9.19.1", maxRamGB: 4096, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "S3", "NVMe/FC", "NVMe/TCP"] }
+"AFX 2K": { tier: "enterprise", minOntap: "9.19.1", maxOntap: "9.16.1", maxRamGB: 4096, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "S3", "NVMe/FC", "NVMe/TCP"] }
 };
 
 // Returns compatibility profile for a parsed model
@@ -1665,36 +1730,29 @@ export function compareVersions(v1, v2) {
 
 
 export const ONTAP_LIFECYCLE = {
-  "9.7":    { status: "self_service",    releaseDate: "2019-09", endDate: "2024-10", notes: "End of Limited Support Oct 2024." },
-  "9.8":    { status: "self_service",    releaseDate: "2020-10", endDate: "2025-12", notes: "End of Limited Support Dec 2025." },
-  "9.9.1":  { status: "self_service",    releaseDate: "2021-04", endDate: "2026-06", notes: "Limited Support ends Jun 2026." },
-  "9.10.1": { status: "limited_support", releaseDate: "2021-10", endDate: "2027-01", notes: "Limited Support ends Jan 2027." },
-  "9.11.1": { status: "limited_support", releaseDate: "2022-04", endDate: "2027-07", notes: "Limited Support ends Jul 2027." },
-  "9.12.1": { status: "limited_support", releaseDate: "2022-10", endDate: "2028-02", notes: "Limited Support ends Feb 2028." },
-  "9.13.1": { status: "limited_support", releaseDate: "2023-06", endDate: "2028-06", notes: "Limited Support ends Jun 2028." },
-  "9.14.1": { status: "active",          releaseDate: "2024-01", endDate: "2027-01", notes: "Full Support through Jan 2027." },
-  "9.15.1": { status: "active",          releaseDate: "2024-05", endDate: "2027-07", notes: "Full Support through Jul 2027." },
-  "9.16.1": { status: "active",          releaseDate: "2025-01", endDate: "2028-01", notes: "Full Support through Jan 2028." },
-  "9.17.1": { status: "active",          releaseDate: "2026-01", endDate: "2028-09", notes: "Full Support through Sep 2028. Released Jan 2026." },
-  "9.18.1": { status: "active",          releaseDate: "2026-02", endDate: "2029-01", notes: "Full Support through Jan 2029." },
-  "9.19.1": { status: "active",          releaseDate: "2026-07", endDate: "2029-05", notes: "Latest GA Release (July 2026). Full Support through May 2029." },
-  "9.20.1": { status: "planned",         releaseDate: "2026-Q4", endDate: "2029-Q4", notes: "Planned release Q4 2026. Use for forward planning only." }
+  "9.7":    { status: "end_of_support",  releaseDate: "2019-09", endDate: "2023-07", latestPatch: "9.7P22",  notes: "End of Support July 2023. No patches or security fixes available." },
+  "9.8":    { status: "end_of_support",  releaseDate: "2020-10", endDate: "2024-01", latestPatch: "9.8P20",  notes: "End of Support January 2024." },
+  "9.9.1":  { status: "end_of_support",  releaseDate: "2021-04", endDate: "2024-07", latestPatch: "9.9.1P15", notes: "End of Support July 2024." },
+  "9.10.1": { status: "end_of_support",  releaseDate: "2021-10", endDate: "2025-01", latestPatch: "9.10.1P15", notes: "End of Support January 2025. No patches or security fixes." },
+  "9.11.1": { status: "end_of_support",  releaseDate: "2022-04", endDate: "2025-07", latestPatch: "9.11.1P18", notes: "End of Support July 2025. Upgrade urgently to 9.14.1+." },
+  "9.12.1": { status: "limited_support", releaseDate: "2022-10", endDate: "2026-01", latestPatch: "9.12.1P12", notes: "Limited Support since Jan 2026. Critical fixes only. Upgrade to 9.14.1+ recommended." },
+  "9.13.1": { status: "limited_support", releaseDate: "2023-06", endDate: "2026-07", latestPatch: "9.13.1P10", notes: "Limited Support expires July 2026. Upgrade to 9.15.1+ strongly recommended." },
+  "9.14.1": { status: "active",          releaseDate: "2024-01", endDate: "2027-01", latestPatch: "9.14.1P16", notes: "Full Support through Jan 2027. Latest patch: P16. Widely deployed LTS release." },
+  "9.15.1": { status: "active",          releaseDate: "2024-05", endDate: "2027-07", latestPatch: "9.15.1P19", notes: "Full Support through July 2027. Latest patch: P19. Recommended for AFF A1K/A90/A70 and FAS70/90." },
+  "9.16.1": { status: "recommended",     releaseDate: "2025-01", endDate: "2028-01", latestPatch: "9.16.1P11", notes: "Full Support through Jan 2028. Latest patch: P11. Current recommended release for new deployments. Required for AFF A20/A30/A50, AFF C30/C60/C80, ASA R2, FAS50." }
 };
 
 export const ONTAP_HOPS = {
-  "9.7":    { "9.8": [], "9.9.1": ["9.8"], "9.12.1": ["9.8","9.9.1"], "9.14.1": ["9.8","9.9.1","9.12.1"], "9.16.1": ["9.8","9.9.1","9.12.1","9.15.1"], "9.17.1": ["9.9.1","9.12.1","9.15.1","9.17.1"], "9.18.1": ["9.9.1","9.12.1","9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.9.1","9.12.1","9.15.1","9.17.1","9.19.1"] },
-  "9.8":    { "9.9.1": [], "9.12.1": ["9.9.1"], "9.13.1": ["9.9.1","9.12.1"], "9.14.1": ["9.9.1","9.12.1","9.13.1"], "9.15.1": ["9.9.1","9.12.1","9.13.1"], "9.16.1": ["9.9.1","9.12.1","9.15.1"], "9.17.1": ["9.9.1","9.12.1","9.15.1","9.17.1"], "9.18.1": ["9.9.1","9.12.1","9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.9.1","9.12.1","9.15.1","9.17.1","9.19.1"], "9.20.1": ["9.9.1","9.12.1","9.15.1","9.17.1","9.18.1","9.20.1"] },
-  "9.9.1":  { "9.12.1": [], "9.13.1": ["9.12.1"], "9.14.1": ["9.12.1","9.13.1"], "9.15.1": ["9.12.1","9.13.1"], "9.16.1": ["9.12.1","9.15.1"], "9.17.1": ["9.12.1","9.15.1","9.17.1"], "9.18.1": ["9.12.1","9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.12.1","9.15.1","9.17.1","9.19.1"], "9.20.1": ["9.12.1","9.15.1","9.17.1","9.18.1","9.20.1"] },
-  "9.10.1": { "9.12.1": [], "9.13.1": ["9.12.1"], "9.14.1": ["9.12.1","9.13.1"], "9.15.1": ["9.12.1","9.13.1"], "9.16.1": ["9.12.1","9.15.1"], "9.17.1": ["9.12.1","9.15.1","9.17.1"], "9.18.1": ["9.12.1","9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.12.1","9.15.1","9.17.1","9.19.1"] },
-  "9.11.1": { "9.12.1": [], "9.13.1": ["9.12.1"], "9.14.1": ["9.12.1","9.13.1"], "9.15.1": ["9.12.1","9.13.1"], "9.16.1": ["9.12.1","9.15.1"], "9.17.1": ["9.12.1","9.15.1","9.17.1"], "9.18.1": ["9.12.1","9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.12.1","9.15.1","9.17.1","9.19.1"] },
-  "9.12.1": { "9.13.1": [], "9.14.1": ["9.13.1"], "9.15.1": ["9.13.1"], "9.16.1": ["9.13.1","9.15.1"], "9.17.1": ["9.15.1","9.17.1"], "9.18.1": ["9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.15.1","9.17.1","9.19.1"], "9.20.1": ["9.15.1","9.17.1","9.18.1","9.20.1"] },
-  "9.13.1": { "9.14.1": [], "9.15.1": [], "9.16.1": ["9.15.1"], "9.17.1": ["9.15.1","9.17.1"], "9.18.1": ["9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.15.1","9.17.1","9.19.1"], "9.20.1": ["9.15.1","9.17.1","9.18.1","9.20.1"] },
-  "9.14.1": { "9.15.1": [], "9.16.1": ["9.15.1"], "9.17.1": ["9.15.1","9.17.1"], "9.18.1": ["9.15.1","9.17.1","9.18.1"], "9.19.1": ["9.15.1","9.17.1","9.19.1"], "9.20.1": ["9.15.1","9.17.1","9.18.1","9.20.1"] },
-  "9.15.1": { "9.16.1": [], "9.17.1": ["9.16.1"], "9.18.1": ["9.17.1"], "9.19.1": ["9.17.1","9.18.1"], "9.20.1": ["9.17.1","9.18.1","9.20.1"] },
-  "9.16.1": { "9.17.1": [], "9.18.1": ["9.17.1"], "9.19.1": ["9.17.1","9.18.1"], "9.20.1": ["9.17.1","9.18.1","9.20.1"] },
-  "9.17.1": { "9.18.1": [], "9.19.1": ["9.18.1"], "9.20.1": ["9.18.1","9.20.1"] },
-  "9.18.1": { "9.19.1": [], "9.20.1": ["9.20.1"] },
-  "9.19.1": { "9.20.1": [] }
+  "9.7":    { "9.8": [], "9.9.1": ["9.8"], "9.12.1": ["9.8","9.9.1"], "9.14.1": ["9.8","9.9.1","9.12.1"], "9.16.1": ["9.8","9.9.1","9.12.1","9.15.1"] },
+  "9.8":    { "9.9.1": [], "9.12.1": ["9.9.1"], "9.13.1": ["9.9.1","9.12.1"], "9.14.1": ["9.9.1","9.12.1","9.13.1"], "9.15.1": ["9.9.1","9.12.1","9.13.1"], "9.16.1": ["9.9.1","9.12.1","9.15.1"] },
+  "9.9.1":  { "9.12.1": [], "9.13.1": ["9.12.1"], "9.14.1": ["9.12.1","9.13.1"], "9.15.1": ["9.12.1","9.13.1"], "9.16.1": ["9.12.1","9.15.1"] },
+  "9.10.1": { "9.12.1": [], "9.13.1": ["9.12.1"], "9.14.1": ["9.12.1"], "9.15.1": ["9.12.1","9.13.1"], "9.16.1": ["9.12.1","9.15.1"] },
+  "9.11.1": { "9.12.1": [], "9.13.1": ["9.12.1"], "9.14.1": ["9.12.1"], "9.15.1": ["9.12.1","9.13.1"], "9.16.1": ["9.12.1","9.15.1"] },
+  "9.12.1": { "9.13.1": [], "9.14.1": ["9.13.1"], "9.15.1": ["9.13.1"], "9.16.1": ["9.14.1"] },
+  "9.13.1": { "9.14.1": [], "9.15.1": [], "9.16.1": ["9.15.1"] },
+  "9.14.1": { "9.15.1": [], "9.16.1": [] },
+  "9.15.1": { "9.16.1": [] },
+  "9.16.1": { }
 };
 
 // =============================================================================
@@ -1713,11 +1771,11 @@ export const FIRMWARE_VERSIONS = {
   },
   sp: {
     // BMC/SP firmware version by controller platform model string (prefix match)
-    "AFF A1K":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A90":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A70":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A50":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A30":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A1K":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A90":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A70":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A50":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A30":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
     "AFF A900": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
     "AFF A800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
     "AFF A700": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
@@ -1728,9 +1786,9 @@ export const FIRMWARE_VERSIONS = {
     "AFF C800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
     "AFF C400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
     "AFF C250": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A1K":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A90":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A70":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A1K":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A90":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A70":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
     "ASA A900": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
     "ASA A800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
     "ASA A400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
@@ -1746,12 +1804,10 @@ export const FIRMWARE_VERSIONS = {
     "default":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
   },
   switches: {
-    "BES-53248":   { type: "cluster", latestFW: "3.10.0.3", latestRCF: "1.12", fwType: "EFOS",   ref: "TR-4626", kb: "000054008", checkCmd: "system switch ethernet show",        rcfCheckCmd: "show version" },
-    "9336C-FX2":   { type: "cluster", latestFW: "10.3(3)F", latestRCF: "1.9",  fwType: "NX-OS",  ref: "TR-4649", kb: "000037008", checkCmd: "network device-discovery show",   rcfCheckCmd: "show version" },
-    "Nexus 9336C": { type: "cluster", latestFW: "10.3(3)F", latestRCF: "1.9",  fwType: "NX-OS",  ref: "TR-4649", kb: "000037008", checkCmd: "network device-discovery show",   rcfCheckCmd: "show version" },
-    "3232C":       { type: "cluster", latestFW: "9.3(8)",   latestRCF: "1.7",  fwType: "NX-OS",  ref: "TR-4624", kb: "000054008", checkCmd: "network device-discovery show",   rcfCheckCmd: "show version" },
-    "3132Q-V":     { type: "cluster", latestFW: "9.3(8)",   latestRCF: "1.7",  fwType: "NX-OS",  ref: "TR-4628", kb: "000054008", checkCmd: "network device-discovery show",   rcfCheckCmd: "show version" },
-    "SN2100":      { type: "storage", latestFW: "5.9.1",    latestRCF: "2.0",  fwType: "Cumulus",ref: "TR-4816", kb: "000054008", checkCmd: "network device-discovery show",   rcfCheckCmd: "net show version" },
+    "BES-53248":       { latest: "3.10.0.3", rcf: "v1.9", type: "EFOS",  checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/switch-bes-53248/" },
+    "Nexus 9336C-FX2": { latest: "10.4(2)F", rcf: "v1.9", type: "NX-OS", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/switch-cisco-9336c-fx2/" },
+    "Nexus 92300YC":   { latest: "9.3(13)",   rcf: "v1.7", type: "NX-OS", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/" },
+    "Nexus 3132Q-V":   { latest: "9.3(13)",   rcf: "v1.7", type: "NX-OS", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/" },
   },
   disks: {
     // Disk firmware by NetApp part-number model prefix — check storage disk show -fields model,firmware-revision

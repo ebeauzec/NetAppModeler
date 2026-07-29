@@ -6,21 +6,22 @@
 import { getPlatformProfile, compareVersions, EXP_CARDS_CATALOG, PLATFORM_SLOT_DETAILS } from './compatibility.js';
 
 export const BP_LIFECYCLE = {
-  "9.7": { status: "warning", label: "Self Service", desc: "ONTAP 9.7 is in Self Service. End of Limited Support was Oct 2024." },
-  "9.8": { status: "warning", label: "Self Service", desc: "ONTAP 9.8 is in Self Service. End of Limited Support was Dec 2025." },
-  "9.9.1": { status: "warning", label: "Self Service", desc: "ONTAP 9.9.1 is in Self Service. Limited Support ends Jun 2026." },
-  "9.10.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.10.1 is in Limited Support. Support ends Jan 2027." },
-  "9.11.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.11.1 is in Limited Support. Support ends Jul 2027." },
-  "9.12.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.12.1 is in Limited Support. Support ends Feb 2028." },
-  "9.13.1": { status: "warning", label: "Limited Support", desc: "ONTAP 9.13.1 is in Limited Support. Support ends Jun 2028." },
-  "9.14.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.14.1 is in General Support until Jan 2027." },
-  "9.15.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.15.1 is in General Support until Jul 2027." },
-  "9.16.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.16.1 is in General Support until Jan 2028." },
-  "9.17.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.17.1 is in General Support until Sep 2028." },
-  "9.18.1": { status: "compliant", label: "Active Support", desc: "ONTAP 9.18.1 is in General Support until Jan 2029." },
-  "9.19.1": { status: "compliant", label: "Active Support (Latest Release)", desc: "ONTAP 9.19.1 is the latest General Support (GA) release, full support until July 2029." },
-  "9.20.1": { status: "compliant", label: "Active Support (Planned Release)", desc: "ONTAP 9.20.1 is a planned release expected Q4 2026." }
+  // === End of Support Releases — No patches or security fixes available ===
+  "9.7":    { status: "critical", label: "End of Support",  desc: "ONTAP 9.7 reached End of Support July 2023. No patches or security fixes are available. Upgrade immediately." },
+  "9.8":    { status: "critical", label: "End of Support",  desc: "ONTAP 9.8 reached End of Support January 2024. No patches or security fixes are available. Upgrade immediately." },
+  "9.9.1":  { status: "critical", label: "End of Support",  desc: "ONTAP 9.9.1 reached End of Support July 2024. No patches or security fixes are available. Upgrade immediately." },
+  "9.10.1": { status: "critical", label: "End of Support",  desc: "ONTAP 9.10.1 reached End of Support January 2025. Upgrade urgently to 9.14.1+ to restore support coverage." },
+  "9.11.1": { status: "critical", label: "End of Support",  desc: "ONTAP 9.11.1 reached End of Support July 2025. Upgrade urgently to 9.14.1+ to restore support coverage." },
+  // === Limited Support Releases — Critical fixes only, no new features ===
+  "9.12.1": { status: "warning",  label: "Limited Support", desc: "ONTAP 9.12.1 entered Limited Support January 2026. Critical security patches only. Plan upgrade to 9.14.1+ now. Latest patch: P12." },
+  "9.13.1": { status: "warning",  label: "Limited Support", desc: "ONTAP 9.13.1 enters Limited Support July 2026. Plan upgrade to 9.15.1+ now. Latest patch: P10." },
+  // === Full Support Releases ===
+  "9.14.1": { status: "compliant", label: "Full Support",    desc: "ONTAP 9.14.1 is in Full Support until January 2027. Latest patch: P16. Widely deployed LTS release." },
+  "9.15.1": { status: "compliant", label: "Full Support",    desc: "ONTAP 9.15.1 is in Full Support until July 2027. Latest patch: P19. Required for AFF A1K/A90/A70, FAS70/90." },
+  // === Recommended Current Release ===
+  "9.16.1": { status: "compliant", label: "Recommended",     desc: "ONTAP 9.16.1 is the current recommended release, Full Support until January 2028. Latest patch: P11. Required for AFF A20/A30/A50, AFF C30/C60/C80, ASA R2, FAS50." },
 };
+
 
 export function getPlatformMaxDrives(model) {
   const upper = (model || "").toUpperCase();
@@ -202,8 +203,8 @@ export function runAudit(systemState) {
     "Software",
     lifecycle.status,
     `System runs ONTAP ${ontapVer} which is classified as ${lifecycle.label}. ${lifecycle.desc}`,
-    "Upgrade cluster to a supported release (ONTAP 9.18.1 is recommended for modern hybrid and all-flash deployments).",
-    `Execute ONTAP software upgrade to ONTAP 9.18.1 following the hop path (current version: ${ontapVer}).`
+    "Upgrade cluster to a supported release. ONTAP 9.16.1 (latest patch P11) is the current recommended release for all new deployments and upgrades.",
+    `Execute ONTAP software upgrade to ONTAP 9.16.1 following the supported hop path (current version: ${ontapVer}). Run Active IQ Upgrade Advisor to generate your specific upgrade plan.`
   );
 
   // --- Rule 2: Shelf Cabling (Multipath HA) ---
