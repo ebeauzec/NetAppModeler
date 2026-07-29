@@ -1596,7 +1596,8 @@ Accepted formats: plain text, .zip, .tar.gz / .tgz`;
         // Diagnostics — shown in the status card to help troubleshoot parse failures
         extractedKeys: extractedKeys,
         totalChars: totalChars,
-        parseWarnings: fileState.parseWarnings || []
+        parseWarnings: fileState.parseWarnings || [],
+        rawText: allFileText  // store full raw text for debug panel
       });
     }
 
@@ -1620,6 +1621,21 @@ Accepted formats: plain text, .zip, .tar.gz / .tgz`;
     }
 
     loadASUPData(mergedState);
+
+    // ── Debug: expose full parsed state and raw text to browser console ────
+    window._parsedState = mergedState;
+    window._rawASUPText = _perFileResults.map(r => r.rawText || '').join('\n\n---FILE BREAK---\n\n');
+    // Store per-section raw text samples for the debug panel
+    window._debugSectionSamples = buildDebugSectionSamples(window._rawASUPText);
+    console.groupCollapsed('%c[NetApp Modeler] Parser Debug', 'color:#818cf8;font-weight:bold');
+    console.log('Parsed State:', mergedState);
+    console.log('Data Sources:', mergedState.dataSources);
+    console.log('Nodes:', mergedState.nodes);
+    console.log('Shelves:', mergedState.shelves);
+    console.log('Aggregates:', mergedState.aggregates);
+    console.log('Licenses:', mergedState.licenses);
+    console.log('Raw text sample (first 2000 chars):', (window._rawASUPText || '').slice(0, 2000));
+    console.groupEnd();
 
     // Render file status grid in Step 1 below drop zone
     renderFileStatusGrid(_perFileResults);
@@ -1846,6 +1862,32 @@ function loadASUPData(input, isGreenfield = false) {
   }
 }
 
+
+// ── Debug Helper: extract relevant text samples for each parser section ──────
+function buildDebugSectionSamples(rawText) {
+  if (!rawText) return {};
+  const t = rawText;
+  const grab = (patterns, maxLen = 500) => {
+    for (const re of patterns) {
+      const m = t.match(re);
+      if (m) {
+        const idx = t.indexOf(m[0]);
+        return t.slice(Math.max(0, idx - 30), idx + maxLen).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+    }
+    return null;
+  };
+  return {
+    shelves: grab([/Shelf\s+\d+:/i, /storage shelf/i, /NS224|DS224C|DS460C|DS212C/i]),
+    nodes:   grab([/System ID:\s*\d/i, /system node show/i]),
+    aggregates: grab([/^Aggregate\s+\w/im, /storage aggregate/i]),
+    licenses: grab([/\bactive\b.*\n.*\bactive\b/i, /license show/i, /NFS\s+active|CIFS\s+active/i, /Package\s+Type/i]),
+    switches: grab([/BES-53248|9336C|3132Q|SN2100/i, /cluster-network/i, /switch ethernet show/i]),
+    spFirmware: grab([/service.processor/i, /SP Firmware/i, /BMC/i]),
+    diskFirmware: grab([/disk firmware show/i, /FW:\s*[A-Z0-9]/i])
+  };
+}
+
 // ── Data Quality Panel: shown at top of Step 2 after parse ──────────────────
 function renderDataQualityPanel(state) {
   const panel = document.getElementById('data-quality-panel');
@@ -1931,6 +1973,48 @@ function renderDataQualityPanel(state) {
     </details>`;
   })();
 
+  // Build parser debug panel (shown for any non-parsed sections)
+  const samples = window._debugSectionSamples || {};
+  const debugSections = [
+    { key: 'shelves',     label: 'Disk Shelves',     hint: 'shelf inventory from SYSCONFIG output' },
+    { key: 'nodes',       label: 'Node Topology',    hint: 'System ID / controller node output' },
+    { key: 'aggregates',  label: 'Aggregates',       hint: 'SYSCONFIG-R / storage aggregate show output' },
+    { key: 'licenses',    label: 'Licenses',         hint: 'license show / system license show output' },
+    { key: 'switches',    label: 'Cluster Switches', hint: 'system switch ethernet show / network device-discovery' },
+    { key: 'spFirmware',  label: 'SP/BMC Firmware',  hint: 'system service-processor show output' },
+    { key: 'diskFirmware',label: 'Disk Firmware',    hint: 'storage disk firmware show output' },
+  ];
+  const nonParsedSections = debugSections.filter(s => {
+    const src = ds[s.key];
+    return !src || src.source === 'default' || src.source === 'missing' || src.source === 'inferred';
+  });
+  const debugHtml = nonParsedSections.length > 0 ? `
+    <details style="margin-top:0.75rem;">
+      <summary style="cursor:pointer;font-size:0.72rem;font-weight:600;color:#818cf8;padding:4px 0;list-style:none;user-select:none;">
+        🔍 Parser Debug &mdash; Why are these sections not Parsed? (click to expand)
+      </summary>
+      <div style="margin-top:0.4rem;padding:0.5rem 0.6rem;background:rgba(129,140,248,0.06);border:1px solid rgba(129,140,248,0.2);border-radius:6px;font-size:0.71rem;line-height:1.6;">
+        ${nonParsedSections.map(s => {
+          const src = ds[s.key];
+          const statusLabel = !src ? 'Unknown (setSource never called)' : `${src.source} — ${src.note || ''}`;
+          const sample = samples[s.key];
+          return `
+            <div style="margin-bottom:0.6rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(255,255,255,0.06);">
+              <div style="font-weight:700;color:#c7d2fe;">${s.label}</div>
+              <div style="color:#94a3b8;font-size:0.68rem;margin-bottom:2px;">Status: ${statusLabel}</div>
+              ${sample
+                ? `<div style="color:#64748b;font-size:0.67rem;margin-bottom:2px;">✅ Relevant text found in ASUP — paste below to help fix the parser:</div>
+                   <pre style="margin:0;padding:6px 8px;background:rgba(0,0,0,0.35);border-radius:4px;font-size:0.64rem;color:#e2e8f0;white-space:pre-wrap;word-break:break-all;max-height:140px;overflow:auto;">${sample}</pre>`
+                : `<div style="color:#f87171;font-size:0.68rem;">❌ No text matching ${s.hint} was found anywhere in the uploaded file. The ASUP may not include this output section.</div>`
+              }
+            </div>`;
+        }).join('')}
+        <div style="margin-top:0.4rem;color:#64748b;font-size:0.67rem;">
+          💡 Tip: Open browser DevTools (F12) → Console → type <code style="background:rgba(0,0,0,0.3);padding:1px 4px;border-radius:3px;">window._rawASUPText.slice(0,3000)</code> to see what the parser received.
+        </div>
+      </div>
+    </details>` : '';
+
   panel.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
       <div>
@@ -1953,6 +2037,7 @@ function renderDataQualityPanel(state) {
     ${filesHtml}
     ${conflictsHtml}
     ${diagHtml}
+    ${debugHtml}
     <div style="margin-top:0.5rem; font-size:0.68rem; color:#64748b; line-height:1.4;">
       🔶 Inferred = deduced from platform/version knowledge &nbsp;·&nbsp; ⬛ Default = placeholder — verify before proceeding
     </div>
