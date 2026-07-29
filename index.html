@@ -104,9 +104,10 @@
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <p>Drag and drop ASUP zip or files here</p>
-            <span>or click to browse from your computer</span>
-            <input type="file" id="file-input" multiple class="hidden">
+            <p>Drag and drop ASUP files here</p>
+            <span>Accepted: <strong>.zip</strong>, <strong>.tar.gz</strong>, <strong>.gz</strong>, or plain <strong>text files</strong> — upload multiple nodes at once</span>
+            <span style="font-size:0.72rem; color:#f87171; margin-top:4px; display:block;">⚠️ .7z archives must be extracted first — right-click → Extract Here, then upload the text files</span>
+            <input type="file" id="file-input" multiple class="hidden" accept=".zip,.tar.gz,.tgz,.gz,.txt,.log,.xml,*">
           </div>
 
           <div class="demo-selector">
