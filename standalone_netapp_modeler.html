@@ -12692,25 +12692,42 @@ function generateReport() {
 
   // ─── SECTION C: Phased Action Plan ───────────────────────────────────────
   // Helper to build a phase block
-  const makePhase = (num, emoji, title, color, steps) => {
+  // Inter-phase gate renderer — verifies prior phase is clean before proceeding
+  const makeGate = (fromPhaseLabel, checks) => `
+    <div style="margin:-0.5rem 0 1.5rem 0; padding:0.65rem 1rem; background:rgba(142,197,252,0.06); border:1px dashed rgba(142,197,252,0.25); border-radius:6px; display:flex; align-items:flex-start; gap:0.6rem;">
+      <span style="font-size:0.9rem; flex-shrink:0;">🔒</span>
+      <div>
+        <div style="font-size:0.75rem; font-weight:700; color:#8ec5fc; margin-bottom:0.3rem;">GATE: Verify ${fromPhaseLabel} complete before proceeding</div>
+        <pre style="background:transparent; border:none; margin:0; padding:0; font-size:0.73rem; color:#a5d6ff; white-space:pre;">${checks}</pre>
+      </div>
+    </div>`;
+
+  const makePhase = (num, emoji, title, color, steps, phaseDeps) => {
     if (!steps || steps.length === 0) return '';
+    const depsHtml = (phaseDeps && phaseDeps.length > 0)
+      ? `<div style="margin-bottom:0.75rem; padding:0.5rem 0.75rem; background:rgba(251,146,60,0.07); border:1px solid rgba(251,146,60,0.2); border-radius:6px; font-size:0.75rem; color:#fed7aa;">🔗 <strong>Phase depends on:</strong> ${phaseDeps.join(' &nbsp;›&nbsp; ')}</div>`
+      : '';
     const stepsHtml = steps.map((s, i) => `
       <div style="margin-bottom:1.25rem; padding:1rem; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid ${color};">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
           <strong style="color:#fff; font-size:0.88rem;">Step ${i+1}: ${s.title}</strong>
           ${s.ref ? `<span style="font-size:0.7rem; color:#8ec5fc; margin-left:8px; flex-shrink:0;">${s.ref}</span>` : ''}
         </div>
+        ${s.preconditions ? `<div style="background:rgba(142,197,252,0.07); border:1px solid rgba(142,197,252,0.2); border-radius:4px; padding:0.4rem 0.75rem; margin-bottom:0.5rem; font-size:0.75rem;"><span style="color:#8ec5fc; font-weight:700;">📋 Pre-conditions:</span><ul style="margin:0.2rem 0 0 0; padding-left:1.1rem; color:#bfdbfe;">${s.preconditions.map(p=>`<li>${p}</li>`).join('')}</ul></div>` : ''}
+        ${s.dependencies ? `<div style="background:rgba(251,146,60,0.07); border:1px solid rgba(251,146,60,0.18); border-radius:4px; padding:0.4rem 0.75rem; margin-bottom:0.5rem; font-size:0.75rem;"><span style="color:#fed7aa; font-weight:700;">🔗 Dependencies:</span><ul style="margin:0.2rem 0 0 0; padding-left:1.1rem; color:#fed7aa;">${s.dependencies.map(d=>`<li>${d}</li>`).join('')}</ul></div>` : ''}
         ${s.objective ? `<p style="color:var(--color-text); font-size:0.8rem; margin:0 0 0.5rem 0;">${s.objective}</p>` : ''}
         ${s.risk ? `<div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:4px; padding:0.4rem 0.6rem; margin-bottom:0.5rem; font-size:0.75rem; color:#fca5a5;">⚠️ <strong>Risk if skipped:</strong> ${s.risk}</div>` : ''}
         ${s.cmd ? `<pre style="background:#0d1117; border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75rem; font-size:0.78rem; color:#a5d6ff; overflow-x:auto; white-space:pre; margin:0.5rem 0;">${s.cmd}</pre>` : ''}
         ${s.expected ? `<div style="font-size:0.75rem; color:#86efac; margin-top:0.35rem;">✅ <strong>Expected output:</strong> ${s.expected}</div>` : ''}
+        ${s.verifyCmd ? `<div style="margin-top:0.5rem;"><span style="font-size:0.73rem; color:#a78bfa; font-weight:700;">🔍 Dependency verification:</span><pre style="background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.2); border-radius:4px; padding:0.5rem 0.75rem; font-size:0.73rem; color:#c4b5fd; margin:0.25rem 0 0 0; white-space:pre;">${s.verifyCmd}</pre></div>` : ''}
       </div>`).join('');
     return `
     <div style="margin-bottom:1.5rem;">
-      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:${depsHtml ? '0.5rem' : '1rem'}; padding-bottom:0.5rem; border-bottom:1px solid rgba(255,255,255,0.08);">
         <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:${color}22; color:${color}; font-weight:800; font-size:0.85rem;">${num}</span>
         <h4 style="color:${color}; margin:0; font-size:0.95rem;">${emoji} ${title}</h4>
       </div>
+      ${depsHtml}
       ${stepsHtml}
     </div>`;
   };
@@ -12719,6 +12736,11 @@ function generateReport() {
   const phase0Steps = [
     {
       title: 'Notify & Open Maintenance Window',
+      preconditions: [
+        'Active IQ / ONTAP System Manager is accessible and cluster responds to CLI',
+        'Change management ticket or CAB approval obtained',
+        'Maintenance schedule confirmed with data owners',
+      ],
       objective: 'Create an AutoSupport maintenance notification to suppress automatic alerts and document the start of remediation activities.',
       risk: 'Without a maintenance window, automated monitoring may generate false-positive escalations during the remediation process.',
       cmd: `# Notify NetApp Support and internal monitoring of planned maintenance\nsystem node autosupport invoke -node * -type all -message "MAINT=4h Starting system health remediation on ${model} cluster"\n\n# Verify AutoSupport connectivity\nsystem node autosupport show -fields last-timestamp,status`,
@@ -12727,14 +12749,30 @@ function generateReport() {
     },
     {
       title: 'Verify Cluster Health Baseline',
+      preconditions: [
+        'Maintenance window AutoSupport sent (Step 0.1 complete)',
+        'No active takeover or giveback in progress',
+        'All cluster nodes reachable via CLI',
+      ],
+      dependencies: [
+        'Step 0.1: Maintenance window open',
+      ],
       objective: 'Capture a comprehensive baseline of cluster health before making any changes. This snapshot is critical for rollback reference.',
       risk: 'Without a health baseline, it is impossible to determine if issues pre-existed or were introduced during remediation.',
-      cmd: `# Verify overall cluster health\ncluster show\n\n# Check node reachability and quorum\ncluster ring show\n\n# Verify storage failover state for all nodes\nstorage failover show -fields node,enabled,state,partner${nodeNames.length > 0 ? '\n\n# Node-specific health\n' + nodeNames.map(n => `system node show -node ${n}`).join('\n') : ''}\n\n# Verify epsilon configuration\ncluster show -fields node,epsilon`,
-      expected: 'All nodes show "healthy: true". All storage failover pairs show "enabled: true".',
+      cmd: `# Verify overall cluster health\ncluster show\n\n# Check node reachability and quorum\ncluster ring show\n\n# Verify storage failover state for all nodes\nstorage failover show -fields node,enabled,state,partner${nodeNames.length > 0 ? '\n\n# Node-specific health\n' + nodeNames.map(n => `system node show -node ${n}`).join('\n') : ''}\n\n# Check for active takeover/giveback\nstorage failover show -fields takeover-possible\n\n# Verify epsilon configuration\ncluster show -fields node,epsilon\n\n# Check EMS event log for pre-existing errors\nevent log show -severity error -time-range -24h | head -20`,
+      expected: 'All nodes show "healthy: true". All storage failover pairs show "enabled: true". No active takeover or giveback in progress.',
       ref: 'KB: 000098456'
     },
     {
       title: 'Collect Pre-Remediation ASUP Bundle',
+      preconditions: [
+        'Cluster health baseline verified (Step 0.2 complete)',
+        'AutoSupport is configured and connected (HTTP/HTTPS to support.netapp.com)',
+      ],
+      dependencies: [
+        'Step 0.2: Cluster health baseline captured',
+        'AutoSupport connectivity confirmed',
+      ],
       objective: 'Generate and upload a full AutoSupport bundle to document the pre-remediation system state for NetApp Support reference.',
       risk: 'Without a pre-remediation bundle, NetApp Support cannot assist with troubleshooting if an issue occurs during remediation.',
       cmd: `# Trigger comprehensive ASUP collection from all nodes\nsystem node autosupport invoke -node * -type all -message "PRE-REMEDIATION baseline capture - ${model}"\n\n# Verify bundle was transmitted\nsystem node autosupport history show -node * | head -5`,
@@ -13036,23 +13074,75 @@ function generateReport() {
   const hasPhase4 = phase4Steps.length > 0;
   const hasPhase5 = phase5Steps.length > 0;
 
-  const phaseCount = [hasPhase1, hasPhase2, hasPhase3, hasPhase4, hasPhase5].filter(Boolean).length + 2; // +2 for Phase 0 and 6
+  const phaseCount = [hasPhase1, hasPhase2, hasPhase3, hasPhase4, hasPhase5].filter(Boolean).length + 2;
 
   const noIssues = !hasPhase1 && !hasPhase2 && !hasPhase3 && !hasPhase4 && !hasPhase5;
   const noIssuesBanner = noIssues ? `<div style="padding:1rem; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px; margin-bottom:1rem; color:#86efac; font-size:0.88rem;">🎉 <strong>All systems compliant.</strong> No remediation actions are required. ${upgradeNeeded ? `Only the ONTAP upgrade from ${ontapVer} to ${targetOntap} is planned.` : 'The cluster is operating within all best practice parameters.'}</div>` : '';
 
+  // ── Dependency Matrix ────────────────────────────────────────────────────
+  // Build a visual dependency chain showing what each phase requires
+  const depMatrixRows = [
+    { phase: 'Phase 0', label: 'Pre-Remediation Check', deps: ['Cluster reachable', 'Change management approval', 'AutoSupport connectivity'] },
+    { phase: 'Phase 1', label: 'Critical Hardware', deps: ['Phase 0 complete', 'HA state confirmed', 'No active takeover/giveback'], show: hasPhase1 },
+    { phase: 'Phase 2', label: 'Firmware Updates', deps: ['Phase 0 complete', 'Phase 1 complete (if applicable)', 'No broken disks pending replacement', 'Cluster health: all nodes up'], show: hasPhase2 },
+    { phase: 'Phase 3', label: 'ONTAP Configuration', deps: ['Phase 0 complete', 'Phase 2 complete (if applicable)', 'All LIFs operational', 'Storage failover enabled'], show: hasPhase3 },
+    { phase: 'Phase 4', label: 'ONTAP Software Upgrade', deps: ['Phase 0 complete', 'Phase 1 complete (critical hardware clear)', 'Phase 2 complete (all firmware current)', 'Phase 3 complete (licenses/LIFs valid)', 'cluster image validate PASSED', 'HA enabled on all nodes', 'Auto-giveback enabled', upgradeNeeded && hops.length > 0 ? `Upgrade path verified: ${ontapVer} → ${hops.join(' → ')} → ${targetOntap}` : ''], show: hasPhase4 },
+    { phase: 'Phase 5', label: 'MetroCluster Steps', deps: ['Phase 4 complete or in-progress', 'MetroCluster replication healthy', 'Both sites synchronized', 'metrocluster check show: all OK'], show: hasPhase5 },
+    { phase: 'Phase 6', label: 'Post-Remediation Validation', deps: ['All prior phases complete', 'No active firmware update tasks running', 'No active EMS errors'] },
+  ].filter(r => r.show !== false);
+
+  const depMatrix = `
+  <div style="margin-bottom:1.25rem; padding:1rem; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.07); border-radius:8px;">
+    <div style="font-size:0.8rem; font-weight:700; color:#cbd5e1; margin-bottom:0.6rem;">🔗 Phase Dependency Chain — All dependencies must be verified before advancing to the next phase</div>
+    <div style="display:flex; flex-direction:column; gap:0.4rem;">
+      ${depMatrixRows.map((r, idx) => `
+        <div style="display:flex; align-items:flex-start; gap:0.5rem; font-size:0.75rem;">
+          <span style="flex-shrink:0; min-width:110px; color:#8ec5fc; font-weight:600;">${r.phase}: ${r.label}</span>
+          <span style="color:var(--color-muted);">←</span>
+          <span style="color:#cbd5e1;">${r.deps.filter(Boolean).join(' &nbsp;·&nbsp; ')}</span>
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+
+  // ── Inter-phase gate commands ────────────────────────────────────────────
+  const gate0to1 = makeGate('Phase 0',
+    `cluster show                                          # All nodes healthy: true\nstorage failover show                                  # enabled: true, state: Connected\ncluster ring show                                      # All rings: master/secondary (no suspect)`);
+
+  const gate1to2 = hasPhase1 ? makeGate('Phase 1 (Critical Hardware)',
+    `storage disk show -broken                             # Zero entries\nstorage failover show -fields enabled                  # All: true\nstorage shelf show -fields shelf-name,connection-type  # All: multipath-ha`) : '';
+
+  const gate2to3 = hasPhase2 ? makeGate('Phase 2 (Firmware Updates)',
+    `storage disk firmware update show                     # No pending updates\nstorage shelf firmware update show                    # No pending updates\nsystem service-processor show -fields firmware-version # All nodes at current SP version\nsystem switch ethernet show                            # Switches at current SW/RCF version`) : '';
+
+  const gate3to4 = hasPhase3 ? makeGate('Phase 3 (ONTAP Configuration)',
+    `system license show                                   # All required licenses: active\nnetwork interface show -fields lif,is-home             # All LIFs: is-home true\nsnapmirror show -fields healthy                        # All relationships: healthy true\ncluster show                                           # All nodes healthy: true`) : '';
+
+  const gate4to5 = (hasPhase4 && hasPhase5) ? makeGate('Phase 4 (ONTAP Upgrade)',
+    `cluster image show                                    # All nodes at target ONTAP version\nmetrocluster check run && metrocluster check show      # All checks: ok\nstorage failover show                                  # enabled: true, state: Connected`) : '';
+
+  const gate5to6 = hasPhase5 ? makeGate('Phase 5 (MetroCluster Steps)',
+    `metrocluster show                                     # Mode: normal\nmetrocluster check show                                # All checks: ok\nstorage aggregate show -fields mirror-status           # All data aggregates: mirrored`) : '';
+
   const secC = `
   <div class="report-section" style="margin-bottom:1.5rem;">
     <h3 style="font-size:1rem; font-weight:700; color:#fff; margin-bottom:0.25rem;">🗺️ Phased Remediation Action Plan</h3>
-    <p style="font-size:0.8rem; color:var(--color-muted); margin:0 0 1rem 0;">${phaseCount} phases | Commands are system-specific to ${model} (${serial}) — ready for direct execution</p>
+    <p style="font-size:0.8rem; color:var(--color-muted); margin:0 0 0.75rem 0;">${phaseCount} phases | Commands are system-specific to ${model} (${serial}) — all inter-phase dependencies verified | ready for direct execution</p>
     ${noIssuesBanner}
-    ${makePhase(0, '🔍', 'Pre-Remediation Health Check & Maintenance Window', '#8ec5fc', phase0Steps)}
-    ${hasPhase1 ? makePhase(1, '🔧', 'Critical Hardware Remediation', '#ef4444', phase1Steps) : ''}
-    ${hasPhase2 ? makePhase(2, '⚡', 'Firmware Updates (Disk → Shelf → SP/BMC → Switch)', '#f59e0b', phase2Steps) : ''}
-    ${hasPhase3 ? makePhase(3, '⚙️', 'ONTAP Configuration Remediation', '#a78bfa', phase3Steps) : ''}
-    ${hasPhase4 ? makePhase(4, '💿', 'ONTAP Software Upgrade: ' + ontapVer + ' → ' + targetOntap, '#34d399', phase4Steps) : ''}
-    ${hasPhase5 ? makePhase(5, '🔄', 'MetroCluster-Specific Steps', '#fb923c', phase5Steps) : ''}
-    ${makePhase(6, '✅', 'Post-Remediation Validation & Close', '#22c55e', phase6Steps)}
+    ${depMatrix}
+    ${makePhase(0, '🔍', 'Pre-Remediation Health Check & Maintenance Window', '#8ec5fc', phase0Steps, [])}
+    ${gate0to1}
+    ${hasPhase1 ? makePhase(1, '🔧', 'Critical Hardware Remediation', '#ef4444', phase1Steps, ['Phase 0: Pre-Remediation Check complete', 'Cluster healthy baseline confirmed']) : ''}
+    ${gate1to2}
+    ${hasPhase2 ? makePhase(2, '⚡', 'Firmware Updates (Disk → Shelf → SP/BMC → Switch)', '#f59e0b', phase2Steps, ['Phase 0: Maintenance window open', hasPhase1 ? 'Phase 1: Critical hardware resolved (no broken disks, HA enabled, cabling multipath)' : 'No critical hardware issues identified', 'Cluster fully operational — all nodes up']) : ''}
+    ${gate2to3}
+    ${hasPhase3 ? makePhase(3, '⚙️', 'ONTAP Configuration Remediation', '#a78bfa', phase3Steps, ['Phase 0: Baseline captured', hasPhase2 ? 'Phase 2: All firmware current (disk, shelf, SP, switch)' : 'Firmware verified current', 'Storage failover enabled on all nodes']) : ''}
+    ${gate3to4}
+    ${hasPhase4 ? makePhase(4, '💿', 'ONTAP Software Upgrade: ' + ontapVer + ' → ' + targetOntap, '#34d399', phase4Steps, ['Phase 0: Maintenance window active', hasPhase1 ? 'Phase 1: No unresolved hardware issues' : 'Hardware health confirmed', hasPhase2 ? 'Phase 2: All firmware updated (critical for ANDU compatibility)' : 'Firmware verified current', hasPhase3 ? 'Phase 3: All licenses active, all LIFs on home ports, SnapMirror healthy' : 'Configuration verified', 'HA enabled on ALL nodes — required for nondisruptive upgrade', 'Auto-giveback enabled: storage failover modify -node * -auto-giveback true', 'cluster image validate -version ' + targetOntap + ' → must show PASS']) : ''}
+    ${gate4to5}
+    ${hasPhase5 ? makePhase(5, '🔄', 'MetroCluster-Specific Steps', '#fb923c', phase5Steps, ['Phase 4: ONTAP upgrade in progress or complete on all standard nodes', 'MetroCluster replication healthy — metrocluster check show: all ok', 'Both sites synchronized — no pending resync', 'Mediator (if IP MCC) reachable and connected']) : ''}
+    ${gate5to6}
+    ${makePhase(6, '✅', 'Post-Remediation Validation & Close', '#22c55e', phase6Steps, ['All applicable phases 0–5 complete', 'No background firmware update tasks running', 'No active EMS errors or health alerts'])}
   </div>`;
 
   // ─── SECTION D: Runbook Export ────────────────────────────────────────────
