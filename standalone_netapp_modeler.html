@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.26</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.27</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -1970,7 +1970,7 @@ svg.cabling-graph {
     </div>
   </div>
 
-  <!-- Splash Screen Modal Overlay (What's New in v2.26) -->
+  <!-- Splash Screen Modal Overlay (What's New in v2.27) -->
   <div id="splash-modal" class="modal-overlay no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 11000; backdrop-filter: blur(8px);">
     <div class="modal-content" style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(15,23,42,0.95) 100%); border: 1.5px solid var(--color-primary); border-radius: var(--radius-lg); padding: 2.5rem; width: 550px; box-shadow: 0 25px 50px -12px rgba(6,182,212,0.3); position: relative; max-height: 85vh; overflow-y: auto;">
       
@@ -1981,7 +1981,7 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.26</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.27</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
@@ -2025,7 +2025,7 @@ svg.cabling-graph {
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary" 
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.26','true')}catch(e){}" 
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.27','true')}catch(e){}" 
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
@@ -12583,6 +12583,46 @@ function generateReport() {
   const targetOntap = document.getElementById("target-ontap") ? document.getElementById("target-ontap").value : ontapVer;
   const baseCur = resolveBaseVersionKey(ontapVer);
   const hops = (UI_UPGRADE_HOPS[baseCur] && UI_UPGRADE_HOPS[baseCur][targetOntap]) ? UI_UPGRADE_HOPS[baseCur][targetOntap] : [];
+  // ─── Modeled Hardware Additions (from Wizard Step 4/5) ───────────────────
+  const _shelfTypeEl = document.getElementById("shelf-type");
+  const _diskCountEl = document.getElementById("disk-count");
+  const _diskSizeEl  = document.getElementById("disk-size");
+  const _diskAllocEl = document.getElementById("disk-allocation");
+
+  const addedShelfType  = _shelfTypeEl ? _shelfTypeEl.value : "none";
+  const addedDiskCount  = _diskCountEl ? (parseInt(_diskCountEl.value) || 0) : 0;
+  const addedDiskSize   = _diskSizeEl  ? _diskSizeEl.value  : "";
+  const addedDiskAlloc  = _diskAllocEl ? _diskAllocEl.value : "new";
+  const addedShelfSpec  = SHELF_SPEC_MAP[addedShelfType];
+  const addedShelfCount = (addedShelfType !== "none" && addedShelfSpec)
+    ? Math.ceil(addedDiskCount / (addedShelfSpec.maxCount || 24)) : 0;
+
+  // Detect newly added PCIe cards (cards in modeledState not in currentState)
+  const _curCardKeys = new Set((currentState.expansionCards || []).map(c => {
+    const k = typeof c === 'string' ? c : c.cardKey;
+    return k + ':' + (c.slot || '?');
+  }));
+  const addedCards = (modeledState.expansionCards || []).filter(c => {
+    const k = (typeof c === 'string' ? c : c.cardKey) + ':' + (c.slot || '?');
+    return !_curCardKeys.has(k);
+  });
+
+  // Resolve storage ports for new shelf stack(s)
+  const availStoragePorts = (addedShelfType !== "none" && addedShelfCount > 0)
+    ? resolveStoragePorts(modeledState, addedShelfType, addedShelfCount + (currentState.shelves || []).length)
+    : [];
+
+  const hasModeledHardware = addedShelfCount > 0 || addedCards.length > 0;
+
+  // Aggregate allocation inputs (expand existing vs new)
+  const aggrAllocInputs = [];
+  try {
+    document.querySelectorAll(".aggr-alloc-input").forEach(inp => {
+      const D = parseInt(inp.value) || 0;
+      if (D > 0) aggrAllocInputs.push({ aggr: inp.getAttribute("data-aggr"), count: D });
+    });
+  } catch(e) {}
+
 
   // ─── Severity helpers ───────────────────────────────────────────────────
   const criticals = curReports.filter(r => r.status === 'critical');
@@ -12819,6 +12859,150 @@ function generateReport() {
       expected: 'All shelves show "connection-type: multipath-ha". No single-path warning in sysconfig.',
       ref: refLink('cabling')
     });
+  }
+
+  // ── Phase 1.5: Planned Hardware Installation (from Modeler) ─────────────
+  const phase15Steps = [];
+  if (hasModeledHardware) {
+    const isNVMe15 = addedShelfType === 'ns224';
+    const stackLimit15 = isNVMe15 ? 1 : 4;
+    const numStacks15  = addedShelfCount > 0 ? Math.ceil(addedShelfCount / stackLimit15) : 0;
+    const nodes15      = currentState.nodes || [];
+    const haPairs15    = Math.max(1, Math.floor(nodes15.length / 2));
+
+    // Pre-installation readiness
+    phase15Steps.push({
+      title: 'Pre-Installation Cluster Readiness Verification',
+      preconditions: [
+        'Phase 0 health baseline complete — cluster healthy, all nodes up',
+        'No broken disks, HA enabled on all nodes',
+        'Rack U-space verified — physical space available for new hardware',
+        'Power budget confirmed — new equipment within PDU/UPS capacity',
+        'All required cables available on-site (' + (isNVMe15 ? '100GbE QSFP28 for NVMe' : 'mini-SAS HD SFF-8644 for SAS') + ')',
+      ],
+      dependencies: ['Phase 0: Pre-remediation check complete'],
+      objective: 'Confirm the cluster is fully healthy before any physical installation work begins. Any pre-existing health issues MUST be resolved before adding hardware.',
+      risk: 'Installing hardware into an unhealthy cluster masks existing issues and complicates troubleshooting. NEVER add hardware during a failover, degraded RAID state, or while background disk firmware updates are running.',
+      cmd: 'cluster show\nstorage failover show -fields node,enabled,state,partner\nstorage disk show -broken\nstorage disk firmware update show\nevent log show -severity error -time-range -1h\n\n# Verify existing shelf IDs (to avoid duplicate ID conflicts when adding new shelves)\nstorage shelf show -fields shelf-id,shelf-name,connection-type,firmware-version\n\n# Verify available rack space and power capacity (manual physical check)\n# Confirm PDU load does not exceed 80% with new equipment added',
+      expected: 'Cluster: healthy=true. No broken disks. No pending firmware updates. HA enabled on all nodes.',
+      verifyCmd: 'cluster show\nstorage failover show\nstorage disk show -broken',
+      ref: refLink('precheck')
+    });
+
+    // PCIe card installation
+    if (addedCards.length > 0) {
+      const cardList = addedCards.map(c => {
+        const cKey = typeof c === 'string' ? c : c.cardKey;
+        const slot = c.slot || '?';
+        const cSpec = EXP_CARDS_CATALOG[cKey];
+        return { cKey, slot, name: cSpec ? cSpec.name : cKey, type: cSpec ? cSpec.type : '', ports: cSpec ? (cSpec.ports || []) : [], cSpec };
+      });
+      phase15Steps.push({
+        title: 'Install PCIe Expansion Cards — Takeover/Giveback Sequence',
+        preconditions: [
+          'Pre-installation readiness verified (Step 1.5.1)',
+          'Anti-static wrist strap and ESD mat in use',
+          'Cards to install: ' + cardList.map(c => c.name + ' in Slot ' + c.slot).join(', '),
+          'Slot assignments verified against platform slot compatibility guide',
+          'HA partner can support takeover (storage failover show: takeover-possible: true)',
+        ],
+        dependencies: ['Step 1.5.1: Pre-installation readiness complete'],
+        objective: 'Physically install ' + cardList.length + ' PCIe expansion card(s) into both controllers. This is a per-controller disruptive operation requiring takeover/giveback for each controller.',
+        risk: 'NEVER hot-insert PCIe cards. The controller MUST be halted before insertion. Hot-inserting a PCIe card WILL permanently damage the card and may brick the controller. Install one controller at a time — the HA partner must remain online and serving data throughout.',
+        cmd: '# ═══ CONTROLLER ' + nodeA.toUpperCase() + ' — CARD INSTALLATION ═══\n\n# 1. Initiate takeover of ' + nodeA + ' by its HA partner ' + nodeB + '\nstorage failover takeover -ofnode ' + nodeA + '\n# Verify takeover complete:\nstorage failover show -fields node,partner,state\n\n# 2. Halt the taken-over node (from SP/BMC console or via partner)\nsystem node halt -node ' + nodeA + ' -inhibit-takeover true\n# Wait for chassis power-off indicator\n\n# 3. PHYSICAL: Install cards (one slot at a time)\n' + cardList.map(c => '# Insert ' + c.name + ' into Slot ' + c.slot + '\n# Press firmly until seated, secure retention latch\n# Note: port labels face toward PCB edge').join('\n') + '\n\n# 4. Power on controller ' + nodeA + ' (power button or: system node power on -node ' + nodeA + ')\n# Wait for ONTAP boot prompt (~5-8 minutes)\n\n# 5. Giveback to restore HA\nstorage failover giveback -ofnode ' + nodeA + '\nstorage failover show -fields node,partner,state\n\n# 6. Verify card recognition on ' + nodeA + '\nnode run -node ' + nodeA + ' -command sysconfig -v | grep -A3 "PCIe\\|slot"\n\n# ═══ REPEAT IDENTICAL STEPS FOR ' + nodeB.toUpperCase() + ' ═══\n# (storage failover takeover -ofnode ' + nodeB + ', etc.)',
+        expected: 'Both controllers returned to "Connected" HA state. sysconfig -v shows all new PCIe cards in their assigned slots. No EMS error events post-installation.',
+        verifyCmd: 'storage failover show\nnode run -node * -command sysconfig -v | grep -i "slot\\|pcie"\nevent log show -severity error -time-range -1h',
+        ref: refLink('precheck')
+      });
+    }
+
+    // Shelf installation
+    if (addedShelfCount > 0) {
+      const totalRU15 = (addedShelfSpec ? addedShelfSpec.ru : 2) * addedShelfCount;
+      const totalW15  = (addedShelfSpec ? addedShelfSpec.power : 300) * addedShelfCount;
+
+      phase15Steps.push({
+        title: 'Rack, Power On, and Set Shelf IDs for ' + addedShelfCount + 'x ' + (addedShelfSpec ? addedShelfSpec.name : addedShelfType.toUpperCase()),
+        preconditions: [
+          totalRU15 + 'U of rack space confirmed free',
+          'Additional power: ' + totalW15 + 'W verified within PDU capacity',
+          addedCards.length > 0 ? 'Storage HBA PCIe cards installed in both controllers (Step 1.5.2)' : 'Onboard storage ports verified available',
+          addedShelfCount + ' shelf unit(s) received, unpacked, inspected — no physical damage',
+        ],
+        dependencies: [
+          addedCards.length > 0 ? 'Step 1.5.2: Storage HBA cards installed and recognized' : 'Step 1.5.1: Readiness check complete',
+        ],
+        objective: 'Physically rack the new shelf unit(s), configure unique shelf IDs, connect power, and power on. Shelves must be powered before cabling to controllers.',
+        risk: 'CRITICAL: Shelf ID conflicts cause immediate I/O errors across the ENTIRE SAS/NVMe domain. Always set unique IDs BEFORE powering on. Check existing IDs first. Duplicate IDs require a controller reboot to recover — this is disruptive in production.',
+        cmd: '# ═══ STEP 1: CHECK EXISTING SHELF IDs ═══\nstorage shelf show -fields shelf-id\n# Record all IDs in use. New shelves must use IDs NOT in this list.\n\n# ═══ STEP 2: SET SHELF IDs (BEFORE POWERING ON) ═══\n# Use a straightened paperclip in the ID dial on rear of each shelf unit\n# Assign IDs: ' + Array.from({length: addedShelfCount}, (_, i) => 'Shelf ' + (i+1) + ': ID = ' + ((currentState.shelves || []).length + i)).join(', ') + '\n\n# ═══ STEP 3: RACK THE SHELVES ═══\n# Mount in rack. Use proper rail kit. Torque screws to spec.\n# Recommended: rack shelves directly above or below the controllers\n\n# ═══ STEP 4: CONNECT REDUNDANT POWER ═══\n# Connect BOTH power supplies on each shelf:\n# PSU-A → PDU A-side (same feed as controller ' + nodeA + ')\n# PSU-B → PDU B-side (same feed as controller ' + nodeB + ')\n\n# ═══ STEP 5: POWER ON SHELVES ═══\n# Power on. Wait 60 seconds for IOM module boot.\n# Visual check: fault LED (amber) OFF, status LED (green) ON, activity blinking\n\n# ═══ STEP 6: CONFIRM SHELVES RECOGNIZED (before cabling) ═══\nstorage shelf show -fields shelf-id,firmware-version\n# New shelves should appear with correct IDs',
+        expected: 'New shelves appear in "storage shelf show" with correct unique IDs. Fault LEDs off on all IOM modules.',
+        verifyCmd: 'storage shelf show -fields shelf-id,connection-type,firmware-version',
+        ref: refLink('cabling')
+      });
+
+      // Cabling step with detailed port mapping
+      const cablingCmd = '# ═══ MULTIPATH HA CABLING LAYOUT ═══\n# DO NOT: Cable only one path — this creates a single point of failure\n# DO: Cable BOTH IOM-A and IOM-B on every shelf before powering on\n# Cable type: ' + (isNVMe15 ? '100GbE QSFP28 DAC or optical (for NVMe/RoCE ports)' : 'mini-SAS HD SFF-8644-to-SFF-8644 (for 12G SAS)') + '\n\n' +
+        Array.from({length: numStacks15}, (_, s) => {
+          const pIdx = s % haPairs15;
+          const nA15 = (nodes15[pIdx*2]   || {name: nodeA}).name;
+          const nB15 = (nodes15[pIdx*2+1] || {name: nodeB}).name;
+          const pA15 = availStoragePorts[s*2]   || '0a';
+          const pB15 = availStoragePorts[s*2+1] || '0b';
+          const first15 = s * stackLimit15 + 1;
+          const last15  = Math.min((s+1)*stackLimit15, addedShelfCount);
+          const isSingle = last15 === first15;
+          if (isNVMe15) {
+            return '# ── NS224 Shelf ' + first15 + ' (NVMe — direct attach, no daisy-chain) ──\n# PATH A: ' + nA15 + ' port ' + pA15 + '  →  Shelf ' + first15 + ' NSM-A port e0a\n# PATH B: ' + nB15 + ' port ' + pA15 + '  →  Shelf ' + first15 + ' NSM-B port e0a\n# (Optional redundant path: ' + nA15 + ' port ' + pB15 + ' → NSM-A e0b, ' + nB15 + ' port ' + pB15 + ' → NSM-B e0b)';
+          } else {
+            let cmd15 = '# ── SAS Stack ' + (s+1) + ': Shelf(ves) ' + first15 + (isSingle ? '' : '–' + last15) + ' — HA Pair: ' + nA15 + '/' + nB15 + ' ──\n';
+            cmd15 += '# PATH A (IOM-A squares):\n';
+            cmd15 += '#   ' + nA15 + ' port ' + pA15 + '  →  Shelf ' + first15 + ' IOM-A Port 0 (IN, circle)\n';
+            if (!isSingle) cmd15 += '#   Shelf ' + first15 + ' IOM-A Port 1 (OUT)  →  Shelf ' + (first15+1) + ' IOM-A Port 0 ... (daisy-chain)\n';
+            cmd15 += '#   Shelf ' + last15  + ' IOM-A Port 1 (OUT) →  ' + nB15 + ' port ' + pA15 + '\n';
+            cmd15 += '# PATH B (IOM-B circles):\n';
+            cmd15 += '#   ' + nB15 + ' port ' + pB15 + '  →  Shelf ' + first15 + ' IOM-B Port 0 (IN, circle)\n';
+            if (!isSingle) cmd15 += '#   Shelf ' + first15 + ' IOM-B Port 1 (OUT)  →  Shelf ' + (first15+1) + ' IOM-B Port 0 ... (daisy-chain)\n';
+            cmd15 += '#   Shelf ' + last15  + ' IOM-B Port 1 (OUT) →  ' + nA15 + ' port ' + pB15;
+            return cmd15;
+          }
+        }).join('\n\n') +
+        '\n\n# POST-CABLING VERIFICATION:\nstorage shelf show -fields shelf-name,connection-type\nstorage cabling show\nstorage disk show -container-type unassigned';
+
+      phase15Steps.push({
+        title: 'Cable Shelves to Controllers — Multipath HA Port-to-Port Connections',
+        preconditions: [
+          'Shelves powered on and showing correct shelf IDs (previous step complete)',
+          'Cables correctly typed and length-verified for rack layout',
+          'Controller ports identified and labelled on controller rear panel',
+        ],
+        dependencies: ['Shelf rack/power/ID step complete'],
+        objective: 'Connect all ' + addedShelfCount + ' new shelf(ves) to the ' + (addedCards.length > 0 ? 'HBA card' : 'onboard') + ' storage ports using Multipath HA cabling. Both IOM-A and IOM-B MUST be connected to separate controllers.',
+        risk: (isNVMe15 ? 'NVMe ONLY: Do not connect more than 1 NS224 shelf per NVMe port pair — NS224 shelves are direct-attach and do not support daisy-chaining. Each shelf needs its own dedicated port pair.' : 'SAS ONLY: Do not leave a stack end unterminated. The last shelf OUT port must connect back to the controller to close the loop. An open loop causes the entire stack to drop offline.'),
+        cmd: cablingCmd,
+        expected: 'All ' + addedShelfCount + ' new shelves show "connection-type: multipath-ha". New disks visible as unassigned.',
+        verifyCmd: 'storage shelf show\nstorage cabling show\nstorage disk show -container-type unassigned\nnode run -node * -command sysconfig -v | grep -i shelf',
+        ref: refLink('cabling')
+      });
+
+      // Disk assignment + aggregate
+      phase15Steps.push({
+        title: 'Assign New Disks and ' + (addedDiskAlloc === 'expand' ? 'Expand Existing Aggregates' : 'Create New Storage Aggregates'),
+        preconditions: [
+          'All shelves showing connection-type: multipath-ha',
+          'Disks visible as unassigned: storage disk show -container-type unassigned',
+          'Minimum 2 spare disks per disk type/size will be retained after allocation',
+        ],
+        dependencies: ['Shelf cabling step complete — all shelves multipath-ha'],
+        objective: 'Assign ' + addedDiskCount + ' new ' + addedDiskSize + ' disks to their owner nodes and ' + (addedDiskAlloc === 'expand' ? 'expand existing aggregates with the additional capacity.' : 'create new RAID-DP aggregates for the new storage pool.'),
+        risk: 'Do NOT assign all disks to aggregates. Retain a minimum of 2 hot spares per disk type per node. Spares enable automatic RAID reconstruction after a disk failure. Also: do not interrupt an in-progress RAID reconstruction — this can cause data loss.',
+        cmd: '# Step 1: Verify unassigned disks\nstorage disk show -container-type unassigned\nstorage disk show -fields disk,shelf,bay,model,size | grep "unass"\n\n# Step 2: Auto-assign to owning nodes\nstorage disk assign -auto true\n# Verify assignment:\nstorage disk show -container-type spare\n\n' + (addedDiskAlloc === 'expand' && aggrAllocInputs.length > 0
+          ? aggrAllocInputs.map(a => '# Expand aggregate: ' + a.aggr + ' with ' + a.count + ' disks\nstorage aggregate add-disks -aggregate ' + a.aggr + ' -diskcount ' + a.count + '\nstorage aggregate show -aggregate ' + a.aggr + ' -fields state,disk-count,size').join('\n\n')
+          : '# Create new aggregates (one per node — split disks evenly)\nstorage aggregate create -aggregate aggr_new_' + nodeA.replace(/-/g,'_') + ' -node ' + nodeA + ' -diskcount ' + Math.max(1, Math.floor(addedDiskCount/2) - 2) + ' -raidtype raid_dp\nstorage aggregate create -aggregate aggr_new_' + nodeB.replace(/-/g,'_') + ' -node ' + nodeB + ' -diskcount ' + Math.max(1, Math.floor(addedDiskCount/2) - 2) + ' -raidtype raid_dp\n\n# Monitor RAID initialization (wait until state=online):\nstorage aggregate show -fields aggregate,state,size,availsize') + '\n\n# Verify spare pool adequacy\nstorage disk show -container-type spare\n# Confirm: at least 2 spares per disk type',
+        expected: (addedDiskAlloc === 'expand' ? 'Aggregates show increased size and state: online.' : 'New aggregates show state: online.') + ' Spare pool: minimum 2 disks per type.',
+        verifyCmd: 'storage aggregate show\nstorage disk show -container-type spare\nstorage disk show -broken',
+        ref: refLink('capacity')
+      });
+    }
   }
 
   // ── Phase 2: Firmware Updates ────────────────────────────────────────────
@@ -13068,27 +13252,29 @@ function generateReport() {
   ];
 
   // ─── Build Section C HTML ─────────────────────────────────────────────────
-  const hasPhase1 = phase1Steps.length > 0;
-  const hasPhase2 = phase2Steps.length > 0;
-  const hasPhase3 = phase3Steps.length > 0;
-  const hasPhase4 = phase4Steps.length > 0;
-  const hasPhase5 = phase5Steps.length > 0;
+  const hasPhase1  = phase1Steps.length > 0;
+  const hasPhase15 = phase15Steps.length > 0;
+  const hasPhase2  = phase2Steps.length > 0;
+  const hasPhase3  = phase3Steps.length > 0;
+  const hasPhase4  = phase4Steps.length > 0;
+  const hasPhase5  = phase5Steps.length > 0;
 
-  const phaseCount = [hasPhase1, hasPhase2, hasPhase3, hasPhase4, hasPhase5].filter(Boolean).length + 2;
+  const phaseCount = [hasPhase1, hasPhase15, hasPhase2, hasPhase3, hasPhase4, hasPhase5].filter(Boolean).length + 2;
 
-  const noIssues = !hasPhase1 && !hasPhase2 && !hasPhase3 && !hasPhase4 && !hasPhase5;
+  const noIssues = !hasPhase1 && !hasPhase15 && !hasPhase2 && !hasPhase3 && !hasPhase4 && !hasPhase5;
   const noIssuesBanner = noIssues ? `<div style="padding:1rem; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px; margin-bottom:1rem; color:#86efac; font-size:0.88rem;">🎉 <strong>All systems compliant.</strong> No remediation actions are required. ${upgradeNeeded ? `Only the ONTAP upgrade from ${ontapVer} to ${targetOntap} is planned.` : 'The cluster is operating within all best practice parameters.'}</div>` : '';
 
   // ── Dependency Matrix ────────────────────────────────────────────────────
   // Build a visual dependency chain showing what each phase requires
   const depMatrixRows = [
-    { phase: 'Phase 0', label: 'Pre-Remediation Check', deps: ['Cluster reachable', 'Change management approval', 'AutoSupport connectivity'] },
-    { phase: 'Phase 1', label: 'Critical Hardware', deps: ['Phase 0 complete', 'HA state confirmed', 'No active takeover/giveback'], show: hasPhase1 },
-    { phase: 'Phase 2', label: 'Firmware Updates', deps: ['Phase 0 complete', 'Phase 1 complete (if applicable)', 'No broken disks pending replacement', 'Cluster health: all nodes up'], show: hasPhase2 },
-    { phase: 'Phase 3', label: 'ONTAP Configuration', deps: ['Phase 0 complete', 'Phase 2 complete (if applicable)', 'All LIFs operational', 'Storage failover enabled'], show: hasPhase3 },
-    { phase: 'Phase 4', label: 'ONTAP Software Upgrade', deps: ['Phase 0 complete', 'Phase 1 complete (critical hardware clear)', 'Phase 2 complete (all firmware current)', 'Phase 3 complete (licenses/LIFs valid)', 'cluster image validate PASSED', 'HA enabled on all nodes', 'Auto-giveback enabled', upgradeNeeded && hops.length > 0 ? `Upgrade path verified: ${ontapVer} → ${hops.join(' → ')} → ${targetOntap}` : ''], show: hasPhase4 },
-    { phase: 'Phase 5', label: 'MetroCluster Steps', deps: ['Phase 4 complete or in-progress', 'MetroCluster replication healthy', 'Both sites synchronized', 'metrocluster check show: all OK'], show: hasPhase5 },
-    { phase: 'Phase 6', label: 'Post-Remediation Validation', deps: ['All prior phases complete', 'No active firmware update tasks running', 'No active EMS errors'] },
+    { phase: 'Phase 0',   label: 'Pre-Remediation Check',        deps: ['Cluster reachable', 'Change management approval', 'AutoSupport connectivity'] },
+    { phase: 'Phase 1',   label: 'Critical Hardware',             deps: ['Phase 0 complete', 'HA state confirmed', 'No active takeover/giveback'], show: hasPhase1 },
+    { phase: 'Phase 1.5', label: 'Planned Hardware Installation', deps: ['Phase 0 complete', hasPhase1 ? 'Phase 1: All critical hardware resolved' : 'No critical issues', 'Rack space & power confirmed', 'Cables available on-site', 'No active RAID reconstruction in progress'], show: hasPhase15 },
+    { phase: 'Phase 2',   label: 'Firmware Updates',              deps: ['Phase 0 complete', hasPhase1 ? 'Phase 1 complete' : 'No critical issues', hasPhase15 ? 'Phase 1.5 complete (new hardware installed and verified)' : 'No hardware additions', 'Cluster health: all nodes up'], show: hasPhase2 },
+    { phase: 'Phase 3',   label: 'ONTAP Configuration',           deps: ['Phase 0 complete', hasPhase2 ? 'Phase 2 complete (all firmware current)' : 'Firmware verified', 'All LIFs operational', 'Storage failover enabled'], show: hasPhase3 },
+    { phase: 'Phase 4',   label: 'ONTAP Software Upgrade',        deps: ['Phases 0–3 complete', 'cluster image validate PASSED', 'HA enabled on all nodes', 'Auto-giveback enabled', upgradeNeeded && hops.length > 0 ? 'Upgrade path: ' + ontapVer + ' → ' + hops.join(' → ') + ' → ' + targetOntap : ''], show: hasPhase4 },
+    { phase: 'Phase 5',   label: 'MetroCluster Steps',            deps: ['Phase 4 complete or in-progress', 'MetroCluster replication healthy', 'Both sites synchronized', 'metrocluster check show: all OK'], show: hasPhase5 },
+    { phase: 'Phase 6',   label: 'Post-Remediation Validation',   deps: ['All prior phases complete', 'No active firmware update tasks running', 'No active EMS errors'] },
   ].filter(r => r.show !== false);
 
   const depMatrix = `
@@ -13109,7 +13295,13 @@ function generateReport() {
   const gate0to1 = makeGate('Phase 0',
     `cluster show                                          # All nodes healthy: true\nstorage failover show                                  # enabled: true, state: Connected\ncluster ring show                                      # All rings: master/secondary (no suspect)`);
 
-  const gate1to2 = hasPhase1 ? makeGate('Phase 1 (Critical Hardware)',
+  const gate1to15 = hasPhase15 ? makeGate('Phase 1 (Critical Hardware — if applicable)',
+    `cluster show                                          # All nodes healthy: true\nstorage failover show                                  # enabled: true, Connected\nstorage disk show -broken                             # Zero entries\nstorage disk firmware update show                     # No active firmware tasks`) : '';
+
+  const gate15to2 = hasPhase15 ? makeGate('Phase 1.5 (Hardware Installation)',
+    `storage shelf show -fields shelf-name,connection-type # All: multipath-ha\nstorage disk show -container-type unassigned           # New disks visible (pre-assignment)\nstorage failover show -fields node,enabled,state      # Both controllers: Connected\nevent log show -severity error -time-range -1h         # No post-install EMS errors`) : '';
+
+  const gate1to2 = (!hasPhase15 && hasPhase1) ? makeGate('Phase 1 (Critical Hardware)',
     `storage disk show -broken                             # Zero entries\nstorage failover show -fields enabled                  # All: true\nstorage shelf show -fields shelf-name,connection-type  # All: multipath-ha`) : '';
 
   const gate2to3 = hasPhase2 ? makeGate('Phase 2 (Firmware Updates)',
@@ -13133,8 +13325,22 @@ function generateReport() {
     ${makePhase(0, '🔍', 'Pre-Remediation Health Check & Maintenance Window', '#8ec5fc', phase0Steps, [])}
     ${gate0to1}
     ${hasPhase1 ? makePhase(1, '🔧', 'Critical Hardware Remediation', '#ef4444', phase1Steps, ['Phase 0: Pre-Remediation Check complete', 'Cluster healthy baseline confirmed']) : ''}
+    ${gate1to15}
+    ${hasPhase15 ? makePhase('1½', '📦', 'Planned Hardware Installation (Modeled Changes)', '#e879f9', phase15Steps, [
+      'Phase 0: Maintenance window open',
+      hasPhase1 ? 'Phase 1: All critical hardware issues resolved (no broken disks, HA enabled)' : 'No critical hardware issues identified',
+      'Cluster fully operational — all nodes healthy, no active RAID reconstruction',
+      'HA enabled on ALL nodes — required for per-controller takeover/giveback sequence',
+      'Physical prerequisites confirmed: rack space, power budget, correct cables on-site',
+    ]) : ''}
+    ${gate15to2}
     ${gate1to2}
-    ${hasPhase2 ? makePhase(2, '⚡', 'Firmware Updates (Disk → Shelf → SP/BMC → Switch)', '#f59e0b', phase2Steps, ['Phase 0: Maintenance window open', hasPhase1 ? 'Phase 1: Critical hardware resolved (no broken disks, HA enabled, cabling multipath)' : 'No critical hardware issues identified', 'Cluster fully operational — all nodes up']) : ''}
+    ${hasPhase2 ? makePhase(2, '⚡', 'Firmware Updates (Disk → Shelf → SP/BMC → Switch)', '#f59e0b', phase2Steps, [
+      'Phase 0: Maintenance window open',
+      hasPhase1 ? 'Phase 1: Critical hardware resolved' : 'No critical hardware issues',
+      hasPhase15 ? 'Phase 1.5: All new hardware installed, cabled multipath-ha, disks assigned and verified' : 'No planned hardware additions',
+      'Cluster fully operational — all nodes up, HA enabled',
+    ]) : ''}
     ${gate2to3}
     ${hasPhase3 ? makePhase(3, '⚙️', 'ONTAP Configuration Remediation', '#a78bfa', phase3Steps, ['Phase 0: Baseline captured', hasPhase2 ? 'Phase 2: All firmware current (disk, shelf, SP, switch)' : 'Firmware verified current', 'Storage failover enabled on all nodes']) : ''}
     ${gate3to4}
@@ -13149,6 +13355,7 @@ function generateReport() {
   const allPhasedSteps = [
     { label: 'PHASE 0: Pre-Remediation Health Check', steps: phase0Steps },
     { label: 'PHASE 1: Critical Hardware Remediation', steps: phase1Steps },
+    { label: 'PHASE 1.5: Planned Hardware Installation (Modeled Changes)', steps: phase15Steps },
     { label: 'PHASE 2: Firmware Updates', steps: phase2Steps },
     { label: 'PHASE 3: ONTAP Configuration Remediation', steps: phase3Steps },
     { label: 'PHASE 4: ONTAP Software Upgrade', steps: phase4Steps },
@@ -13257,6 +13464,7 @@ function generateReport() {
     cliCodePre.textContent = generateCliScriptText();
   }
 }
+
 // --- END js/ui.js ---
 </script>
 </body>
