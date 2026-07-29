@@ -3883,7 +3883,7 @@ function inferMissingData(state, profile) {
       field: 'ontapVersion', label: 'ONTAP Version',
       reason: 'Cannot assess upgrade path, firmware requirements, or feature support without the current ONTAP version.',
       promptType: 'select',
-      promptOptions: ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.15.1','9.16.1']
+      promptOptions: ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.14.1P1','9.14.1P2','9.14.1P3','9.15.1','9.15.1P1','9.15.1P2','9.16.1','9.16.1P1','9.16.1P2','9.17.1','9.17.1P1','9.18.1','9.18.1P1','9.19.1']
     });
   }
   if (!state.dataSources.model || state.dataSources.model.source === 'default') {
@@ -4045,7 +4045,7 @@ function getPlatformSlots(model) {
 const NETAPP_PLATFORMS = {
   // --- AFF A-Series (NVMe High Performance All Flash) ---
   "AFF A1K": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -4070,7 +4070,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 11
   },
   "AFF A90": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 natively cabled to on-board RoCE ports." },
@@ -4093,7 +4093,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF A70": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4116,7 +4116,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF A900": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -4141,7 +4141,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 10
   },
   "AFF A800": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -4166,7 +4166,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF A50": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4189,7 +4189,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A400": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -4214,7 +4214,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF A30": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4237,7 +4237,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A20": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4260,7 +4260,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A300": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ns224"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -4285,7 +4285,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A250": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -4335,7 +4335,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "AFF A150": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c"],
     unsupportedShelves: ["ns224", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SAS SSD shelf is supported." },
@@ -4361,7 +4361,7 @@ const NETAPP_PLATFORMS = {
   // --- AFF C-Series (Capacity All Flash) ---
   "AFF C80": {
     minOntap: "9.16.1",
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4384,7 +4384,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "AFF C800": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf fully supported." },
@@ -4407,7 +4407,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF C400": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is highly recommended." },
@@ -4429,7 +4429,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF C250": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is supported natively." },
@@ -4453,7 +4453,7 @@ const NETAPP_PLATFORMS = {
   },
   "AFF C30": {
     minOntap: "9.16.1",
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4477,7 +4477,7 @@ const NETAPP_PLATFORMS = {
   },
   "AFF C60": {
     minOntap: "9.16.1",
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4500,7 +4500,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "AFF C190": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c"],
     unsupportedShelves: ["ns224", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SAS SSD shelf fully supported." },
@@ -4525,7 +4525,7 @@ const NETAPP_PLATFORMS = {
 
   // --- FAS Series (Hybrid / Capacity HDD) ---
   "FAS9500": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4548,7 +4548,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 10
   },
   "FAS9000": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4571,7 +4571,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "FAS8700": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4593,7 +4593,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "FAS8300": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4618,7 +4618,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "FAS8200": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds460c": "DS460C high-density SAS shelf is fully supported." },
@@ -4639,7 +4639,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2820": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SFF shelf fully supported." },
@@ -4660,7 +4660,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2720": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds212c": "LFF HDD expansion supported." },
@@ -4681,7 +4681,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2750": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ns224", "ds2246"],
     shelfWarnings: { "ds224c": "DS224C SFF expansion supported." },
@@ -4768,7 +4768,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 1
   },
   "FAS90": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4791,7 +4791,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "FAS70": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c", "ds212c", "ds460c"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {
@@ -4814,7 +4814,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "FAS50": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     unsupportedShelves: ["ns224"],
     shelfWarnings: {
@@ -4836,7 +4836,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "ASA A1K": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -4861,7 +4861,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 11
   },
   "ASA A90": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 natively cabled to on-board RoCE ports." },
@@ -4884,7 +4884,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "ASA A70": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4907,7 +4907,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "ASA A50": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4930,7 +4930,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 6
   },
   "ASA A30": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4953,7 +4953,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "ASA A20": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -4976,7 +4976,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "ASA C30": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 QLC-SSD NVMe shelf supported." },
@@ -4999,7 +4999,7 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 4
   },
   "ASA C800": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf supported." },
@@ -5024,7 +5024,7 @@ const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA C400": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is highly recommended." },
@@ -5048,7 +5048,7 @@ const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA C250": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: { "ns224": "NS224 NVMe shelf is supported natively." },
@@ -5073,7 +5073,7 @@ const NETAPP_PLATFORMS = {
     cpus: 16
   },
   "ASA A800": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -5100,7 +5100,7 @@ const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA A400": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224", "ds224c"],
     unsupportedShelves: ["ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -5127,7 +5127,7 @@ const NETAPP_PLATFORMS = {
     cpus: 32
   },
   "ASA A900": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
     unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {
@@ -5302,7 +5302,7 @@ const NETAPP_PLATFORMS = {
     cpus: 16
   },
   "Cloud Volumes ONTAP": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: [],
     unsupportedShelves: ["ns224", "ds224c", "ds212c", "ds460c", "ds2246"],
     shelfWarnings: {},
@@ -5322,7 +5322,7 @@ const NETAPP_PLATFORMS = {
     cpus: 16
   },
   "Default": {
-    maxOntap: "9.16.1",
+    maxOntap: "9.19.1",
     supportedShelves: ["ds224c", "ns224"],
     unsupportedShelves: ["ds2246"],
     shelfWarnings: {},
@@ -5342,41 +5342,41 @@ const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
 // === ASA A-Series (SAN-Only All-Flash) ===
-"ASA A150": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 128, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
-"ASA A250": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 256, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
-"ASA A400": { tier: "midrange", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"ASA A800": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 1536, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A900": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.16.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A1K": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A70": { tier: "midrange", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
-"ASA A90": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 1024, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A150": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.19.1", maxRamGB: 128, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
+"ASA A250": { tier: "entry", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.19.1", maxRamGB: 256, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], isADP: true, defaultProtocols: ["FC", "iSCSI", "NVMe/FC"] },
+"ASA A400": { tier: "midrange", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.19.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"ASA A800": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.19.1", maxRamGB: 1536, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A900": { tier: "enterprise", sanOnly: true, minOntap: "9.13.1", maxOntap: "9.19.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A1K": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 2048, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A70": { tier: "midrange", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 512, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA A90": { tier: "enterprise", sanOnly: true, minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 1024, maxDrivesPerShelf: 24, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
 // === ASA C-Series (Capacity / QLC SAN-Only) ===
-"ASA C250": { tier: "entry", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
-"ASA C400": { tier: "midrange", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
-"ASA C800": { tier: "enterprise", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.16.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
-"ASA r2": { tier: "enterprise", sanOnly: true, minOntap: "9.16.1", maxOntap: "9.16.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
+"ASA C250": { tier: "entry", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.19.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA C400": { tier: "midrange", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.19.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA C800": { tier: "enterprise", sanOnly: true, isCapacityFlash: true, minOntap: "9.14.1", maxOntap: "9.19.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["FC", "iSCSI"] },
+"ASA r2": { tier: "enterprise", sanOnly: true, minOntap: "9.16.1", maxOntap: "9.19.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NVMe/FC", "NVMe/TCP", "FC", "iSCSI"] },
 // === AFF C-Series (Capacity Flash) ===
-"AFF C250": { tier: "entry", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
-"AFF C400": { tier: "midrange", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
-"AFF C800": { tier: "enterprise", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.16.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
-"AFF C30": { tier: "entry", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF C60": { tier: "midrange", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF C80": { tier: "midrange", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.16.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF C250": { tier: "entry", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.19.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"AFF C400": { tier: "midrange", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.19.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
+"AFF C800": { tier: "enterprise", isCapacityFlash: true, minOntap: "9.12.1", maxOntap: "9.19.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
+"AFF C30": { tier: "entry", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.19.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF C60": { tier: "midrange", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.19.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF C80": { tier: "midrange", isCapacityFlash: true, minOntap: "9.16.1", maxOntap: "9.19.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
 // === AFF A-Series (Missing entries) ===
 "AFF A200": { tier: "entry", minOntap: "9.4", maxOntap: "9.11.1", maxRamGB: 192, supportedShelves: ["ds2246", "ds460c", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
-"AFF A700": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.16.1", maxRamGB: 1536, supportedShelves: ["ns224", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
+"AFF A700": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.19.1", maxRamGB: 1536, supportedShelves: ["ns224", "ds224c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC", "NVMe/FC"] },
 "AFF A700s": { tier: "enterprise", minOntap: "9.5", maxOntap: "9.14.1", maxRamGB: 1024, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC"] },
-"AFF A30": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF A50": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF A70": { tier: "midrange", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
-"AFF A1K": { tier: "enterprise", minOntap: "9.15.1", maxOntap: "9.16.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A30": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 256, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A50": { tier: "entry", minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A70": { tier: "midrange", minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 512, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
+"AFF A1K": { tier: "enterprise", minOntap: "9.15.1", maxOntap: "9.19.1", maxRamGB: 2048, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "NVMe/FC", "NVMe/TCP"] },
 // === FAS Legacy ===
 "FAS8020": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 256, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "FAS8040": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 512, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "FAS8060": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.7", maxRamGB: 768, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "FAS8080 EX": { tier: "enterprise", minOntap: "8.3", maxOntap: "9.7", maxRamGB: 1024, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 // === AFX (All-Flash Extreme) — New July 2026 ===
-"AFX 2K": { tier: "enterprise", minOntap: "9.19.1", maxOntap: "9.16.1", maxRamGB: 4096, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "S3", "NVMe/FC", "NVMe/TCP"] }
+"AFX 2K": { tier: "enterprise", minOntap: "9.19.1", maxOntap: "9.19.1", maxRamGB: 4096, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "S3", "NVMe/FC", "NVMe/TCP"] }
 };
 
 // Returns compatibility profile for a parsed model
@@ -5615,7 +5615,10 @@ const ONTAP_LIFECYCLE = {
   "9.13.1": { status: "limited_support", releaseDate: "2023-06", endDate: "2026-07", latestPatch: "9.13.1P10", notes: "Limited Support expires July 2026. Upgrade to 9.15.1+ strongly recommended." },
   "9.14.1": { status: "active",          releaseDate: "2024-01", endDate: "2027-01", latestPatch: "9.14.1P16", notes: "Full Support through Jan 2027. Latest patch: P16. Widely deployed LTS release." },
   "9.15.1": { status: "active",          releaseDate: "2024-05", endDate: "2027-07", latestPatch: "9.15.1P19", notes: "Full Support through July 2027. Latest patch: P19. Recommended for AFF A1K/A90/A70 and FAS70/90." },
-  "9.16.1": { status: "recommended",     releaseDate: "2025-01", endDate: "2028-01", latestPatch: "9.16.1P11", notes: "Full Support through Jan 2028. Latest patch: P11. Current recommended release for new deployments. Required for AFF A20/A30/A50, AFF C30/C60/C80, ASA R2, FAS50." }
+  "9.16.1": { status: "recommended",     releaseDate: "2025-01", endDate: "2028-01", latestPatch: "9.16.1P11", notes: "Full Support through Jan 2028. Latest patch: P11. Current recommended release for new deployments. Required for AFF A20/A30/A50, AFF C30/C60/C80, ASA R2, FAS50." },
+  "9.17.1": { status: "recommended",     releaseDate: "2025-06", endDate: "2028-07", latestPatch: "9.17.1P1",  notes: "Full Support through July 2028. Latest patch: P1." },
+  "9.18.1": { status: "recommended",     releaseDate: "2026-01", endDate: "2029-01", latestPatch: "9.18.1P1",  notes: "Full Support through Jan 2029. Latest patch: P1." },
+  "9.19.1": { status: "recommended",     releaseDate: "2026-06", endDate: "2029-07", latestPatch: "9.19.1",    notes: "Full Support through July 2029." }
 };
 
 const ONTAP_HOPS = {
@@ -5626,9 +5629,12 @@ const ONTAP_HOPS = {
   "9.11.1": { "9.12.1": [], "9.13.1": ["9.12.1"], "9.14.1": ["9.12.1"], "9.15.1": ["9.12.1","9.13.1"], "9.16.1": ["9.12.1","9.15.1"] },
   "9.12.1": { "9.13.1": [], "9.14.1": ["9.13.1"], "9.15.1": ["9.13.1"], "9.16.1": ["9.14.1"] },
   "9.13.1": { "9.14.1": [], "9.15.1": [], "9.16.1": ["9.15.1"] },
-  "9.14.1": { "9.15.1": [], "9.16.1": [] },
-  "9.15.1": { "9.16.1": [] },
-  "9.16.1": { }
+  "9.14.1": { "9.15.1": [], "9.16.1": [], "9.17.1": [], "9.18.1": ["9.16.1"], "9.19.1": ["9.17.1"] },
+  "9.15.1": { "9.16.1": [], "9.17.1": [], "9.18.1": [], "9.19.1": ["9.17.1"] },
+  "9.16.1": { "9.17.1": [], "9.18.1": [], "9.19.1": [] },
+  "9.17.1": { "9.18.1": [], "9.19.1": [] },
+  "9.18.1": { "9.19.1": [] },
+  "9.19.1": { }
 };
 
 // =============================================================================
@@ -7051,7 +7057,22 @@ const UI_UPGRADE_HOPS = {
   },
   // From 9.16.1 — currently latest, no further path
   "9.16.1": {
-    "9.16.1": []
+    "9.16.1": [],
+    "9.17.1": ["9.17.1"],
+    "9.18.1": ["9.17.1", "9.18.1"],
+    "9.19.1": ["9.17.1", "9.18.1", "9.19.1"]
+  },
+  "9.17.1": {
+    "9.17.1": [],
+    "9.18.1": ["9.18.1"],
+    "9.19.1": ["9.18.1", "9.19.1"]
+  },
+  "9.18.1": {
+    "9.18.1": [],
+    "9.19.1": ["9.19.1"]
+  },
+  "9.19.1": {
+    "9.19.1": []
   }
 };
 
@@ -7117,7 +7138,7 @@ const SHELF_SPEC_MAP = {
 
 // Robust version baseline key resolver
 function resolveBaseVersionKey(version) {
-  if (!version) return '9.16.1';
+  if (!version) return '9.19.1';
   const v = version.trim();
   if (UI_UPGRADE_HOPS[v]) return v;
   const base = v.split('P')[0].trim();
@@ -7131,9 +7152,11 @@ function resolveBaseVersionKey(version) {
   if (base === "9.13") return "9.13.1";
   if (base === "9.14" || base === "9.15") return "9.15.1";
   if (base === "9.16") return "9.16.1";
-  if (base === "9.17") return "9.16.1";
-  if (base.startsWith('9.1')) return '9.16.1'; // future versions not yet released — fallback to current
-  return "9.16.1";
+  if (base === "9.17") return "9.17.1";
+  if (base === "9.18") return "9.18.1";
+  if (base === "9.19") return "9.19.1";
+  if (base.startsWith('9.1')) return '9.19.1'; // future versions not yet released — fallback to current
+  return "9.19.1";
 }
 
 // --- DOM References ---
@@ -7230,7 +7253,7 @@ function populateManualPlatformDropdown() {
     const selectedModel = select.value;
     const profile = getPlatformProfile(selectedModel);
     
-    const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1"];
+    const targetOptions = ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.14.1P1','9.14.1P2','9.14.1P3','9.15.1','9.15.1P1','9.15.1P2','9.16.1','9.16.1P1','9.16.1P2','9.17.1','9.17.1P1','9.18.1','9.18.1P1','9.19.1'];
     
     targetOptions.forEach(optVal => {
       if (compareVersions(optVal, profile.maxOntap) <= 0) {
@@ -8486,6 +8509,20 @@ Accepted formats: plain text, .zip, .tar.gz / .tgz`;
       uploadedFiles = origUploadedFiles; // restore global
       Object.assign(uploadedFiles, fileUploadedFiles); // also keep global merged
 
+      // Diagnostic: what did we actually extract?
+      const extractedKeys = Object.keys(fileUploadedFiles);
+      const totalChars = Object.values(fileUploadedFiles).reduce((s, v) => s + v.length, 0);
+
+      // XML ASUP detection — newer ASUPs may be XML-wrapped; extract text content
+      const xmlEntry = Object.entries(fileUploadedFiles).find(([k, v]) => v.trimStart().startsWith('<?xml'));
+      if (xmlEntry) {
+        const xmlText = xmlEntry[1];
+        // Strip XML tags and use raw text content for parsing
+        const stripped = xmlText.replace(/<[^>]+>/g, ' ').replace(/\s{2,}/g, '\n').trim();
+        fileUploadedFiles['ALL'] = (fileUploadedFiles['ALL'] || '') + '\n' + stripped;
+        Object.assign(uploadedFiles, fileUploadedFiles);
+      }
+
       // Parse this file independently
       const fileState = parseASUP(fileUploadedFiles);
 
@@ -8501,7 +8538,11 @@ Accepted formats: plain text, .zip, .tar.gz / .tgz`;
         coverage: coverage.coverage,
         sectionsFound: coverage.found,
         sectionsMissing: coverage.missing,
-        nodeNames: fileState.nodes.map(n => n.name).filter(n => n !== 'node-a' && n !== 'node-b')
+        nodeNames: fileState.nodes.map(n => n.name).filter(n => n !== 'node-a' && n !== 'node-b'),
+        // Diagnostics — shown in the status card to help troubleshoot parse failures
+        extractedKeys: extractedKeys,
+        totalChars: totalChars,
+        parseWarnings: fileState.parseWarnings || []
       });
     }
 
@@ -8585,6 +8626,25 @@ function renderFileStatusGrid(results) {
         : 'Node unknown';
       const foundLabels = (r.sectionsFound || []).slice(0, 4).map(s => s.label).join(', ');
       const missingLabels = (r.sectionsMissing || []).slice(0, 3).map(s => s.label).join(', ');
+
+      // Show diagnostic detail when nothing was parsed
+      const diagHtml = (r.coverage === 0) ? (() => {
+        const keys = r.extractedKeys || [];
+        const chars = r.totalChars || 0;
+        const warns = (r.parseWarnings || []).slice(0,3).map(w => w.message || w).join('; ');
+        if (chars === 0) {
+          return `<div style="font-size:0.7rem; color:#f87171; margin-top:4px; padding:4px 8px; background:rgba(239,68,68,0.07); border-radius:4px;">
+            ⚠ No readable text was extracted from this file.<br>
+            <strong>Possible causes:</strong> encrypted zip, unsupported compression, or binary-only content.<br>
+            Try extracting the archive manually and dragging the text files here.
+          </div>`;
+        }
+        return `<div style="font-size:0.7rem; color:#fbbf24; margin-top:4px; padding:4px 8px; background:rgba(245,158,11,0.07); border-radius:4px;">
+          ℹ Extracted ${(chars/1024).toFixed(0)} KB across ${keys.length} section(s): <em style="color:#c7d2fe;">${keys.slice(0,6).join(', ')}${keys.length>6?'…':''}</em><br>
+          ${warns ? `Parse notes: ${warns}` : 'Parser could not identify ONTAP CLI output patterns in the extracted text.'}
+        </div>`;
+      })() : '';
+
       return `
         <div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.6rem 0.85rem; background:rgba(0,0,0,0.25); border:1px solid ${badge.color}33; border-radius:8px; border-left:3px solid ${badge.color};">
           <div style="font-size:1rem; flex-shrink:0; margin-top:1px;">${badge.icon}</div>
@@ -8595,6 +8655,7 @@ function renderFileStatusGrid(results) {
               ${foundLabels ? `&nbsp;·&nbsp; ✓ ${foundLabels}` : ''}
             </div>
             ${missingLabels ? `<div style="font-size:0.7rem; color:#fca5a5; margin-top:1px;">⚠ Not found: ${missingLabels}</div>` : ''}
+            ${diagHtml}
           </div>
           <div style="font-size:0.7rem; padding:2px 7px; border-radius:10px; background:${badge.bg}; color:${badge.color}; white-space:nowrap; font-weight:600; flex-shrink:0;">${badge.label}</div>
         </div>`;
@@ -8839,7 +8900,7 @@ function renderCriticalGapsPanel(state) {
   }
 
   // Build dropdown options for known fields
-  const ONTAP_OPTIONS = ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.15.1','9.16.1'];
+  const ONTAP_OPTIONS = ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.14.1P1','9.14.1P2','9.14.1P3','9.15.1','9.15.1P1','9.15.1P2','9.16.1','9.16.1P1','9.16.1P2','9.17.1','9.17.1P1','9.18.1','9.18.1P1','9.19.1'];
   const PLATFORM_OPTIONS = [
     'AFF A1K','AFF A90','AFF A70','AFF A50','AFF A30','AFF A20',
     'AFF A900','AFF A800','AFF A700','AFF A400','AFF A300','AFF A250','AFF A220',
@@ -9295,7 +9356,7 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
   
   let startingOntap = manualOntap || profile.maxOntap;
   if (isGreenfield) {
-    const compliantVersions = ["9.14.1", "9.15.1", "9.16.1"];
+    const compliantVersions = ["9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1"];
     let bestCompliant = null;
     for (let cv of compliantVersions) {
       if (compareVersions(cv, profile.maxOntap) <= 0) {
@@ -11103,7 +11164,7 @@ function initStep3Inputs() {
   const curVer = currentState.version.ontap;
   const profile = getPlatformProfile(currentState.version.model);
   
-  const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1"];
+  const targetOptions = ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.14.1P1','9.14.1P2','9.14.1P3','9.15.1','9.15.1P1','9.15.1P2','9.16.1','9.16.1P1','9.16.1P2','9.17.1','9.17.1P1','9.18.1','9.18.1P1','9.19.1'];
   
   targetOptions.forEach(opt => {
     const isDowngrade = compareVersions(opt, curVer) < 0 && !curVer.startsWith(opt);
