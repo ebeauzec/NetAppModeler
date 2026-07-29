@@ -1696,3 +1696,103 @@ export const ONTAP_HOPS = {
   "9.18.1": { "9.19.1": [], "9.20.1": ["9.20.1"] },
   "9.19.1": { "9.20.1": [] }
 };
+
+// =============================================================================
+// FIRMWARE VERSION DATABASE
+// Source: NetApp Support Site - Disk Drive & Firmware Matrix, SP/BMC Release Notes
+// Last verified: 2026-Q3 — update these values when new firmware is released
+// =============================================================================
+export const FIRMWARE_VERSIONS = {
+  shelves: {
+    "ns224":  { latest: "1.1.3X0",  iomType: "NSM100",  minOntap: "9.8",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
+    "ds224c": { latest: "IOM12.0220", iomType: "IOM12G", minOntap: "9.1",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
+    "ds460c": { latest: "IOM12.0101", iomType: "IOM12B", minOntap: "8.3",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
+    "ds2246": { latest: "IOM6.0101",  iomType: "IOM6",   minOntap: "8.1",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
+    "ds4246": { latest: "IOM6.0101",  iomType: "IOM6",   minOntap: "8.2",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
+    "ds4486": { latest: "IOM6.0101",  iomType: "IOM6",   minOntap: "8.2",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
+  },
+  sp: {
+    // BMC/SP firmware version by controller platform model string (prefix match)
+    "AFF A1K":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A90":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A70":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A50":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A30":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A900": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A700": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A300": { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A250": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A220": { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C250": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A1K":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A90":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A70":  { latest: "18.5",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A900": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A250": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA C800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA C400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS9500":  { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8700":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8300":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8200":  { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2750":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2720":  { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "default":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+  },
+  switches: {
+    "BES-53248":   { type: "cluster", latestFW: "3.10.0.3", latestRCF: "1.12", fwType: "EFOS",   ref: "TR-4626", kb: "000054008", checkCmd: "system switch ethernet show",        rcfCheckCmd: "show version" },
+    "9336C-FX2":   { type: "cluster", latestFW: "10.3(3)F", latestRCF: "1.9",  fwType: "NX-OS",  ref: "TR-4649", kb: "000037008", checkCmd: "network device-discovery show",   rcfCheckCmd: "show version" },
+    "Nexus 9336C": { type: "cluster", latestFW: "10.3(3)F", latestRCF: "1.9",  fwType: "NX-OS",  ref: "TR-4649", kb: "000037008", checkCmd: "network device-discovery show",   rcfCheckCmd: "show version" },
+    "3232C":       { type: "cluster", latestFW: "9.3(8)",   latestRCF: "1.7",  fwType: "NX-OS",  ref: "TR-4624", kb: "000054008", checkCmd: "network device-discovery show",   rcfCheckCmd: "show version" },
+    "3132Q-V":     { type: "cluster", latestFW: "9.3(8)",   latestRCF: "1.7",  fwType: "NX-OS",  ref: "TR-4628", kb: "000054008", checkCmd: "network device-discovery show",   rcfCheckCmd: "show version" },
+    "SN2100":      { type: "storage", latestFW: "5.9.1",    latestRCF: "2.0",  fwType: "Cumulus",ref: "TR-4816", kb: "000054008", checkCmd: "network device-discovery show",   rcfCheckCmd: "net show version" },
+  },
+  disks: {
+    // Disk firmware by NetApp part-number model prefix — check storage disk show -fields model,firmware-revision
+    // Source: NetApp Disk Drive Firmware Matrix (support.netapp.com > Downloads > Disk Drive Firmware)
+    "X800": { latest: "NA04", type: "NVMe SSD", updateCmd: "storage disk firmware update -disk {disk}" },
+    "X801": { latest: "NA05", type: "NVMe SSD", updateCmd: "storage disk firmware update -disk {disk}" },
+    "X802": { latest: "NA04", type: "NVMe SSD", updateCmd: "storage disk firmware update -disk {disk}" },
+    "X803": { latest: "NA02", type: "NVMe SSD", updateCmd: "storage disk firmware update -disk {disk}" },
+    "X806": { latest: "NA03", type: "NVMe SSD", updateCmd: "storage disk firmware update -disk {disk}" },
+    "X357": { latest: "NA04", type: "SAS SSD",  updateCmd: "storage disk firmware update -disk {disk}" },
+    "X371": { latest: "NA05", type: "SAS SSD",  updateCmd: "storage disk firmware update -disk {disk}" },
+    "X440": { latest: "NA03", type: "SAS SSD",  updateCmd: "storage disk firmware update -disk {disk}" },
+    "X448": { latest: "NA03", type: "SAS SSD",  updateCmd: "storage disk firmware update -disk {disk}" },
+    "X477": { latest: "0B26", type: "SAS HDD",  updateCmd: "storage disk firmware update -disk {disk}" },
+    "X491": { latest: "A004", type: "SAS HDD",  updateCmd: "storage disk firmware update -disk {disk}" },
+    "X527": { latest: "NA01", type: "SAS HDD",  updateCmd: "storage disk firmware update -disk {disk}" },
+    "X575": { latest: "NA02", type: "SAS HDD",  updateCmd: "storage disk firmware update -disk {disk}" },
+    "X316": { latest: "0B26", type: "SAS HDD",  updateCmd: "storage disk firmware update -disk {disk}" },
+  }
+};
+
+// =============================================================================
+// REMEDIATION REFERENCE DATABASE
+// NetApp Knowledge Base articles and Technical Reports by remediation category
+// =============================================================================
+export const REMEDIATION_REFS = {
+  cabling:      { kb: "000093050", tr: "TR-4182", title: "Ethernet Storage Cabling Guide",                  url: "https://www.netapp.com/media/10680-tr4182.pdf" },
+  ontapUpg:     { kb: "000020671", tr: "TR-4622", title: "ONTAP 9 Upgrade Guide",                          url: "https://docs.netapp.com/us-en/ontap/upgrade/" },
+  firmware:     { kb: "000020272", tr: "TR-4569", title: "NetApp Firmware and Disk Qualification Package", url: "https://mysupport.netapp.com/site/downloads/firmware" },
+  sp:           { kb: "000094804", tr: "",         title: "Service Processor/BMC Administration Guide",   url: "https://docs.netapp.com/us-en/ontap/system-admin/manage-sp-concept.html" },
+  acp:          { kb: "000016498", tr: "",         title: "Alternate Control Path (ACP) Configuration",   url: "https://docs.netapp.com/us-en/ontap/disks-aggregates/acp-concept.html" },
+  metrocluster: { kb: "000030556", tr: "TR-4375", title: "MetroCluster Installation and Configuration",    url: "https://docs.netapp.com/us-en/ontap-metrocluster/" },
+  licenses:     { kb: "000098779", tr: "",         title: "ONTAP Licensing Overview",                     url: "https://docs.netapp.com/us-en/ontap/system-admin/manage-licenses-concept.html" },
+  spares:       { kb: "000010004", tr: "",         title: "Spare Disk Best Practices",                    url: "https://docs.netapp.com/us-en/ontap/disks-aggregates/" },
+  switches:     { kb: "000054008", tr: "TR-4673", title: "Cluster Switch Health Monitor Configuration",    url: "https://docs.netapp.com/us-en/ontap-systems-switches/" },
+  san:          { kb: "000097610", tr: "TR-4684", title: "NVMe-oF Host Configuration Guide",               url: "https://docs.netapp.com/us-en/ontap-sanhost/" },
+  snapmirror:   { kb: "000093579", tr: "TR-4015", title: "SnapMirror Async Replication Guide",             url: "https://docs.netapp.com/us-en/ontap/data-protection/" },
+  capacity:     { kb: "000091344", tr: "TR-3965", title: "Aggregate and Volume Best Practices",            url: "https://docs.netapp.com/us-en/ontap/" },
+  ha:           { kb: "000098456", tr: "",         title: "Storage Failover Configuration",               url: "https://docs.netapp.com/us-en/ontap/high-availability/" },
+  disks:        { kb: "000020272", tr: "",         title: "Disk Management and Replacement",              url: "https://docs.netapp.com/us-en/ontap/disks-aggregates/" },
+  lifs:         { kb: "000051421", tr: "",         title: "LIF Management and Failover",                  url: "https://docs.netapp.com/us-en/ontap/networking/" },
+  mtu:          { kb: "000032059", tr: "",         title: "Jumbo Frames / MTU Configuration",             url: "https://docs.netapp.com/us-en/ontap/networking/" },
+  precheck:     { kb: "000020671", tr: "TR-4622", title: "ONTAP Pre-Upgrade Checklist",                   url: "https://docs.netapp.com/us-en/ontap/upgrade/task_verifying_the_lif_failover_configuration.html" },
+};

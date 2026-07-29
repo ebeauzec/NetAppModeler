@@ -157,6 +157,24 @@ export const exportRules = [
       });
       return findings;
     }
+  },
+  {
+    id: 'BP_SP_FIRMWARE',
+    category: 'Firmware',
+    title: 'Service Processor / BMC Firmware Currency',
+    check: (state) => [] // Evaluated inline in runAudit()
+  },
+  {
+    id: 'BP_DISK_FIRMWARE',
+    category: 'Firmware',
+    title: 'Disk Drive Firmware Currency',
+    check: (state) => [] // Evaluated inline in runAudit()
+  },
+  {
+    id: 'BP_ACP_STATUS',
+    category: 'Hardware',
+    title: 'Alternate Control Path (ACP) Connectivity',
+    check: (state) => [] // Evaluated inline in runAudit()
   }
 ];
 
@@ -1007,6 +1025,131 @@ export function runAudit(systemState) {
       "None required.",
       ""
     );
+  }
+
+  // --- Rule: BP_SP_FIRMWARE: Service Processor / BMC Firmware Currency ---
+  if (systemState.spFirmware && systemState.spFirmware.length > 0) {
+    const model = (systemState.version && systemState.version.model) || '';
+    const spSpec = Object.entries(typeof FIRMWARE_VERSIONS !== 'undefined' ? (FIRMWARE_VERSIONS.sp || {}) : {})
+      .find(([k]) => model.toUpperCase().startsWith(k.toUpperCase()));
+    const latestSP = spSpec ? spSpec[1].latest : null;
+    const outdatedNodes = latestSP
+      ? systemState.spFirmware.filter(sp => sp.version && sp.version !== latestSP && compareVersions(sp.version, latestSP) < 0)
+      : [];
+    if (latestSP && outdatedNodes.length > 0) {
+      addReport(
+        "BP_SP_FIRMWARE",
+        "Service Processor / BMC Firmware Currency",
+        "Firmware",
+        "warning",
+        `Service Processor firmware on ${outdatedNodes.length} node(s) [${outdatedNodes.map(n => n.node).join(', ')}] is at version ${outdatedNodes[0].version}, which is behind the current recommended version ${latestSP} for the ${model} platform.`,
+        `Update SP/BMC firmware to ${latestSP} on all nodes using the system service-processor image update command before performing the ONTAP upgrade. Current SP firmware may contain security patches and stability fixes.`,
+        `system service-processor image update -node ${outdatedNodes.map(n => n.node).join(',')}`
+      );
+    } else if (latestSP) {
+      addReport(
+        "BP_SP_FIRMWARE",
+        "Service Processor / BMC Firmware Currency",
+        "Firmware",
+        "compliant",
+        `All nodes are running the current recommended SP/BMC firmware version ${latestSP}.`,
+        "No action required.",
+        ""
+      );
+    }
+  }
+
+  // --- Rule: BP_DISK_FIRMWARE: Disk Drive Firmware Currency ---
+  {
+    const diskFwCatalog = typeof FIRMWARE_VERSIONS !== 'undefined' ? (FIRMWARE_VERSIONS.disks || {}) : {};
+    const outdatedDisks = [];
+    // Check disks in shelf inventory
+    (systemState.shelves || []).forEach(shelf => {
+      (shelf.disks || []).forEach(disk => {
+        if (!disk.firmware || !disk.model) return;
+        const prefix = Object.keys(diskFwCatalog).find(k => (disk.model || '').toUpperCase().startsWith(k));
+        if (prefix) {
+          const latest = diskFwCatalog[prefix].latest;
+          if (disk.firmware !== latest) {
+            outdatedDisks.push({ disk: disk.serial || `${shelf.id}:${disk.slot}`, model: disk.model, current: disk.firmware, latest });
+          }
+        }
+      });
+    });
+    // Also check state.diskFirmware[] if populated by parser
+    (systemState.diskFirmware || []).forEach(df => {
+      const prefix = Object.keys(diskFwCatalog).find(k => (df.model || '').toUpperCase().startsWith(k));
+      if (prefix) {
+        const latest = diskFwCatalog[prefix].latest;
+        if (df.firmware && df.firmware !== latest) {
+          const already = outdatedDisks.find(d => d.disk === df.disk);
+          if (!already) outdatedDisks.push({ disk: df.disk, model: df.model, current: df.firmware, latest });
+        }
+      }
+    });
+    if (outdatedDisks.length > 0) {
+      const diskList = outdatedDisks.map(d => `${d.disk} (${d.model}: ${d.current}→${d.latest})`).join(', ');
+      addReport(
+        "BP_DISK_FIRMWARE",
+        "Disk Drive Firmware Currency",
+        "Firmware",
+        "warning",
+        `${outdatedDisks.length} disk drive(s) are running non-current firmware: ${diskList}. Outdated disk firmware may introduce data integrity risks and compatibility issues with newer ONTAP releases.`,
+        "Update disk firmware using the storage disk firmware update command. Disk firmware is typically updated automatically as a background process during ONTAP ANDU upgrades. Manual update is recommended prior to upgrade if firmware is more than one revision behind.",
+        `storage disk firmware update\nstorage disk show -fields model,firmware-revision`
+      );
+    } else {
+      addReport(
+        "BP_DISK_FIRMWARE",
+        "Disk Drive Firmware Currency",
+        "Firmware",
+        "compliant",
+        "All disk drives are running current qualified firmware revisions.",
+        "No action required.",
+        ""
+      );
+    }
+  }
+
+  // --- Rule: BP_ACP_STATUS: Alternate Control Path (ACP) Connectivity ---
+  {
+    const hasSasShelves = (systemState.shelves || []).some(s => (s.model || '').toLowerCase().match(/ds224c|ds460c|ds2246|ds4246|ds4486/));
+    const hasNvmeOnly = (systemState.shelves || []).every(s => (s.model || '').toLowerCase() === 'ns224');
+    if (hasSasShelves && !hasNvmeOnly) {
+      const acp = systemState.acpStatus || {};
+      if (acp.enabled === false || acp.connectivity === 'disabled') {
+        addReport(
+          "BP_ACP_STATUS",
+          "Alternate Control Path (ACP) Connectivity",
+          "Hardware",
+          "warning",
+          "Alternate Control Path (ACP) is disabled or not detected. ACP provides an out-of-band management path to SAS disk shelves, enabling the system to respond to shelf-related events without impacting I/O operations. Without ACP, shelf module failures may not be properly reported.",
+          "Enable and verify ACP connectivity on all SAS shelf stacks. Connect the ACP Ethernet ports on each IOM module to a dedicated management network or the cluster management switch, then run 'storage acp configure' to enable the service.",
+          `storage acp show\nstorage acp configure -enabled true\nstorage acp connectivity show`
+        );
+      } else if (acp.enabled === true) {
+        addReport(
+          "BP_ACP_STATUS",
+          "Alternate Control Path (ACP) Connectivity",
+          "Hardware",
+          "compliant",
+          `Alternate Control Path (ACP) is enabled and connected to ${acp.disksOnAcp || 'all'} disks.`,
+          "No action required.",
+          ""
+        );
+      }
+      // If ACP status unknown (null), skip — don't generate a finding
+    } else if (hasNvmeOnly || !hasSasShelves) {
+      addReport(
+        "BP_ACP_STATUS",
+        "Alternate Control Path (ACP) Connectivity",
+        "Hardware",
+        "compliant",
+        "ACP is not applicable for this configuration — system uses NVMe (NS224) shelves exclusively, which have redundant paths via dedicated NVMe-oF ports. ACP is a SAS-only mechanism.",
+        "No action required. NVMe shelf redundancy is managed via dual RoCE/NVMe port connectivity.",
+        ""
+      );
+    }
   }
 
   // --- Execute Dynamic Rules 21-25 ---
