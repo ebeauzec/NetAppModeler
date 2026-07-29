@@ -441,6 +441,46 @@ export function parseASUP(files) {
     });
   }
 
+  // Pass 5: SES (SCSI Enclosure Services) format — sasadmin enclosure / storage enclosure show
+  // Format from debug panel:
+  //   SES Configuration, shelf 0:
+  //     product identification=DS2246
+  //     product revision level=0191
+  //     Product Serial Number: SHFHU1511001144
+  // Run regardless of prior passes — SES gives us real serials for shelves found via keyword
+  {
+    const sesBlocks = combinedText.split(/SES Configuration,\s+shelf\s+(\d+):/i);
+    for (let i = 1; i < sesBlocks.length; i += 2) {
+      const shelfId = sesBlocks[i].trim();
+      const block = sesBlocks[i + 1] ? sesBlocks[i + 1].slice(0, 600) : '';
+
+      const modelMatch = block.match(/product\s+identification\s*[=:]\s*(\S+)/i);
+      const fwMatch    = block.match(/product\s+revision\s+level\s*[=:]\s*(\S+)/i);
+      const serialMatch = block.match(/Product\s+Serial\s+Number\s*[=:]\s*(\S+)/i);
+
+      if (!modelMatch) continue;
+      const model   = modelMatch[1].toUpperCase();
+      const firmware = fwMatch ? fwMatch[1] : 'unknown';
+      const serial   = serialMatch ? serialMatch[1].trim() : `AUTO-DISC-SES-${shelfId}`;
+
+      const existing = data.shelves.find(s => s.id === shelfId);
+      if (existing) {
+        // Upgrade an AUTO-DISC entry with the real serial and firmware
+        if (existing.serial.startsWith('AUTO-')) existing.serial = serial;
+        if (existing.firmware === 'unknown') existing.firmware = firmware;
+        if (existing.latestFirmware === 'unknown') existing.latestFirmware = firmware;
+        existing.model = model; // SES gives authoritative model string
+      } else {
+        const shelfObj = {
+          id: shelfId, model, serial, firmware,
+          latestFirmware: firmware, cabling: 'Multipath HA', disks: []
+        };
+        data.shelves.push(shelfObj);
+        shelfMap.set(shelfId, shelfObj);
+      }
+    }
+  }
+
   // setSource for shelves is set AFTER all discovery paths complete (see below)
 
   // Parse cabling loops
