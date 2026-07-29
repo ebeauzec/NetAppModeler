@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.33</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.35</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2022,7 +2022,7 @@ svg.cabling-graph {
     </div>
   </div>
 
-  <!-- Splash Screen Modal Overlay (What's New in v2.33) -->
+  <!-- Splash Screen Modal Overlay (What's New in v2.35) -->
   <div id="splash-modal" class="modal-overlay no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 11000; backdrop-filter: blur(8px);">
     <div class="modal-content" style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(15,23,42,0.95) 100%); border: 1.5px solid var(--color-primary); border-radius: var(--radius-lg); padding: 2.5rem; width: 550px; box-shadow: 0 25px 50px -12px rgba(6,182,212,0.3); position: relative; max-height: 85vh; overflow-y: auto;">
       
@@ -2033,7 +2033,7 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.33</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.35</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
@@ -2077,7 +2077,7 @@ svg.cabling-graph {
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary" 
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.33','true')}catch(e){}" 
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.35','true')}catch(e){}" 
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
@@ -3171,7 +3171,37 @@ function parseASUP(files) {
         }
       }
 
-      let nodeName = aggrName.endsWith("_b") || aggrName.toLowerCase().includes("nodeb") ? "node-b" : "node-a";
+      // Determine aggregate node ownership: match parsed node names first (handles MCC node-a1/a2/b1/b2)
+      let nodeName = null;
+      if (data.nodes && data.nodes.length > 0) {
+        // 1. Direct node name match within aggregate name (e.g. aggr_nvme_sync_a1 → node-a1)
+        const aggrNameNorm = aggrName.toLowerCase().replace(/[-_]/g, '');
+        const matchedNode = data.nodes.find(n =>
+          aggrNameNorm.includes(n.name.toLowerCase().replace(/[-_]/g, ''))
+        );
+        if (matchedNode) {
+          nodeName = matchedNode.name;
+        } else {
+          // 2. Spare Disk line lookup: "Spare Disks (node-a1):"
+          const spareMatch = block.match(/Spare Disks?\s*\(([^)]+)\)/i);
+          if (spareMatch) {
+            const cand = spareMatch[1].trim();
+            const found = data.nodes.find(n => n.name.toLowerCase() === cand.toLowerCase());
+            if (found) nodeName = found.name;
+          }
+        }
+        if (!nodeName) {
+          // 3. Heuristic: _b suffix => Site B primary, else Site A primary
+          const isSiteB = /_b\d*$|nodeb|node.b/.test(aggrName.toLowerCase());
+          const siteANodes = data.nodes.filter(n => n.site === 'A' || (!n.site && data.nodes.indexOf(n) < Math.ceil(data.nodes.length / 2)));
+          const siteBNodes = data.nodes.filter(n => n.site === 'B' || (!n.site && data.nodes.indexOf(n) >= Math.ceil(data.nodes.length / 2)));
+          nodeName = isSiteB
+            ? (siteBNodes[0] ? siteBNodes[0].name : 'node-b')
+            : (siteANodes[0] ? siteANodes[0].name : 'node-a');
+        }
+      } else {
+        nodeName = (aggrName.endsWith('_b') || aggrName.toLowerCase().includes('nodeb')) ? 'node-b' : 'node-a';
+      }
 
       data.aggregates.push({
         name: aggrName,
@@ -14971,4 +15001,6 @@ function generateReport() {
 </script>
 </body>
 </html>
+
+
 
