@@ -5017,8 +5017,14 @@ function updateCapacityImpactDetails() {
       isSupported = false;
     } else {
       mcNoticeHtml = `
-        <div style="background: rgba(6, 182, 212, 0.1); border: 1px solid var(--color-info); color: #8ec5fc; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.75rem;">
-          <strong>🔀 MetroCluster Symmetrical Mode:</strong> Adding shelf and drives symmetrically to Site-A and Site-B.
+        <div style="background: rgba(6, 182, 212, 0.08); border: 1px solid var(--color-info); color: #8ec5fc; padding: 0.65rem 0.75rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.78rem; line-height: 1.5;">
+          <strong style="display:block; margin-bottom: 0.3rem;">🔀 MetroCluster Symmetrical Mode — One Selection, Both Sites</strong>
+          You only need to <strong>configure once here</strong>. The tool will automatically apply the same shelf configuration to <strong>both Site A and Site B</strong> to maintain MetroCluster symmetry requirements.
+          <ul style="margin: 0.4rem 0 0 1rem; padding: 0; display: flex; flex-direction: column; gap: 0.25rem;">
+            <li><strong>Do not add a second shelf manually</strong> — the Site B shelf is added automatically.</li>
+            <li>Physically, you must install identical shelves in both sites' racks before running the ONTAP add-disk commands.</li>
+            <li>Select your shelf type and quantity above, then click <strong>Continue</strong> to proceed.</li>
+          </ul>
         </div>
       `;
     }
@@ -5119,16 +5125,35 @@ function updateCapacityImpactDetails() {
       const requiredSasPorts = Math.ceil(sasShelvesPerHA / 4) * 2;
 
       if (totalNvmeShelves > 0 && finalPorts.roce < requiredRocePorts) {
-        errorMsg = `Port Exhaustion (RoCE): Required RoCE ports per controller: ${requiredRocePorts} (for ${nvmeShelvesPerHA} NVMe shelves), but only ${finalPorts.roce} 100G RoCE ports are available and no free PCIe slots remain on Node A.`;
-        isSupported = false;
+        // If ports.roce === 0, this likely means ports weren't parsed from ASUP (incomplete data)
+        // — show as a warning rather than a hard block so the user can still proceed
+        if (finalPorts.roce === 0 && finalPorts.sas === 0) {
+          // No port data at all — cannot validate, show advisory but don't block
+          mcNoticeHtml += `
+            <div style="background: rgba(245,158,11,0.12); border: 1px solid var(--color-warning); color: #fde047; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.75rem;">
+              <strong>⚠️ Port Inventory Incomplete:</strong> Storage port data was not parsed from the ASUP file. Manually verify that sufficient RoCE/SAS ports exist on each node before proceeding. Required: ${requiredRocePorts} × 100G RoCE port(s) per node for ${nvmeShelvesPerHA} NVMe shelf(ves).
+            </div>
+          `;
+        } else {
+          errorMsg = `Port Exhaustion (RoCE): Required RoCE ports per controller: ${requiredRocePorts} (for ${nvmeShelvesPerHA} NVMe shelves), but only ${finalPorts.roce} 100G RoCE ports are available and no free PCIe slots remain on Node A.`;
+          isSupported = false;
+        }
       } else if (totalSasShelves > 0 && finalPorts.sas < requiredSasPorts) {
-        errorMsg = `Port Exhaustion (SAS): Required SAS ports per controller: ${requiredSasPorts} (for ${sasShelvesPerHA} SAS shelves), but only ${finalPorts.sas} SAS ports are available and no free PCIe slots remain on Node A.`;
-        isSupported = false;
+        if (finalPorts.roce === 0 && finalPorts.sas === 0) {
+          mcNoticeHtml += `
+            <div style="background: rgba(245,158,11,0.12); border: 1px solid var(--color-warning); color: #fde047; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.75rem;">
+              <strong>⚠️ Port Inventory Incomplete:</strong> SAS port data was not parsed from the ASUP. Manually verify SAS HBA ports are available. Required: ${requiredSasPorts} SAS port(s) for ${sasShelvesPerHA} SAS shelf(ves).
+            </div>
+          `;
+        } else {
+          errorMsg = `Port Exhaustion (SAS): Required SAS ports per controller: ${requiredSasPorts} (for ${sasShelvesPerHA} SAS shelves), but only ${finalPorts.sas} SAS ports are available and no free PCIe slots remain on Node A.`;
+          isSupported = false;
+        }
       }
 
-      // Validate daisy chain limits
+      // Validate daisy chain limits — only if port data is actually available
       const maxShelves = isHighEnd ? finalPorts.roce : Math.floor(finalPorts.roce / 2);
-      if (totalNvmeShelves > maxShelves) {
+      if (finalPorts.roce > 0 && totalNvmeShelves > maxShelves) {
         if (!isHighEnd) {
           errorMsg = `Daisy-Chaining Unsupported: NVMe shelf daisy-chaining is not supported on platform ${currentState.version.model}. Each of the ${totalNvmeShelves} NVMe shelves requires a dedicated direct connection pair. Max shelves supported with current ports: ${maxShelves}.`;
         } else {
@@ -5168,8 +5193,11 @@ function updateCapacityImpactDetails() {
       <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid var(--color-warning); color: #fde047; padding: 0.75rem; border-radius: var(--radius-md); margin-top: 1rem; line-height:1.4;">
         <strong>⚠️ Best Practice Warning:</strong><br>
         ${warningMsg}
+        <div style="margin-top: 0.5rem; font-size: 0.78rem; color: rgba(253,224,71,0.7);">⚠️ Review this warning carefully before proceeding. You may continue, but this configuration deviates from NetApp best practices.</div>
       </div>
     `;
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = "1";
   } else if (isSupported) {
     statusHtml = `
       <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--color-success); color: #a7f3d0; padding: 0.75rem; border-radius: var(--radius-md); margin-top: 1rem; line-height:1.4;">
@@ -5177,6 +5205,8 @@ function updateCapacityImpactDetails() {
         This expansion shelf is verified as a compliant deployment option.
       </div>
     `;
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = "1";
   }
 
   notesNode.innerHTML = `
@@ -5228,8 +5258,23 @@ function populateAggregateDistributionList() {
     if (aggr.name.startsWith("aggr0")) return;
     
     // In MetroCluster, only show Site A aggregates to allocate; Site B partner is expanded symmetrically under the hood.
-    if (isMetroCluster && aggr.node !== "node-a" && !aggr.node.endsWith("-a") && aggr.node !== "node-c") {
-      return;
+    // Detect Site A nodes robustly: use mccNodes role data if available, else use the first half of nodes by index.
+    if (isMetroCluster) {
+      const allNodes = currentState.nodes || [];
+      const mccNodes = currentState.mccNodes || [];
+      let isSiteA = false;
+      if (mccNodes.length > 0) {
+        // Use parsed MCC role data
+        const mccInfo = mccNodes.find(m => m.node === aggr.node);
+        isSiteA = mccInfo ? mccInfo.role === 'local' : false;
+      } else {
+        // Fallback: first half of sorted nodes are Site A
+        const siteANodes = allNodes.slice(0, Math.ceil(allNodes.length / 2)).map(n => n.name);
+        isSiteA = siteANodes.includes(aggr.node);
+        // Additional fallback: if no node match found yet, show all (don't filter)
+        if (allNodes.length === 0) isSiteA = true;
+      }
+      if (!isSiteA) return; // skip Site B aggregates
     }
 
     const row = document.createElement("div");
