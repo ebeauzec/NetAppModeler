@@ -6053,7 +6053,12 @@ function runModelingCalculations() {
                 : null;
 
               totalAllocatedSiteA += D;
-              const addedUsableGB = Math.round(D * diskGB * 0.80);
+              // RAID-DP efficiency per standard group (22 data + 2 parity per 24-disk NS224 group)
+              // For SAS shelves use 14/16 group. Apply MCC synchronous mirror ÷2 for effective usable.
+              const rgSz = shelfType === 'ns224' ? 24 : 16;
+              const raidEff = (rgSz - 2) / rgSz;   // 22/24 ≈ 0.917 for NS224
+              const mccMirrorFactor = 0.5;           // MCC writes to both sites — effective usable per cluster is half
+              const addedUsableGB = Math.round(D * diskGB * raidEff * mccMirrorFactor);
 
               // Expand Site A Aggregate
               aggrA.disksCount += D;
@@ -6098,8 +6103,15 @@ function runModelingCalculations() {
         const siteBNodes = modeledState.nodes.filter(n => n.site === 'B' || (!n.site && modeledState.nodes.indexOf(n) >= Math.ceil(modeledState.nodes.length / 2)));
         const primaryA = siteANodes[0] ? siteANodes[0].name : "node-a";
         const primaryB = siteBNodes[0] ? siteBNodes[0].name : "node-b";
-        const dataCount = diskCount - 4;
-        const usableGB = Math.max(0, Math.round(dataCount * diskGB * 0.82));
+        // RAID-DP: standard group size for NS224 = 24 (22 data + 2 parity), SAS = 16 (14+2)
+        // MCC synchronous mirror: all data is written to both sites — effective usable per cluster = raw_usable / 2
+        const rgSzNew = shelfType === 'ns224' ? 24 : 16;
+        const raidEffNew = (rgSzNew - 2) / rgSzNew;   // 22/24 = 0.9167 for NS224; 14/16 = 0.875 for SAS
+        const numGroups = Math.ceil(diskCount / rgSzNew);
+        const parityDisks = numGroups * 2;             // 2 parity per RAID-DP group
+        const dataDisks = Math.max(0, diskCount - parityDisks);
+        const rawUsableGB = dataDisks * diskGB;        // raw usable after RAID overhead
+        const usableGB = Math.max(0, Math.round(rawUsableGB * 0.5)); // ÷2 for MCC synchronous mirror
         const totalGB = diskCount * diskGB;
         const aggrIdxStr = modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length > 0 ? '_' + (modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length + 1) : '';
 
@@ -6757,10 +6769,14 @@ function populateStateTable(state, bodyId) {
 
   const isMCC = !!(state.metrocluster && state.metrocluster !== 'none');
   const totalShelves = state.shelves.length;
-  const shelvesPerSite = isMCC ? Math.floor(totalShelves / 2) : totalShelves;
-  const shelfCount = totalShelves; // used below for label
+  // For MCC: shelves must always be even (equal per site). If odd (misconfigured), flag it.
+  const shelvesPerSite = isMCC ? Math.round(totalShelves / 2) : totalShelves;
+  const shelfCount = totalShelves;
+  const isOddMCC = isMCC && (totalShelves % 2 !== 0);
   const shelfCountLabel = isMCC
-    ? `${shelvesPerSite} per site × 2 sites (${totalShelves} total)`
+    ? (isOddMCC
+        ? `⚠ ${totalShelves} shelves (ASYMMETRIC — MCC requires equal shelves per site)`
+        : `${shelvesPerSite} per site × 2 sites (${totalShelves} total)`)
     : `${totalShelves}`;
 
   const diskTypes = {};

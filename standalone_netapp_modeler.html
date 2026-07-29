@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.49</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.50</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2022,7 +2022,7 @@ svg.cabling-graph {
     </div>
   </div>
 
-  <!-- Splash Screen Modal Overlay (What's New in v2.49) -->
+  <!-- Splash Screen Modal Overlay (What's New in v2.50) -->
   <div id="splash-modal" class="modal-overlay no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 11000; backdrop-filter: blur(8px);">
     <div class="modal-content" style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(15,23,42,0.95) 100%); border: 1.5px solid var(--color-primary); border-radius: var(--radius-lg); padding: 2.5rem; width: 550px; box-shadow: 0 25px 50px -12px rgba(6,182,212,0.3); position: relative; max-height: 85vh; overflow-y: auto;">
       
@@ -2033,7 +2033,7 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.49</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.50</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
@@ -2077,7 +2077,7 @@ svg.cabling-graph {
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary" 
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.49','true')}catch(e){}" 
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.50','true')}catch(e){}" 
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
@@ -13758,7 +13758,12 @@ function runModelingCalculations() {
                 : null;
 
               totalAllocatedSiteA += D;
-              const addedUsableGB = Math.round(D * diskGB * 0.80);
+              // RAID-DP efficiency per standard group (22 data + 2 parity per 24-disk NS224 group)
+              // For SAS shelves use 14/16 group. Apply MCC synchronous mirror ÷2 for effective usable.
+              const rgSz = shelfType === 'ns224' ? 24 : 16;
+              const raidEff = (rgSz - 2) / rgSz;   // 22/24 ≈ 0.917 for NS224
+              const mccMirrorFactor = 0.5;           // MCC writes to both sites — effective usable per cluster is half
+              const addedUsableGB = Math.round(D * diskGB * raidEff * mccMirrorFactor);
 
               // Expand Site A Aggregate
               aggrA.disksCount += D;
@@ -13803,8 +13808,15 @@ function runModelingCalculations() {
         const siteBNodes = modeledState.nodes.filter(n => n.site === 'B' || (!n.site && modeledState.nodes.indexOf(n) >= Math.ceil(modeledState.nodes.length / 2)));
         const primaryA = siteANodes[0] ? siteANodes[0].name : "node-a";
         const primaryB = siteBNodes[0] ? siteBNodes[0].name : "node-b";
-        const dataCount = diskCount - 4;
-        const usableGB = Math.max(0, Math.round(dataCount * diskGB * 0.82));
+        // RAID-DP: standard group size for NS224 = 24 (22 data + 2 parity), SAS = 16 (14+2)
+        // MCC synchronous mirror: all data is written to both sites — effective usable per cluster = raw_usable / 2
+        const rgSzNew = shelfType === 'ns224' ? 24 : 16;
+        const raidEffNew = (rgSzNew - 2) / rgSzNew;   // 22/24 = 0.9167 for NS224; 14/16 = 0.875 for SAS
+        const numGroups = Math.ceil(diskCount / rgSzNew);
+        const parityDisks = numGroups * 2;             // 2 parity per RAID-DP group
+        const dataDisks = Math.max(0, diskCount - parityDisks);
+        const rawUsableGB = dataDisks * diskGB;        // raw usable after RAID overhead
+        const usableGB = Math.max(0, Math.round(rawUsableGB * 0.5)); // ÷2 for MCC synchronous mirror
         const totalGB = diskCount * diskGB;
         const aggrIdxStr = modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length > 0 ? '_' + (modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length + 1) : '';
 
@@ -14462,10 +14474,14 @@ function populateStateTable(state, bodyId) {
 
   const isMCC = !!(state.metrocluster && state.metrocluster !== 'none');
   const totalShelves = state.shelves.length;
-  const shelvesPerSite = isMCC ? Math.floor(totalShelves / 2) : totalShelves;
-  const shelfCount = totalShelves; // used below for label
+  // For MCC: shelves must always be even (equal per site). If odd (misconfigured), flag it.
+  const shelvesPerSite = isMCC ? Math.round(totalShelves / 2) : totalShelves;
+  const shelfCount = totalShelves;
+  const isOddMCC = isMCC && (totalShelves % 2 !== 0);
   const shelfCountLabel = isMCC
-    ? `${shelvesPerSite} per site × 2 sites (${totalShelves} total)`
+    ? (isOddMCC
+        ? `⚠ ${totalShelves} shelves (ASYMMETRIC — MCC requires equal shelves per site)`
+        : `${shelvesPerSite} per site × 2 sites (${totalShelves} total)`)
     : `${totalShelves}`;
 
   const diskTypes = {};
@@ -15542,6 +15558,7 @@ function generateReport() {
 </script>
 </body>
 </html>
+
 
 
 
