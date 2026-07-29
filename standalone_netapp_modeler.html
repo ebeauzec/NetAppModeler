@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.45</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.46</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2022,7 +2022,7 @@ svg.cabling-graph {
     </div>
   </div>
 
-  <!-- Splash Screen Modal Overlay (What's New in v2.45) -->
+  <!-- Splash Screen Modal Overlay (What's New in v2.46) -->
   <div id="splash-modal" class="modal-overlay no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 11000; backdrop-filter: blur(8px);">
     <div class="modal-content" style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(15,23,42,0.95) 100%); border: 1.5px solid var(--color-primary); border-radius: var(--radius-lg); padding: 2.5rem; width: 550px; box-shadow: 0 25px 50px -12px rgba(6,182,212,0.3); position: relative; max-height: 85vh; overflow-y: auto;">
       
@@ -2033,7 +2033,7 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.45</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.46</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
@@ -2077,7 +2077,7 @@ svg.cabling-graph {
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary" 
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.45','true')}catch(e){}" 
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.46','true')}catch(e){}" 
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
@@ -3702,65 +3702,130 @@ function parseASUP(files) {
     }
   });
 
-  // --- 8. Parse Cluster Switches ---
-  const switches = [];
+  // --- 8  const switches = [];
+  const seenSwitchNames = new Set();
+
+  // Known switch model patterns — used for keyword scan and model normalization
   const switchPatterns = [
-    { model: "BES-53248", regex: /BES-53248/i, defaultVer: "1.3.0.1" },
-    { model: "Nexus 9336C-FX2", regex: /9336C-FX2|9336C/i, defaultVer: "10.2(3)F" },
-    { model: "Nexus 3132Q-V", regex: /3132Q-V|3132Q/i, defaultVer: "9.3(8)" },
-    { model: "NVIDIA SN2100", regex: /SN2100/i, defaultVer: "3.9.3000" }
+    { model: "Cisco Nexus 9336C-FX2",  regex: /9336C-FX2|9336C/i,      defaultVer: "10.2(3)F",  role: "cluster-switch" },
+    { model: "Cisco Nexus 3132Q-V",    regex: /3132Q-V|3132Q/i,        defaultVer: "9.3(8)",    role: "cluster-switch" },
+    { model: "Cisco Nexus 3172PQ",     regex: /3172PQ|3172T/i,         defaultVer: "9.3(5)",    role: "cluster-switch" },
+    { model: "Cisco Nexus 92300YC",    regex: /92300YC/i,              defaultVer: "9.3(8)",    role: "cluster-switch" },
+    { model: "Broadcom BES-53248",     regex: /BES-53248/i,            defaultVer: "1.3.0.1",   role: "cluster-switch" },
+    { model: "NVIDIA SN2100",          regex: /SN2100/i,               defaultVer: "3.9.3000",  role: "cluster-switch" },
+    { model: "Cisco Catalyst 3750",    regex: /WS-C3750|catalyst.?3750/i, defaultVer: "15.2(4)E", role: "cluster-switch" },
+    { model: "Cisco Catalyst 9336",    regex: /C9336C?/i,              defaultVer: "17.9.1",    role: "cluster-switch" },
   ];
 
-  switchPatterns.forEach(pattern => {
-    if (pattern.regex.test(combinedText)) {
-      const lineMatch = combinedText.match(new RegExp(`.*${pattern.model}.*`, 'i'));
-      let ver = pattern.defaultVer;
-      if (lineMatch) {
-        const verMatch = lineMatch[0].match(/(?:v|version|fw)?\s*([\d\.\(\)[A-Za-z\-]+)/i);
-        if (verMatch && verMatch[1].length > 2) ver = verMatch[1];
+  const addSwitch = (name, model, version, role, source) => {
+    const key = name || model;
+    if (seenSwitchNames.has(key)) return;
+    seenSwitchNames.add(key);
+    switches.push({ name: name || `CSW-${model.split(' ').pop()}-${switches.length+1}`, model, version: version || 'unknown', role: role || 'cluster-switch', _source: source });
+  };
+
+  // ── Pass 1: CDP neighbor detail — most reliable, appears in ASUP as:
+  //   Device ID: cs1
+  //   Platform: N9K-C9336C-FX2
+  //   Software version: version 9.3(8)
+  //   Interface: e0a,  Port ID (outgoing port): Eth1/1
+  {
+    const cdpBlocks = combinedText.split(/(?:^|\n)[-─]{5,}|(?=Device ID:)/im);
+    cdpBlocks.forEach(block => {
+      const deviceId  = block.match(/Device ID:\s*(\S+)/i);
+      const platform  = block.match(/Platform:\s*([^\r\n,]+)/i);
+      const swVer     = block.match(/Software [Vv]ersion[^:\r\n]*:\s*(?:version\s*)?([^\r\n,]+)/i);
+      if (!deviceId || !platform) return;
+      const name    = deviceId[1].trim();
+      const rawModel = platform[1].trim();
+      // Normalize to known model name
+      const knownPat = switchPatterns.find(p => p.regex.test(rawModel));
+      const model   = knownPat ? knownPat.model : rawModel;
+      // Only include switches (not disk shelves or other devices)
+      if (/shelf|disk|netapp|fas|aff|asa/i.test(rawModel)) return;
+      const version = swVer ? swVer[1].trim().replace(/^version\s*/i, '') : (knownPat ? knownPat.defaultVer : 'unknown');
+      addSwitch(name, model, version, 'cluster-switch', 'cdp');
+    });
+  }
+
+  // ── Pass 2: LLDP neighbor show tabular format
+  //   cs1  e0a  cs1/Eth1/1  N9K-C9336C-FX2  Eth1/1
+  //   Port: e0a, Peer: cs1 (Nexus 9336C-FX2)
+  if (switches.length === 0) {
+    const lldpRegex = /network lldp neighbors[\s\S]{0,200}?(\w[\w\-\.]+)\s+e\d+[a-z]\s+/gi;
+    let lm;
+    while ((lm = lldpRegex.exec(combinedText)) !== null) {
+      const name = lm[1].trim();
+      // Try to find model near the name
+      const vicinity = combinedText.slice(Math.max(0, lm.index - 50), lm.index + 200);
+      const knownPat = switchPatterns.find(p => p.regex.test(vicinity));
+      if (knownPat) addSwitch(name, knownPat.model, knownPat.defaultVer, 'cluster-switch', 'lldp');
+    }
+  }
+
+  // ── Pass 3: network device-discovery show
+  //   node-1/e0a    cs1     cluster    BES-53248   1.3.0.1
+  //   <node>/<port> <device> <type>    <model>     <version>
+  {
+    const ddRegex = /^\s*\S+\/e\d+[a-z]\s+(\S+)\s+(?:cluster|storage|management)\s+([A-Za-z0-9][A-Za-z0-9\-\.]+)\s+([\d\.]+[\d\.A-Za-z\(\)]*)?/gim;
+    let ddm;
+    while ((ddm = ddRegex.exec(combinedText)) !== null) {
+      const name = ddm[1].trim();
+      const modelRaw = ddm[2].trim();
+      const ver   = ddm[3] ? ddm[3].trim() : null;
+      if (/netapp|fas|aff|shelf/i.test(modelRaw)) continue;
+      const knownPat = switchPatterns.find(p => p.regex.test(modelRaw));
+      const model = knownPat ? knownPat.model : modelRaw;
+      addSwitch(name, model, ver || (knownPat ? knownPat.defaultVer : 'unknown'), 'cluster-switch', 'device-discovery');
+    }
+  }
+
+  // ── Pass 4: system switch ethernet show / cluster switch show
+  //   Switch Name: cs1   Model: BES-53248   Version: 3.4.4.6   Role: cluster
+  //   cs1   cluster-network   192.168.10.1   BES-53248   3.4.4.6
+  {
+    const swShowRegex = /(?:Switch(?:\s+Name)?:|^)[ \t]*(\w[\w\-\.]+)[ \t]+(?:cluster-network|storage-network|management)[ \t]+\S+[ \t]+([A-Za-z0-9][A-Za-z0-9\-]+)[ \t]*([\d\.]+[\d\.A-Za-z\(\)]*)?/gim;
+    let sm;
+    while ((sm = swShowRegex.exec(combinedText)) !== null) {
+      const name = sm[1].trim();
+      const modelRaw = sm[2].trim();
+      if (/netapp|fas|aff|shelf/i.test(modelRaw)) continue;
+      const knownPat = switchPatterns.find(p => p.regex.test(modelRaw));
+      const model = knownPat ? knownPat.model : modelRaw;
+      addSwitch(name, model, sm[3] || (knownPat ? knownPat.defaultVer : 'unknown'), 'cluster-switch', 'switch-show');
+    }
+
+    // Also: "Switch Name: cs1  Model: Nexus 9336C-FX2  Version: 9.3(8)"
+    const swNameRegex = /Switch Name:\s*(\S+)[^\n]*?Model:\s*([^\n]+?)(?:\s+Version:\s*([^\n\s]+))?(?:\r?\n|$)/ig;
+    let snm;
+    while ((snm = swNameRegex.exec(combinedText)) !== null) {
+      const name = snm[1].trim();
+      const modelRaw = snm[2].trim();
+      const ver = snm[3] ? snm[3].trim() : null;
+      const knownPat = switchPatterns.find(p => p.regex.test(modelRaw));
+      const model = knownPat ? knownPat.model : modelRaw;
+      addSwitch(name, model, ver || (knownPat ? knownPat.defaultVer : 'unknown'), 'cluster-switch', 'switch-show-named');
+    }
+  }
+
+  // ── Pass 5: keyword scan — if a switch model name appears anywhere in the text
+  //   (last resort; gives no real name or version — marked as inferred)
+  if (switches.length === 0) {
+    switchPatterns.forEach(pattern => {
+      if (pattern.regex.test(combinedText)) {
+        // Extract version from the line that mentions the model
+        const lineMatch = combinedText.match(new RegExp(`.{0,80}${pattern.regex.source}.{0,80}`, 'i'));
+        let ver = pattern.defaultVer;
+        if (lineMatch) {
+          const verM = lineMatch[0].match(/(?:version|fw|v)\s*([\d]+[\d\.\(\)A-Za-z\-]+)/i);
+          if (verM && verM[1].length > 2) ver = verM[1];
+        }
+        addSwitch(null, pattern.model, ver, 'cluster-switch', 'keyword');
       }
-      switches.push({
-        name: `CSW-${pattern.model.split(' ')[0]}-01`,
-        model: pattern.model,
-        version: ver,
-        role: "cluster-switch"
-      });
-      switches.push({
-        name: `CSW-${pattern.model.split(' ')[0]}-02`,
-        model: pattern.model,
-        version: ver,
-        role: "cluster-switch"
-      });
-    }
-  });
-
-  // Also try to parse actual switch names and firmware from 'system switch ethernet show' or 'network device-discovery show'
-  const switchShowRegex = /(?:Switch Name:|Switch:)\s*(\S+)[^\n]*Model:\s*(\S[^\n]+?)\s*(?:Version:|Firmware:|FW:)?\s*([\d]+[\d.()A-Za-z\-]*)?(?:\r?\n|$)/ig;
-  let swShowMatch;
-  while ((swShowMatch = switchShowRegex.exec(combinedText)) !== null) {
-    const swName = swShowMatch[1].trim();
-    const swModel = swShowMatch[2].trim();
-    const swVer = swShowMatch[3] ? swShowMatch[3].trim() : null;
-    if (!switches.some(s => s.name === swName)) {
-      switches.push({ name: swName, model: swModel, version: swVer || 'unknown', role: 'cluster-switch' });
-    }
+    });
   }
 
-  // Parse system switch ethernet show tabular format
-  // cs1  cluster-network  192.168.1.1  BES-53248
-  const swEthernetRegex = /^([a-z][a-z0-9\-]+)\s+(?:cluster-network|storage-network|management)\s+\S+\s+([A-Z][A-Za-z0-9\-]+)/gim;
-  let swEthMatch;
-  while ((swEthMatch = swEthernetRegex.exec(combinedText)) !== null) {
-    const swName = swEthMatch[1].trim();
-    const modelHint = swEthMatch[2].trim();
-    // Map model hint to a known model
-    const knownModel = switchPatterns.find(p => p.regex.test(modelHint));
-    if (knownModel && !switches.some(s => s.name === swName)) {
-      switches.push({ name: swName, model: knownModel.model, version: knownModel.defaultVer, role: 'cluster-switch' });
-    }
-  }
-
-  // Fallback to default cluster switches
+  // ── Fallback: platform-default switches
   if (switches.length === 0) {
     if (!isDemoMode) {
       data.parseWarnings.push({
@@ -3768,15 +3833,21 @@ function parseASUP(files) {
         message: "Cluster interconnect switch model could not be parsed; using default switch profile."
       });
     }
-    switches.push({ name: "CSW-BES-01", model: "BES-53248", version: "1.3.0.1", role: "cluster-switch" });
-    switches.push({ name: "CSW-BES-02", model: "BES-53248", version: "1.3.0.1", role: "cluster-switch" });
+    switches.push({ name: "CSW-01", model: "BES-53248", version: "1.3.0.1", role: "cluster-switch", _source: 'default' });
+    switches.push({ name: "CSW-02", model: "BES-53248", version: "1.3.0.1", role: "cluster-switch", _source: 'default' });
   }
 
   data.switches = switches;
 
-  const switchesParsed = switches.some(s => !s.name.startsWith('CSW-BES-0') || s.version !== '1.3.0.1');
-  setSource('switches', switchesParsed ? 'parsed' : 'default', switchesParsed ? 0.8 : 0.2,
-    switchesParsed ? `${switches.length} switch(es) detected in ASUP text` : 'No switch model found; using default cluster switch profile');
+  // Source quality: parsed if found via CDP/LLDP/device-discovery/show; inferred if keyword only; default if fallback
+  const hasRealSource = switches.some(s => ['cdp','lldp','device-discovery','switch-show','switch-show-named'].includes(s._source));
+  const hasKeyword    = switches.some(s => s._source === 'keyword');
+  setSource('switches',
+    hasRealSource ? 'parsed' : hasKeyword ? 'inferred' : 'default',
+    hasRealSource ? 0.9 : hasKeyword ? 0.5 : 0.1,
+    hasRealSource ? `${switches.length} switch(es) found in CDP/LLDP/device-discovery output`
+                  : hasKeyword ? 'Switch model detected by keyword; name/version not confirmed'
+                  : 'No switch information found; using default profile');
 
   // --- 9. Parse PCIe Expansion Cards from sysconfig -a ---
   const slotCardRegex = /slot\s+(\d+):\s+([^\r\n]+)/ig;
@@ -15376,6 +15447,7 @@ function generateReport() {
 </script>
 </body>
 </html>
+
 
 
 
