@@ -173,6 +173,15 @@ const SHELF_SPEC_MAP = {
 };
 
 // Robust version baseline key resolver
+function resolveBaseVersionKey(version) {
+  if (!version) return '9.16.1';
+  const v = version.trim();
+  if (UI_UPGRADE_HOPS[v]) return v;
+  const base = v.split('P')[0].trim();
+  if (UI_UPGRADE_HOPS[base]) return base;
+  if (base.startsWith('9.7'))  return '9.7';
+  if (base.startsWith('9.8'))  return '9.8';
+  if (base.startsWith('9.9'))  return '9.9.1';
   if (base === "9.10") return "9.10.1";
   if (base === "9.11") return "9.11.1";
   if (base === "9.12") return "9.12.1";
