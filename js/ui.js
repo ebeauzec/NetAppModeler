@@ -242,7 +242,7 @@ function setupSplashModal() {
   
   let dismissedVersion = "false";
   try {
-    dismissedVersion = localStorage.getItem("splash-dismissed-v2.21");
+    dismissedVersion = localStorage.getItem("splash-dismissed-v2.32");
   } catch (e) {
     console.warn("localStorage is not accessible:", e);
   }
@@ -256,7 +256,7 @@ function setupSplashModal() {
   closeSplashBtn.addEventListener("click", () => {
     splashModal.classList.add("hidden");
     try {
-      localStorage.setItem("splash-dismissed-v2.21", "true");
+      localStorage.setItem("splash-dismissed-v2.32", "true");
     } catch (e) {
       console.warn("localStorage write failed:", e);
     }
@@ -3165,8 +3165,11 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
   container.innerHTML = "";
 
   const _mccCbTopo = document.getElementById('deploy-metrocluster');
+  // For comparison view (targetFrameId !== 'cabling-svg-frame'), respect the parsed state directly.
+  // For greenfield modeler view, require the deploy-metrocluster checkbox to be checked.
+  const _isGreenfieldView = targetFrameId === 'cabling-svg-frame';
   const isMetroCluster = !!(state.metrocluster && state.metrocluster !== 'none'
-    && _mccCbTopo && _mccCbTopo.checked);
+    && (_isGreenfieldView ? (_mccCbTopo && _mccCbTopo.checked) : true));
   const proposedShelvesArray = proposedShelf ? (Array.isArray(proposedShelf) ? proposedShelf : [proposedShelf]) : [];
   const totalShelvesCount = state.shelves.length + proposedShelvesArray.length;
   
@@ -4605,12 +4608,18 @@ function setupModelerListeners() {
 
   document.getElementById("disk-allocation").addEventListener("change", (e) => {
     const val = e.target.value;
-    const targetGroup = document.getElementById("expand-aggr-select-group");
+    const expandGroup = document.getElementById("expand-aggr-select-group");
+    const newAggrFields = document.getElementById("new-aggr-fields");
     if (val === "expand") {
-      targetGroup.classList.remove("hidden");
+      expandGroup && expandGroup.classList.remove("hidden");
+      newAggrFields && newAggrFields.classList.add("hidden");
       populateAggregateDistributionList();
+    } else if (val === "new") {
+      expandGroup && expandGroup.classList.add("hidden");
+      newAggrFields && newAggrFields.classList.remove("hidden");
     } else {
-      targetGroup.classList.add("hidden");
+      expandGroup && expandGroup.classList.add("hidden");
+      newAggrFields && newAggrFields.classList.add("hidden");
     }
     updateCapacityImpactDetails();
   });
