@@ -12753,28 +12753,6 @@ function runModelingCalculations() {
           }))
         });
       }
-          }))
-        });
-
-        // Add partner shelf to Site B
-        modeledState.shelves.push({
-          id: shelfId + "B",
-          model: shelfType.toUpperCase(),
-          serial: `SHFL-NEW-${shelfId}-B`,
-          firmware: "Latest baseline",
-          latestFirmware: "Latest baseline",
-          cabling: "Multipath HA",
-          disks: Array.from({ length: disksInThisShelf }, (_, idx) => ({
-            slot: idx,
-            model: "Expansion Model",
-            sizeStr: diskSizeStr,
-            sizeGB: diskGB,
-            type: spec.mediaType,
-            firmware: "NA01",
-            serial: `EXP-${diskSerialIndex++}-B`
-          }))
-        });
-      }
 
       if (allocation === "spare") {
         modeledState.spares.push({
