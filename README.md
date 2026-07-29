@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.25)
+# NetApp AutoSupport Analyzer & Modeler (v2.26)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,7 +6,7 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.25)
+## 🆕 New in this Version (v2.26)
 * **Data accuracy fixes:** AFF C-series minOntap, AFX 2K platform, 9.19.1 GA date, DATA_SOURCES.md
 * **MetroCluster Auto-Detection & Topologies:** Automatically detects MetroCluster IP/FC configurations from ASUP logs, rendering dual-site split cabling graphs and replication paths.
 * **Advanced Best Practice Audits:** Added 5 new rules covering cluster switch RCF versions, front-end port MTU sizing (Jumbo Frames), MetroCluster aggregate SyncMirror status, site hardware symmetry, and Flash Pool SSD cache ratios.

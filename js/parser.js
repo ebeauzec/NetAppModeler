@@ -829,6 +829,78 @@ export function parseASUP(files) {
   // Detect ADP (Advanced Drive Partitioning)
   data.isADP = /root-data|root-data-data|ADPv[12]/i.test(combinedText);
 
+  // === Parse: Service Processor / BMC Firmware ===
+  // Source: system service-processor show
+  data.spFirmware = [];
+  const spMatches = [...combinedText.matchAll(/^(\S+)\s+(?:up|down|online|offline)\s+(?:installed|not-installed)?\s*(\d+\.\d+[\w.]*)\s/gim)];
+  if (spMatches.length > 0) {
+    // Try more specific SP firmware pattern
+    const spSection = combinedText.match(/service-processor show[\s\S]*?(?=\n\n[A-Z]|$)/i);
+    if (spSection) {
+      const spLines = [...spSection[0].matchAll(/^(\S+)\s+\S+\s+(\d+\.\d+[\w.]*)\s/gim)];
+      data.spFirmware = spLines.map(m => ({ node: m[1].trim(), version: m[2].trim() }));
+    }
+  }
+  // Fallback: parse from sysconfig -a SP firmware lines
+  if (data.spFirmware.length === 0) {
+    const spCfgMatches = [...combinedText.matchAll(/Service Processor[\s\S]*?Firmware Version:\s*([\d.]+\S*)/gi)];
+    spCfgMatches.forEach((m, idx) => {
+      const nodeName = data.nodes[idx] ? data.nodes[idx].name : `node-${idx + 1}`;
+      data.spFirmware.push({ node: nodeName, version: m[1].trim() });
+    });
+  }
+
+  // === Parse: Disk Firmware Versions ===
+  // Source: storage disk show -fields model,firmware-revision  OR  storage disk firmware show
+  data.diskFirmware = [];
+  const diskFwSection = combinedText.match(/storage disk(?:\s+firmware)?\s+show[\s\S]*?(?=\n\n[A-Za-z]|$)/i);
+  if (diskFwSection) {
+    const dfMatches = [...diskFwSection[0].matchAll(/(\d+\.\d+[a-zA-Z.]*\d+|[A-Z]+:\d+[A-Z]+\.\d+)\s+(\S+[A-Z]\d{3,}\S*)\s+([A-Z0-9]{4})\b/gi)];
+    dfMatches.forEach(m => {
+      data.diskFirmware.push({ disk: m[1].trim(), model: m[2].trim(), firmware: m[3].trim() });
+    });
+  }
+  // Also scan disks already parsed in shelves for firmware field
+  if (data.diskFirmware.length === 0) {
+    data.shelves.forEach(shelf => {
+      (shelf.disks || []).forEach(d => {
+        if (d.firmware && d.serial) {
+          data.diskFirmware.push({ disk: d.serial || `shelf${shelf.id}:${d.slot}`, model: d.model || 'Unknown', firmware: d.firmware });
+        }
+      });
+    });
+  }
+
+  // === Parse: ACP (Alternate Control Path) Status ===
+  // Source: storage acp show
+  data.acpStatus = { enabled: null, connectivity: 'unknown', disksOnAcp: 0 };
+  const acpSection = combinedText.match(/storage acp show[\s\S]*?(?=\n\n[A-Z]|$)/i);
+  if (acpSection) {
+    const acpEnabled = acpSection[0].match(/ACP Connectivity Status:\s*(\S+)/i) ||
+                       acpSection[0].match(/Enabled:\s*(true|false|yes|no)/i);
+    if (acpEnabled) {
+      const val = acpEnabled[1].toLowerCase();
+      data.acpStatus.enabled = val === 'true' || val === 'yes' || val === 'full-connectivity';
+      data.acpStatus.connectivity = acpEnabled[1];
+    }
+    const acpDiskMatch = acpSection[0].match(/(\d+)\s+disks? connected/i);
+    if (acpDiskMatch) data.acpStatus.disksOnAcp = parseInt(acpDiskMatch[1]);
+  } else if (/acp.*disabled|no acp/i.test(combinedText)) {
+    data.acpStatus.enabled = false;
+    data.acpStatus.connectivity = 'disabled';
+  }
+
+  // === Enhance: Switch RCF Version ===
+  // Augment existing data.switches[] with RCF version if found
+  if (data.switches && data.switches.length > 0) {
+    data.switches.forEach(sw => {
+      const rcfMatch = combinedText.match(new RegExp(sw.name + '[\\s\\S]{0,300}RCF[\\s\\S]{0,100}v([\\d.]+)', 'i'));
+      if (rcfMatch) sw.rcfVersion = rcfMatch[1];
+      const efosMatch = combinedText.match(new RegExp(sw.name + '[\\s\\S]{0,300}EFOS[\\s\\S]{0,100}([\\d.]+)', 'i'));
+      if (efosMatch) sw.fwVersion = efosMatch[1];
+    });
+  }
+
   return data;
 }
 

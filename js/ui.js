@@ -5949,576 +5949,584 @@ function generateReport() {
 
   const footprintBefore = getSystemPhysicalFootprint(currentState);
   const footprintAfter = getSystemPhysicalFootprint(modeledState);
-  
-  let rawCapBeforeGB = 0;
-  (currentState.shelves || []).forEach(s => {
-    (s.disks || []).forEach(d => {
-      rawCapBeforeGB += (d.sizeGB || 0);
-    });
-  });
-  
-  let rawCapAfterGB = 0;
-  (modeledState.shelves || []).forEach(s => {
-    (s.disks || []).forEach(d => {
-      rawCapAfterGB += (d.sizeGB || 0);
-    });
-  });
 
   const isMetroCluster = currentState.metrocluster && currentState.metrocluster !== "none";
-  const mult = isMetroCluster ? 2 : 1;
+  const mcType = currentState.metrocluster || "none";
+  const nodeNames = (currentState.nodes || []).map(n => n.name);
+  const nodeA = nodeNames[0] || "node-a";
+  const nodeB = nodeNames[1] || "node-b";
+  const clusterName = currentState.version ? (currentState.version.clusterName || currentState.version.serial || "cluster") : "cluster";
+  const model = currentState.version ? currentState.version.model : "Unknown";
+  const ontapVer = currentState.version ? currentState.version.ontap : "9.14.1";
+  const serial = currentState.version ? currentState.version.serial : "N/A";
 
-  // Compute Footprint impacts
-  const shelfType = document.getElementById("shelf-type").value;
-  let ruAdded = 0;
-  let wattsAdded = 0;
-  let btuAdded = 0;
-  let rawCapAddedGB = 0;
-  let shelfCount = 0;
-
-  // Include PCIe cards power draw
-  let cardWatts = 0;
-  const cards = currentState.expansionCards || [];
-  cards.forEach(c => {
-    const cKey = typeof c === 'string' ? c : c.cardKey;
-    const cSpec = EXP_CARDS_CATALOG[cKey];
-    if (cSpec) cardWatts += (cSpec.power || 0);
-  });
-
-  if (shelfType !== "none") {
-    const spec = SHELF_SPEC_MAP[shelfType];
-    const diskCount = parseInt(document.getElementById("disk-count").value) || 0;
-    shelfCount = Math.ceil(diskCount / spec.maxCount);
-    
-    let diskGB = 0;
-    const diskSizeStr = document.getElementById("disk-size").value;
-    const match = diskSizeStr.match(/([\d.]+)\s*([GT])B?/i);
-    if (match) {
-      const val = parseFloat(match[1]);
-      diskGB = match[2].toUpperCase() === 'T' ? val * 1000 : val;
-    }
-
-    ruAdded = spec.ru * mult;
-    wattsAdded = (spec.power + cardWatts) * mult;
-    btuAdded = Math.round(wattsAdded * 3.412);
-    rawCapAddedGB = diskGB * diskCount * mult;
-  } else {
-    wattsAdded = cardWatts * mult;
-    btuAdded = Math.round(cardWatts * 3.412) * mult;
-  }
-
-  const targetOntap = document.getElementById("target-ontap").value;
-  const curVer = currentState.version.ontap;
-  const baseCur = resolveBaseVersionKey(curVer);
+  const targetOntap = document.getElementById("target-ontap") ? document.getElementById("target-ontap").value : ontapVer;
+  const baseCur = resolveBaseVersionKey(ontapVer);
   const hops = (UI_UPGRADE_HOPS[baseCur] && UI_UPGRADE_HOPS[baseCur][targetOntap]) ? UI_UPGRADE_HOPS[baseCur][targetOntap] : [];
-  let hopListText = `${baseCur} → ` + (hops.length > 0 ? hops.join(" → ") : "No intermediate hops required");
 
-  // Determine Cabling Fix text
-  const fixCable = document.getElementById("model-fix-cabling").checked;
-  const originalHadSPOF = currentState.shelves.some(s => s.cabling && (s.cabling.toLowerCase().includes("single-path") || !s.cabling.toLowerCase().includes("multipath")));
-  const cablingRemediationActive = fixCable && originalHadSPOF;
+  // ─── Severity helpers ───────────────────────────────────────────────────
+  const criticals = curReports.filter(r => r.status === 'critical');
+  const warnings  = curReports.filter(r => r.status === 'warning');
+  const compliant = curReports.filter(r => r.status === 'compliant');
 
-  // Build Action Steps Technical checklist
-  let stepCounter = 1;
-  const actionSteps = [];
+  const badgeColor = curScore >= 85 ? '#22c55e' : curScore >= 60 ? '#f59e0b' : '#ef4444';
+  const badgeLabel = curScore >= 85 ? 'COMPLIANT' : curScore >= 60 ? 'AT RISK' : 'NON-COMPLIANT';
 
-  // Step 1: Pre-requisites & Cabling (MetroCluster check first)
+  // ─── Category Icons ──────────────────────────────────────────────────────
+  const catIcon = { Hardware: '🔧', Software: '💿', Firmware: '⚡', Network: '🌐', Licensing: '📋', Storage: '🗄️', Capacity: '📊', MetroCluster: '🔄', SAN: '🔌' };
+
+  const refLink = (refKey) => {
+    if (typeof REMEDIATION_REFS === 'undefined') return '';
+    const ref = REMEDIATION_REFS[refKey];
+    if (!ref) return '';
+    return `<span style="font-size:0.72rem; color:#8ec5fc;">📎 ${ref.tr ? ref.tr + ': ' : ''}${ref.title}${ref.kb ? ' | KB: ' + ref.kb : ''}</span>`;
+  };
+
+  // ─── SECTION A: Executive Summary ────────────────────────────────────────
+  const topFinding = criticals[0] || warnings[0];
+  const riskStatement = topFinding
+    ? `Primary risk: <strong>${topFinding.title}</strong> — ${topFinding.description.substring(0, 120)}...`
+    : `System is operating within compliance parameters.`;
+
+  const secA = `
+  <div class="report-section" style="margin-bottom: 1.5rem;">
+    <div style="display:flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap;">
+      <!-- Score Badge -->
+      <div style="background: rgba(0,0,0,0.3); border: 2px solid ${badgeColor}; border-radius: 12px; padding: 1.25rem 2rem; text-align:center; min-width:140px; flex-shrink:0;">
+        <div style="font-size:3rem; font-weight:900; color:${badgeColor}; line-height:1;">${curScore}</div>
+        <div style="font-size:0.7rem; color:${badgeColor}; font-weight:700; letter-spacing:2px; margin-top:4px;">${badgeLabel}</div>
+        <div style="font-size:0.65rem; color:var(--color-muted); margin-top:6px;">Compliance Score</div>
+      </div>
+      <!-- System Identity -->
+      <div style="flex:1; min-width:200px;">
+        <h3 style="color:#fff; margin:0 0 0.75rem 0; font-size:1.05rem;">System Overview</h3>
+        <table style="width:100%; font-size:0.82rem; border-collapse:collapse;">
+          <tr><td style="color:var(--color-muted); padding:2px 12px 2px 0;">Platform</td><td style="color:#fff; font-weight:600;">${model}</td></tr>
+          <tr><td style="color:var(--color-muted); padding:2px 12px 2px 0;">ONTAP Version</td><td style="color:#fff;">${ontapVer}</td></tr>
+          <tr><td style="color:var(--color-muted); padding:2px 12px 2px 0;">Serial / ID</td><td style="color:#fff;">${serial}</td></tr>
+          <tr><td style="color:var(--color-muted); padding:2px 12px 2px 0;">Nodes</td><td style="color:#fff;">${nodeNames.join(', ') || 'N/A'}</td></tr>
+          <tr><td style="color:var(--color-muted); padding:2px 12px 2px 0;">Configuration</td><td style="color:#fff;">${isMetroCluster ? '🔄 MetroCluster ' + mcType : '🟢 Standard HA Pair'}</td></tr>
+          <tr><td style="color:var(--color-muted); padding:2px 12px 2px 0;">Upgrade Target</td><td style="color:#8ec5fc;">${targetOntap !== ontapVer ? targetOntap : 'Current (' + ontapVer + ')'}</td></tr>
+        </table>
+      </div>
+      <!-- Finding Counts -->
+      <div style="display:flex; flex-direction:column; gap:0.5rem; min-width:160px;">
+        <div style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:0.6rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#fca5a5; font-size:0.82rem;">🔴 Critical</span>
+          <span style="color:#ef4444; font-weight:700; font-size:1.1rem;">${criticals.length}</span>
+        </div>
+        <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); border-radius:8px; padding:0.6rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#fde68a; font-size:0.82rem;">🟡 Warning</span>
+          <span style="color:#f59e0b; font-weight:700; font-size:1.1rem;">${warnings.length}</span>
+        </div>
+        <div style="background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3); border-radius:8px; padding:0.6rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#86efac; font-size:0.82rem;">🟢 Compliant</span>
+          <span style="color:#22c55e; font-weight:700; font-size:1.1rem;">${compliant.length}</span>
+        </div>
+      </div>
+    </div>
+    ${topFinding ? `<div style="margin-top:1rem; padding:0.75rem 1rem; background:rgba(239,68,68,0.08); border-left:3px solid #ef4444; border-radius:0 6px 6px 0; font-size:0.83rem; color:var(--color-text);">${riskStatement}</div>` : ''}
+  </div>`;
+
+  // ─── SECTION B: Findings Table ────────────────────────────────────────────
+  const sevOrder = { critical: 0, warning: 1, compliant: 2 };
+  const sortedReports = [...curReports].sort((a, b) => (sevOrder[a.status] ?? 3) - (sevOrder[b.status] ?? 3));
+
+  const catToRef = { Hardware: 'disks', Software: 'ontapUpg', Firmware: 'firmware', Network: 'lifs', Licensing: 'licenses', Storage: 'capacity', MetroCluster: 'metrocluster', SAN: 'san' };
+
+  let findingsRows = sortedReports.map(r => {
+    const sevColor = r.status === 'critical' ? '#ef4444' : r.status === 'warning' ? '#f59e0b' : '#22c55e';
+    const sevBg    = r.status === 'critical' ? 'rgba(239,68,68,0.08)' : r.status === 'warning' ? 'rgba(245,158,11,0.06)' : 'rgba(34,197,94,0.05)';
+    const icon = catIcon[r.category] || '📌';
+    const ref = refLink(catToRef[r.category] || '');
+    return `
+    <tr style="background:${sevBg}; border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:0.5rem 0.75rem; white-space:nowrap;">
+        <span style="display:inline-block; padding:2px 8px; border-radius:4px; background:${sevColor}22; color:${sevColor}; font-size:0.7rem; font-weight:700;">${r.status.toUpperCase()}</span>
+      </td>
+      <td style="padding:0.5rem 0.5rem; color:var(--color-muted); font-size:0.8rem;">${icon} ${r.category || ''}</td>
+      <td style="padding:0.5rem 0.75rem;">
+        <strong style="color:#fff; font-size:0.82rem;">${r.title}</strong><br>
+        <span style="color:var(--color-muted); font-size:0.75rem;">${(r.description || '').substring(0, 140)}${r.description && r.description.length > 140 ? '…' : ''}</span>
+        ${ref ? '<br>' + ref : ''}
+      </td>
+      <td style="padding:0.5rem 0.75rem; font-size:0.75rem; color:var(--color-muted); max-width:180px;">${(r.recommendation || '').substring(0, 100)}${r.recommendation && r.recommendation.length > 100 ? '…' : ''}</td>
+    </tr>`;
+  }).join('');
+
+  const secB = `
+  <div class="report-section" style="margin-bottom:1.5rem;">
+    <h3 style="font-size:1rem; font-weight:700; color:#fff; margin-bottom:0.75rem;">📋 Audit Findings — All Rules (${curReports.length} Total)</h3>
+    <div style="overflow-x:auto;">
+      <table class="compare-table" style="width:100%; font-size:0.82rem;">
+        <thead><tr>
+          <th style="width:90px;">Severity</th>
+          <th style="width:110px;">Category</th>
+          <th>Finding</th>
+          <th style="width:200px;">Action</th>
+        </tr></thead>
+        <tbody>${findingsRows}</tbody>
+      </table>
+    </div>
+  </div>`;
+
+  // ─── SECTION C: Phased Action Plan ───────────────────────────────────────
+  // Helper to build a phase block
+  const makePhase = (num, emoji, title, color, steps) => {
+    if (!steps || steps.length === 0) return '';
+    const stepsHtml = steps.map((s, i) => `
+      <div style="margin-bottom:1.25rem; padding:1rem; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid ${color};">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+          <strong style="color:#fff; font-size:0.88rem;">Step ${i+1}: ${s.title}</strong>
+          ${s.ref ? `<span style="font-size:0.7rem; color:#8ec5fc; margin-left:8px; flex-shrink:0;">${s.ref}</span>` : ''}
+        </div>
+        ${s.objective ? `<p style="color:var(--color-text); font-size:0.8rem; margin:0 0 0.5rem 0;">${s.objective}</p>` : ''}
+        ${s.risk ? `<div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:4px; padding:0.4rem 0.6rem; margin-bottom:0.5rem; font-size:0.75rem; color:#fca5a5;">⚠️ <strong>Risk if skipped:</strong> ${s.risk}</div>` : ''}
+        ${s.cmd ? `<pre style="background:#0d1117; border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75rem; font-size:0.78rem; color:#a5d6ff; overflow-x:auto; white-space:pre; margin:0.5rem 0;">${s.cmd}</pre>` : ''}
+        ${s.expected ? `<div style="font-size:0.75rem; color:#86efac; margin-top:0.35rem;">✅ <strong>Expected output:</strong> ${s.expected}</div>` : ''}
+      </div>`).join('');
+    return `
+    <div style="margin-bottom:1.5rem;">
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:${color}22; color:${color}; font-weight:800; font-size:0.85rem;">${num}</span>
+        <h4 style="color:${color}; margin:0; font-size:0.95rem;">${emoji} ${title}</h4>
+      </div>
+      ${stepsHtml}
+    </div>`;
+  };
+
+  // ── Phase 0: Pre-Remediation Validation (always) ─────────────────────────
+  const phase0Steps = [
+    {
+      title: 'Notify & Open Maintenance Window',
+      objective: 'Create an AutoSupport maintenance notification to suppress automatic alerts and document the start of remediation activities.',
+      risk: 'Without a maintenance window, automated monitoring may generate false-positive escalations during the remediation process.',
+      cmd: `# Notify NetApp Support and internal monitoring of planned maintenance\nsystem node autosupport invoke -node * -type all -message "MAINT=4h Starting system health remediation on ${model} cluster"\n\n# Verify AutoSupport connectivity\nsystem node autosupport show -fields last-timestamp,status`,
+      expected: 'AutoSupport messages transmitted successfully to support.netapp.com.',
+      ref: 'KB: 000020671'
+    },
+    {
+      title: 'Verify Cluster Health Baseline',
+      objective: 'Capture a comprehensive baseline of cluster health before making any changes. This snapshot is critical for rollback reference.',
+      risk: 'Without a health baseline, it is impossible to determine if issues pre-existed or were introduced during remediation.',
+      cmd: `# Verify overall cluster health\ncluster show\n\n# Check node reachability and quorum\ncluster ring show\n\n# Verify storage failover state for all nodes\nstorage failover show -fields node,enabled,state,partner${nodeNames.length > 0 ? '\n\n# Node-specific health\n' + nodeNames.map(n => `system node show -node ${n}`).join('\n') : ''}\n\n# Verify epsilon configuration\ncluster show -fields node,epsilon`,
+      expected: 'All nodes show "healthy: true". All storage failover pairs show "enabled: true".',
+      ref: 'KB: 000098456'
+    },
+    {
+      title: 'Collect Pre-Remediation ASUP Bundle',
+      objective: 'Generate and upload a full AutoSupport bundle to document the pre-remediation system state for NetApp Support reference.',
+      risk: 'Without a pre-remediation bundle, NetApp Support cannot assist with troubleshooting if an issue occurs during remediation.',
+      cmd: `# Trigger comprehensive ASUP collection from all nodes\nsystem node autosupport invoke -node * -type all -message "PRE-REMEDIATION baseline capture - ${model}"\n\n# Verify bundle was transmitted\nsystem node autosupport history show -node * | head -5`,
+      expected: 'ASUP bundles show "sent" status for all nodes.',
+      ref: refLink('precheck')
+    }
+  ];
+
+  // ── Phase 1: Critical Hardware Issues ────────────────────────────────────
+  const phase1Steps = [];
+  const brokenDiskRule = curReports.find(r => r.id === 'BP_BROKEN_DISKS' && r.status !== 'compliant');
+  if (brokenDiskRule) {
+    const brokenList = (currentState.brokenDisks || []).map(d => d.disk).filter(Boolean);
+    phase1Steps.push({
+      title: 'Replace Failed or Prefailed Disk Drives',
+      objective: brokenDiskRule.description,
+      risk: 'A failed disk that is not replaced immediately reduces RAID protection. A second disk failure in the same RAID group will result in data loss.',
+      cmd: `# Identify failed disks\nstorage disk show -broken\n\n# Show disk location for physical replacement (bay/shelf)\nstorage disk show -fields disk,shelf,bay,state,model${brokenList.length > 0 ? '\n\n# Replace specific failed disks (perform after physical swap):\n' + brokenList.map(d => `storage disk assign -disk ${d} -owner ${nodeA}`).join('\n') : ''}\n\n# Verify spare pool after replacement\nstorage disk show -spare`,
+      expected: 'storage disk show -broken returns zero entries. Spare pool shows at least 2 spares per disk type.',
+      ref: refLink('disks')
+    });
+  }
+
+  const haRule = curReports.find(r => r.id === 'BP_HA_STATUS' && r.status !== 'compliant');
+  if (haRule) {
+    phase1Steps.push({
+      title: 'Restore Storage Failover (HA) State',
+      objective: haRule.description,
+      risk: 'Without HA enabled, a controller failure will result in a service outage. ONTAP upgrades also require HA to be enabled for nondisruptive operation.',
+      cmd: `# Check current failover state\nstorage failover show\n\n# Re-enable failover on affected nodes:\n${nodeNames.map(n => `storage failover modify -node ${n} -enabled true`).join('\n')}\n\n# Verify partner connectivity\nstorage failover show -fields node,enabled,state,partner`,
+      expected: 'All nodes show "enabled: true" and "state: Connected".',
+      ref: refLink('ha')
+    });
+  }
+
+  const cablingRule = curReports.find(r => r.id === 'BP_SHELF_CABLING' && r.status !== 'compliant');
+  if (cablingRule) {
+    const singlePathShelves = (currentState.shelves || []).filter(s => s.cabling && (s.cabling.toLowerCase().includes('single-path') || !s.cabling.toLowerCase().includes('multipath'))).map(s => s.id || s.name);
+    phase1Steps.push({
+      title: 'Remediate Single-Path Shelf Cabling (SPOF Elimination)',
+      objective: `Shelves [${singlePathShelves.join(', ')}] are connected via single-path SAS/NVMe loops, creating a single point of failure (SPOF) for storage I/O.`,
+      risk: 'A cable or HBA failure on a single-path shelf will cause an unplanned storage outage. This is the highest-priority physical remediation.',
+      cmd: `# Physical step: Connect secondary path cables\n# For each affected shelf:\n# - Controller ${nodeA} Port 0b (or expansion HBA Port 1) → Shelf IOM-B Port 0\n# - Controller ${nodeB} Port 0b (or expansion HBA Port 1) → Shelf IOM-B Port 1\n\n# After recabling, verify multipath connectivity:\nstorage shelf show -fields shelf-name,connection-type\nnode run -node * -command sysconfig -v | grep -i "multipath\|single-path"`,
+      expected: 'All shelves show "connection-type: multipath-ha". No single-path warning in sysconfig.',
+      ref: refLink('cabling')
+    });
+  }
+
+  // ── Phase 2: Firmware Updates ────────────────────────────────────────────
+  const phase2Steps = [];
+
+  // Disk firmware
+  const diskFwRule = curReports.find(r => r.id === 'BP_DISK_FIRMWARE' && r.status !== 'compliant');
+  if (diskFwRule) {
+    phase2Steps.push({
+      title: 'Update Disk Drive Firmware',
+      objective: diskFwRule.description,
+      risk: 'Outdated disk firmware may contain unresolved data integrity or performance defects. Update before ONTAP upgrade to avoid incompatibility.',
+      cmd: `# Verify current disk firmware across all shelves\nstorage disk show -fields disk,model,firmware-revision | sort -k3\n\n# Download the latest Disk Qualification Package (DQP) from:\n# https://mysupport.netapp.com/site/downloads/firmware/disk-drive-firmware\n\n# Install disk firmware package\nstorage disk firmware update\n\n# Monitor update progress (background operation)\nstorage disk firmware update show\n\n# Verify all disks are on current firmware\nstorage disk show -fields disk,model,firmware-revision`,
+      expected: 'All disks show current firmware revision matching the Disk Drive Firmware Matrix.',
+      ref: refLink('firmware')
+    });
+  }
+
+  // Shelf firmware
+  const shelfFwRule = curReports.find(r => r.id === 'BP_SHELF_FIRMWARE' && r.status !== 'compliant');
+  if (shelfFwRule) {
+    const outdatedShelves = (currentState.shelves || []).filter(s => s.firmware && s.latestFirmware && s.firmware !== s.latestFirmware).map(s => ({ id: s.id, current: s.firmware, latest: s.latestFirmware, model: s.model }));
+    phase2Steps.push({
+      title: 'Update Storage Shelf IOM Firmware',
+      objective: `${outdatedShelves.length > 0 ? 'Shelf(ves) ' + outdatedShelves.map(s=>`${s.id} (${s.current}→${s.latest})`).join(', ') + ' are running non-current IOM firmware.' : shelfFwRule.description}`,
+      risk: 'Outdated shelf module firmware can cause I/O errors, shelf health monitoring failures, and is a prerequisite for ONTAP upgrade qualification.',
+      cmd: `# Check all shelf firmware versions\nstorage shelf show -fields shelf-name,shelf-uid,firmware-version\n\n# Update shelf firmware non-disruptively${outdatedShelves.length > 0 ? '\n' + outdatedShelves.map(s => `storage shelf firmware update -shelf ${s.id}`).join('\n') : '\nstorage shelf firmware update'}\n\n# Monitor progress\nstorage shelf firmware update show\n\n# Verify after update\nstorage shelf show -fields shelf-name,firmware-version`,
+      expected: `All shelves show current IOM firmware version.`,
+      ref: refLink('firmware')
+    });
+  }
+
+  // SP/BMC firmware
+  const spFwRule = curReports.find(r => r.id === 'BP_SP_FIRMWARE' && r.status !== 'compliant');
+  if (spFwRule) {
+    const outdatedSPs = (currentState.spFirmware || []);
+    phase2Steps.push({
+      title: 'Update Service Processor / BMC Firmware',
+      objective: spFwRule.description,
+      risk: 'Outdated SP/BMC firmware may contain critical security vulnerabilities or stability issues. SP firmware should be updated before ONTAP upgrade.',
+      cmd: `# Check SP/BMC firmware on all nodes\nsystem service-processor show -fields node,firmware-version,status\n\n# Download SP firmware package from NetApp Support Site:\n# https://mysupport.netapp.com/site/downloads/firmware/sp-bmc\n\n# Update SP firmware on each node (one at a time, non-disruptive):\n${nodeNames.map(n => `system service-processor image update -node ${n}\n# Wait for reboot:\nsystem service-processor show -node ${n} -fields firmware-version`).join('\n\n')}`,
+      expected: `All nodes show updated SP/BMC firmware version.`,
+      ref: refLink('sp')
+    });
+  }
+
+  // Switch firmware
+  const switchRule = curReports.find(r => r.id === 'BP_SWITCH_RCF' && r.status !== 'compliant');
+  if (switchRule) {
+    const switches = currentState.switches || [];
+    phase2Steps.push({
+      title: 'Update Cluster/Storage Switch Firmware and RCF',
+      objective: switchRule.description,
+      risk: 'Switches running outdated RCF versions may not support newer ONTAP features and can cause cluster communication instability during upgrade.',
+      cmd: `# Verify current switch versions\nnetwork device-discovery show\nsystem switch ethernet show\n\n${switches.map(sw => `# Switch: ${sw.name} (${sw.model || 'Unknown'})\n# Current: ${sw.version || 'Unknown'}${sw.rcfVersion ? ' / RCF: ' + sw.rcfVersion : ''}\n# Download new EFOS/NX-OS + RCF from: https://mysupport.netapp.com/site/products/all/details/broadcom-supported-switches\n# Follow NetApp TR-4626 (BES-53248) or TR-4649 (Nexus 9336C) for update procedure`).join('\n\n')}\n\n# After update, verify:\nsystem switch ethernet show -fields switch,sw-version\nnetwork device-discovery show`,
+      expected: 'All switches show current EFOS/NX-OS version and RCF version.',
+      ref: refLink('switches')
+    });
+  }
+
+  // System BIOS firmware
+  const biosFwRule = curReports.find(r => r.id === 'BP_SYSTEM_FIRMWARE' && r.status !== 'compliant');
+  if (biosFwRule) {
+    phase2Steps.push({
+      title: 'Update Controller System Firmware (BIOS/LOADER)',
+      objective: biosFwRule.description,
+      risk: 'Controller firmware (BIOS/LOADER) updates are required for compatibility with new ONTAP versions and for critical stability patches.',
+      cmd: `# Verify controller firmware on all nodes\nnode run -node * sysconfig -a | grep -i "BIOS\|Firmware\|LOADER"\n\n# System firmware is typically updated as part of ONTAP ANDU upgrade\n# For manual update, download from NetApp Support Site\n# and follow the platform-specific hardware guide`,
+      expected: 'All nodes report current system firmware version after ONTAP upgrade.',
+      ref: refLink('firmware')
+    });
+  }
+
+  // ACP
+  const acpRule = curReports.find(r => r.id === 'BP_ACP_STATUS' && r.status === 'warning');
+  if (acpRule) {
+    phase2Steps.push({
+      title: 'Configure Alternate Control Path (ACP) for SAS Shelves',
+      objective: acpRule.description,
+      risk: 'Without ACP, shelf I/O module failures may not be correctly reported and shelf-level management operations will be degraded.',
+      cmd: `# Verify ACP status\nstorage acp show\n\n# Enable ACP (connect IOM ACP Ethernet ports to management network first)\nstorage acp configure -enabled true\n\n# Verify ACP connectivity to all shelf modules\nstorage acp connectivity show\nstorage acp show`,
+      expected: 'ACP shows "enabled: true" with full connectivity to all shelf IOM modules.',
+      ref: refLink('acp')
+    });
+  }
+
+  // ── Phase 3: ONTAP Configuration Remediation ─────────────────────────────
+  const phase3Steps = [];
+
+  const licRule = curReports.find(r => r.id === 'BP_LICENSING' && r.status !== 'compliant');
+  if (licRule) {
+    const expiredLics = (currentState.licenses || []).filter(l => l.status === 'expired' || l.status === 'disabled').map(l => l.name);
+    phase3Steps.push({
+      title: 'Renew and Reinstall Expired Feature Licenses',
+      objective: `License entitlements for [${expiredLics.join(', ')}] are expired. Expired licenses will disable the associated protocol or feature after the grace period.`,
+      risk: 'Expired protocol licenses (NFS, CIFS, FCP, iSCSI) will terminate data access for the affected protocol after the expiry grace period.',
+      cmd: `# View all licenses and status\nsystem license show\n\n# Check serial number for license key retrieval\nsystem show -instance | grep -i serial\n\n# Retrieve new license keys from:\n# https://mysupport.netapp.com/site/global/dashboard (My Support > Licenses)\n\n# Install renewed license keys (replace <key> with actual license string):\n${expiredLics.map(l => `system license add -license-code <${l.toUpperCase()}_LICENSE_KEY>`).join('\n')}\n\n# Verify license status\nsystem license show`,
+      expected: `All licenses for [${expiredLics.join(', ')}] show "active" status.`,
+      ref: refLink('licenses')
+    });
+  }
+
+  const lifRule = curReports.find(r => r.id === 'BP_LIF_FAILOVER' && r.status !== 'compliant');
+  if (lifRule) {
+    const displacedLifs = (currentState.lifs || []).filter(l => !l.isHome).map(l => l.lif);
+    phase3Steps.push({
+      title: 'Revert Displaced LIFs to Home Ports',
+      objective: `${displacedLifs.length} LIF(s) [${displacedLifs.slice(0,5).join(', ')}${displacedLifs.length>5?'...':''}] are not on their configured home ports. This can indicate underlying port or node issues.`,
+      risk: 'LIFs not on home ports reduce redundancy and may indicate a persistent port or network failure. Client performance may also be affected.',
+      cmd: `# View current LIF placement\nnetwork interface show -fields lif,status-admin,status-oper,current-node,current-port,home-node,home-port\n\n# Revert all LIFs to home ports\nnetwork interface revert *\n\n# If specific LIFs remain displaced, check home port status:\nnetwork port show -fields port,node,link,speed,mtu\n\n# Verify after revert\nnetwork interface show -fields lif,is-home`,
+      expected: 'All LIFs show "is-home: true".',
+      ref: refLink('lifs')
+    });
+  }
+
+  const mtuRule = curReports.find(r => r.id === 'BP_PORT_MTU_SIZING' && r.status !== 'compliant');
+  if (mtuRule) {
+    const blockPorts = [];
+    (currentState.nodes || []).forEach(n => {
+      (n.ports || []).filter(p => p.type === 'data' && p.mtu === 1500).forEach(p => blockPorts.push({ node: n.name, port: p.name }));
+    });
+    if (blockPorts.length > 0) {
+      phase3Steps.push({
+        title: 'Configure Jumbo Frames (MTU 9000) on Block Storage Ports',
+        objective: `Data ports [${blockPorts.map(p=>`${p.node}:${p.port}`).join(', ')}] are configured at MTU 1500. iSCSI and NVMe-oF protocols require end-to-end jumbo frames for optimal throughput.`,
+        risk: 'MTU 1500 on iSCSI/NVMe-oF ports reduces throughput by up to 30% and increases CPU overhead. Must be set consistently across the entire network path.',
+        cmd: `# Set MTU 9000 on data ports (ensure switches are also configured for jumbo frames):\n${blockPorts.map(p => `network port modify -node ${p.node} -port ${p.port} -mtu 9000`).join('\n')}\n\n# Verify MTU settings\nnetwork port show -fields node,port,mtu\n\n# Test jumbo frame connectivity (from client):\n# ping -f -l 8972 <lif-ip-address>`,
+        expected: 'All block storage ports show MTU 9000. Ping test with 8972 byte payload succeeds without fragmentation.',
+        ref: refLink('mtu')
+      });
+    }
+  }
+
+  const smRule = curReports.find(r => r.id === 'BP_SNAPMIRROR_LAG' && r.status !== 'compliant');
+  if (smRule) {
+    const lagRels = (currentState.snapmirrorRelationships || []).filter(r => !r.healthy);
+    phase3Steps.push({
+      title: 'Remediate SnapMirror Replication Lag',
+      objective: smRule.description,
+      risk: 'SnapMirror lag beyond RPO thresholds means recovery point objectives are not being met. Lag > 24h may indicate a broken relationship requiring resync.',
+      cmd: `# View all SnapMirror relationships and health\nsnapmirror show -fields source-path,destination-path,status,lag-time,healthy\n\n# For unhealthy relationships, attempt resync:\n${lagRels.length > 0 ? lagRels.map(r => `snapmirror resync -destination-path ${r.destination}`).join('\n') : 'snapmirror resync -destination-path <vol>'}\n\n# For broken-off relationships:\nsnapmirror show -fields status | grep broken-off\n# snapmirror resync -destination-path <destination>\n\n# Update all relationships now:\nsnapmirror update -destination-path *\n\n# Verify health after resync:\nsnapmirror show -fields healthy,lag-time`,
+      expected: 'All SnapMirror relationships show "healthy: true" and lag within configured schedule threshold.',
+      ref: refLink('snapmirror')
+    });
+  }
+
+  const spareRule = curReports.find(r => r.id === 'BP_SPARE_DISKS' && r.status !== 'compliant');
+  if (spareRule) {
+    phase3Steps.push({
+      title: 'Provision Minimum Spare Disk Drives',
+      objective: spareRule.description,
+      risk: 'Insufficient spare disks means a failed drive cannot be automatically replaced, leaving the RAID group permanently degraded and at risk of data loss on a second failure.',
+      cmd: `# View current spare disk inventory\nstorage disk show -state spare -fields disk,node,model,size\n\n# Check aggregate-level protection:\nstorage aggregate show -fields aggregate,raidtype,diskcount,disksize\n\n# Assign unowned disks as spares:\nstorage disk assign -disk <disk-id> -owner ${nodeA}\n\n# Verify spare pool adequacy\nstorage disk show -spare`,
+      expected: 'Minimum 2 spare disks per disk type/size per node. storage disk show -spare shows adequate spares.',
+      ref: refLink('spares')
+    });
+  }
+
+  // ── Phase 4: ONTAP Software Upgrade ──────────────────────────────────────
+  const phase4Steps = [];
+  const upgradeNeeded = targetOntap && targetOntap !== ontapVer;
+  if (upgradeNeeded) {
+    const allHops = hops.length > 0 ? [ontapVer, ...hops, targetOntap] : [ontapVer, targetOntap];
+
+    phase4Steps.push({
+      title: 'Pre-Upgrade Validation',
+      objective: `Validate the cluster is ready for ONTAP upgrade from ${ontapVer} to ${targetOntap}. ANDU (Automated Nondisruptive Upgrade) requires all health checks to pass.`,
+      risk: 'Skipping pre-upgrade validation risks an interrupted upgrade, potentially leaving nodes on mixed ONTAP versions which is an unsupported state.',
+      cmd: `# Run automated pre-upgrade check:\ncluster image validate -version ${allHops[1] || targetOntap}\n\n# Review all validation results (look for any FAIL entries):\ncluster image validate -version ${allHops[1] || targetOntap} -show-validation-details true\n\n# Check cluster-wide health:\ncluster show\nstorage failover show\nnetwork interface show -fields is-home | grep false`,
+      expected: 'cluster image validate shows "Validation Passed" with no FAIL entries. All nodes healthy.',
+      ref: refLink('ontapUpg')
+    });
+
+    // Generate one step per hop
+    for (let h = 0; h < allHops.length - 1; h++) {
+      const fromVer = allHops[h];
+      const toVer   = allHops[h + 1];
+      const isLast  = h === allHops.length - 2;
+      phase4Steps.push({
+        title: `${isMetroCluster ? 'MetroCluster ' : ''}ONTAP Upgrade: ${fromVer} → ${toVer}${!isLast ? ' (Intermediate Hop)' : ' (Target Version)'}`,
+        objective: `Perform ${isMetroCluster ? 'rolling MetroCluster negotiated switchover' : 'Automated Nondisruptive Upgrade (ANDU)'} from ONTAP ${fromVer} to ${toVer}.`,
+        risk: 'Ensure firmware updates (disk, shelf, SP) are complete before this step. Verify HA and cluster health before proceeding.',
+        cmd: isMetroCluster
+          ? `# MetroCluster ONTAP Upgrade: ${fromVer} → ${toVer}\n\n# Step 1: Download image on both sites\ncluster image package get -url http://<internal-server>/ontap/${toVer}/image.tgz\n\n# Step 2: Validate upgrade\ncluster image validate -version ${toVer}\n\n# Step 3: Perform negotiated switchover (Site B)\nmetrocluster switchover -controller-replacement false\n\n# Step 4: Upgrade Site B nodes\ncluster image update -version ${toVer} -nodes ${nodeB} -noconfirm\n\n# Step 5: Switchback\nmetrocluster switchback\n\n# Step 6: Repeat for Site A\ncluster image update -version ${toVer} -nodes ${nodeA} -noconfirm\n\n# Verify\ncluster image show-update-progress`
+          : `# ONTAP ANDU Upgrade: ${fromVer} → ${toVer}\n\n# Step 1: Download the ONTAP image package\ncluster image package get -url http://<internal-webserver>/ontap_images/${toVer}/image.tgz\n\n# Step 2: Validate (review all findings before proceeding)\ncluster image validate -version ${toVer}\n\n# Step 3: Set automatic giveback (required for ANDU)\nstorage failover modify -node * -auto-giveback true\n\n# Step 4: Initiate nondisruptive upgrade\ncluster image update -version ${toVer} -force-rolling true\n\n# Step 5: Monitor progress (run in separate session)\ncluster image show-update-progress\n\n# Step 6: Verify completion\ncluster image show\ncluster show`,
+        expected: `All nodes show ONTAP version ${toVer}. Cluster health shows "healthy: true".`,
+        ref: refLink('ontapUpg')
+      });
+    }
+
+    phase4Steps.push({
+      title: 'Post-Upgrade: Disk and Shelf Firmware Auto-Update Verification',
+      objective: 'After ONTAP upgrade, verify that background disk and shelf firmware update tasks have completed. ANDU triggers these automatically.',
+      risk: 'Do not reboot nodes or perform maintenance until background firmware tasks complete.',
+      cmd: `# Check background firmware disk update status\nstorage disk firmware update show\n\n# Check shelf firmware update status\nstorage shelf firmware update show\n\n# If updates are pending, monitor until complete:\nstorage disk show -fields firmware-revision | sort -u`,
+      expected: 'No pending firmware updates shown. All disks and shelves at current firmware.',
+      ref: refLink('firmware')
+    });
+  }
+
+  // ── Phase 5: MetroCluster Specific (if applicable) ────────────────────────
+  const phase5Steps = [];
   if (isMetroCluster) {
-    actionSteps.push({
-      num: stepCounter++,
-      title: "Verify MetroCluster Replication & Sync Health",
-      desc: "Perform cluster health verification commands to ensure both Site-A and Site-B replication states are fully synchronized prior to executing upgrades.",
-      cmd: "metrocluster check run\nmetrocluster check show\nmc operation show"
+    const mcRule = curReports.find(r => r.id === 'BP_METROCLUSTER' && r.status !== 'compliant');
+    const mirrorRule = curReports.find(r => r.id === 'BP_MCC_MIRRORING' && r.status !== 'compliant');
+
+    phase5Steps.push({
+      title: 'Verify MetroCluster Replication and Sync Health',
+      objective: `Verify both ${mcType} sites are synchronized and replication is healthy before any upgrade or maintenance activity.`,
+      risk: 'Performing an upgrade with degraded MetroCluster synchronization can result in data loss at the secondary site.',
+      cmd: `# Run comprehensive MetroCluster health check\nmetrocluster check run\nmetrocluster check show\n\n# Verify operation history\nmetrocluster operation show -fields operation,state\n\n# Check replication status\nmetrocluster show\nmetrocluster node show\n\n# Verify aggregate mirroring (all data aggregates should be mirrored)\nstorage aggregate show -fields aggregate,mirror-status`,
+      expected: 'metrocluster check show: all checks show "ok". All data aggregates show "mirror-status: mirrored".',
+      ref: refLink('metrocluster')
     });
-  }
 
-  if (cablingRemediationActive) {
-    actionSteps.push({
-      num: stepCounter++,
-      title: "Remediate Storage Shelf Loop Cabling",
-      desc: "Connect secondary loop path cables to establish Multipath HA wiring redundancy and remove the single point of failure (SPOF).",
-      cmd: "storage cabinet show\nui run -node * -command sasadmin expander_map"
-    });
-  }
-
-  // Step 2: Shelf / Disk Firmware Updates
-  const fixFw = document.getElementById("model-upgrade-firmware").checked;
-  const originalHadOutdatedFw = currentState.shelves.some(s => s.firmware !== s.latestFirmware);
-  if (fixFw && originalHadOutdatedFw) {
-    actionSteps.push({
-      num: stepCounter++,
-      title: "Apply Storage Shelf & Disk Firmware Upgrades",
-      desc: "Download and install the latest qualified firmware to ensure system stability prior to ONTAP operating system modifications.",
-      cmd: "storage shelf firmware update\nstorage disk firmware update"
-    });
-  }
-
-  // Step 3: PCIe Cards Mounting
-  if (cards.length > 0) {
-    const listText = cards.map(c => {
-      const cKey = typeof c === 'string' ? c : c.cardKey;
-      const slotNum = typeof c === 'string' ? '?' : c.slot;
-      const cardSpec = EXP_CARDS_CATALOG[cKey];
-      return `Slot ${slotNum}: ${cardSpec ? cardSpec.name : cKey}`;
-    }).join(", ");
-    actionSteps.push({
-      num: stepCounter++,
-      title: "Physically Mount PCIe Expansion Cards",
-      desc: `Shut down controllers sequentially and insert PCIe expansion adapter cards into controller chassis slots: ${listText}.`,
-      cmd: "system node halt -node <node_name> -inhibit-takeover false\nsysconfig -card"
-    });
-  }
-
-  // Step 4: License updates
-  const appliedLicenses = [];
-  const checkboxes = document.querySelectorAll("#license-list-form input[type='checkbox']");
-  checkboxes.forEach(box => {
-    const licName = box.getAttribute("data-lic");
-    const wasActive = currentState.licenses.some(l => l.name === licName && l.status === "active");
-    if (box.checked && !wasActive) {
-      appliedLicenses.push(licName);
-    }
-  });
-
-  if (appliedLicenses.length > 0) {
-    actionSteps.push({
-      num: stepCounter++,
-      title: `Install Active NetApp License Entitlements`,
-      desc: `Renew and install license keys for protocol features: ${appliedLicenses.join(", ")}.`,
-      cmd: `system license add -license-code <license_key_string>`
-    });
-  }
-
-  // Step 5: ONTAP Software Hops
-  if (hops.length > 0) {
-    if (isMetroCluster) {
-      actionSteps.push({
-        num: stepCounter++,
-        title: `Execute Rolling MetroCluster ONTAP Software Upgrade: ${hopListText}`,
-        desc: "Upgrade nodes sequentially using negotiated switchover. Perform switchover Site B ➔ Upgrade Node B ➔ Switchback ➔ Repeat for Site A.",
-        cmd: "metrocluster switchover -controller-replacement true\ncluster image package get -url http://internal-web/ontap_images/\ncluster image validate -version <target>\nsystem node reboot -node <site_b_node>\nmetrocluster switchback"
-      });
-    } else {
-      actionSteps.push({
-        num: stepCounter++,
-        title: `Execute Multi-hop ONTAP Software Upgrade: ${hopListText}`,
-        desc: "Perform rolling multi-hop updates sequential download. Validate pre-upgrade check outputs at each version upgrade block.",
-        cmd: "cluster image package get -url http://internal-webserver/ontap_images/\ncluster image validate -version <target_version>\ncluster image update"
+    if (mirrorRule) {
+      const unmirroredAggrs = (currentState.aggregates || []).filter(a => a.isMirrored === false && !a.name.startsWith('aggr0')).map(a => a.name);
+      phase5Steps.push({
+        title: 'Mirror Unmirrored Data Aggregates',
+        objective: `Data aggregate(s) [${unmirroredAggrs.join(', ')}] are not mirrored. In a MetroCluster configuration, all data aggregates MUST be mirrored for DR protection.`,
+        risk: 'Unmirrored aggregates in MetroCluster have NO disaster recovery protection. A site failure will result in permanent data loss for volumes on these aggregates.',
+        cmd: `# Mirror each unmirrored aggregate:\n${unmirroredAggrs.map(a => `storage aggregate mirror -aggregate ${a}`).join('\n')}\n\n# Monitor mirroring resync progress\nstorage aggregate show -fields aggregate,mirror-status,mirror-disks`,
+        expected: `All aggregates show "mirror-status: mirrored".`,
+        ref: refLink('metrocluster')
       });
     }
   }
 
-  // Step 6: Hardware shelves
-// Gather all available storage ports for LLD commands
-    const allStoragePortsA = resolveStoragePorts(currentState, shelfType, shelfCount);
+  // ── Phase 6: Post-Remediation Validation ─────────────────────────────────
+  const phase6Steps = [
+    {
+      title: 'Final Cluster Health Verification',
+      objective: 'Perform comprehensive post-remediation health verification to confirm all issues have been resolved and the system is operating within compliance parameters.',
+      risk: 'Skipping final validation risks leaving undetected issues that could impact production workloads.',
+      cmd: `# Full cluster health check\ncluster show\ncluster ring show\nstorage failover show\n\n# Verify all LIFs are on home ports\nnetwork interface show -fields lif,is-home\n\n# Verify no disk errors\nstorage disk show -broken\nstorage disk show -state failed\n\n# Verify aggregate health\nstorage aggregate show\n\n# Verify all licenses active\nsystem license show | grep -v active\n\n# Check EMS for recent errors\nevent log show -severity error -time-range -1h\n\n# Final SP/BMC health\nsystem service-processor show`,
+      expected: 'Cluster shows healthy. No broken/failed disks. All LIFs on home ports. No error events in last 1 hour.',
+      ref: refLink('precheck')
+    },
+    {
+      title: 'Close Maintenance Window and Final AutoSupport',
+      objective: 'Close the maintenance window and send a post-remediation AutoSupport to document the completed work for NetApp Support records.',
+      risk: 'Leaving maintenance window open suppresses legitimate alerts from the monitoring system.',
+      cmd: `# Send post-maintenance ASUP\nsystem node autosupport invoke -node * -type all -message "MAINT=0h Remediation complete on ${model} - all issues resolved"\n\n# Verify AutoSupport is working normally\nsystem node autosupport show -fields last-timestamp,status`,
+      expected: 'AutoSupport transmitted. Cluster health monitoring resumed with no suppression.',
+      ref: 'KB: 000020671'
+    }
+  ];
 
-    if (shelfType !== "none") {
-      const spec = SHELF_SPEC_MAP[shelfType];
-      const stackLimit = shelfType.includes("ns224") ? 1 : 4;
-      const numStacks = Math.ceil(shelfCount / stackLimit);
-      
-      let lldCablingDesc = `Physically mount the ${ruAdded}U shelf capacity stacks in cabinet rack. Run cabling loops according to NetApp Multipath HA best practices:<br>`;
-      const nodes = currentState.nodes || [];
-      const haPairsCount = Math.floor(nodes.length / 2) || 1;
-      
-      for (let s = 0; s < numStacks; s++) {
-        const pIdx = s % haPairsCount;
-        const nodeA = nodes[pIdx * 2] || { name: `node-${String.fromCharCode(97 + pIdx * 2)}` };
-        const nodeB = nodes[pIdx * 2 + 1] || { name: `node-${String.fromCharCode(97 + pIdx * 2 + 1)}` };
-        
-        const nodeAName = nodeA.name;
-        const nodeBName = nodeB.name;
+  // ─── Build Section C HTML ─────────────────────────────────────────────────
+  const hasPhase1 = phase1Steps.length > 0;
+  const hasPhase2 = phase2Steps.length > 0;
+  const hasPhase3 = phase3Steps.length > 0;
+  const hasPhase4 = phase4Steps.length > 0;
+  const hasPhase5 = phase5Steps.length > 0;
 
-        const firstIdx = s * stackLimit;
-        const lastIdx = Math.min((s + 1) * stackLimit - 1, shelfCount - 1);
-        const stackShelvesNum = lastIdx - firstIdx + 1;
-        
-        const pairStackIdx = Math.floor(s / haPairsCount);
-        const pPort = allStoragePortsA[pairStackIdx * 2] || "HBA port A (Exhausted)";
-        const rPort = allStoragePortsA[pairStackIdx * 2 + 1] || "HBA port B (Exhausted)";
-        
-        lldCablingDesc += `• <strong>Stack ${s + 1}</strong> (${stackShelvesNum} shelf/shelves): Cable to HA Pair <strong>${nodeAName.toUpperCase()} / ${nodeBName.toUpperCase()}</strong>. Connect ${nodeAName} Port <strong>${pPort}</strong> to first shelf IOM-A IN, and ${nodeBName} Port <strong>${pPort}</strong> to first shelf IOM-B IN. Connect return path to last shelf IOM-A OUT using ${nodeBName} Port <strong>${rPort}</strong>, and to last shelf IOM-B OUT using ${nodeAName} Port <strong>${rPort}</strong>.<br>`;
-      }
-      
-      actionSteps.push({
-        num: stepCounter++,
-        title: `Mount and Cable Storage Shelf Loops (${shelfType.toUpperCase()})`,
-        desc: lldCablingDesc,
-        cmd: "storage shelf show\nstorage cabling show\nstorage disk show -container-type spare"
+  const phaseCount = [hasPhase1, hasPhase2, hasPhase3, hasPhase4, hasPhase5].filter(Boolean).length + 2; // +2 for Phase 0 and 6
+
+  const noIssues = !hasPhase1 && !hasPhase2 && !hasPhase3 && !hasPhase4 && !hasPhase5;
+  const noIssuesBanner = noIssues ? `<div style="padding:1rem; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px; margin-bottom:1rem; color:#86efac; font-size:0.88rem;">🎉 <strong>All systems compliant.</strong> No remediation actions are required. ${upgradeNeeded ? `Only the ONTAP upgrade from ${ontapVer} to ${targetOntap} is planned.` : 'The cluster is operating within all best practice parameters.'}</div>` : '';
+
+  const secC = `
+  <div class="report-section" style="margin-bottom:1.5rem;">
+    <h3 style="font-size:1rem; font-weight:700; color:#fff; margin-bottom:0.25rem;">🗺️ Phased Remediation Action Plan</h3>
+    <p style="font-size:0.8rem; color:var(--color-muted); margin:0 0 1rem 0;">${phaseCount} phases | Commands are system-specific to ${model} (${serial}) — ready for direct execution</p>
+    ${noIssuesBanner}
+    ${makePhase(0, '🔍', 'Pre-Remediation Health Check & Maintenance Window', '#8ec5fc', phase0Steps)}
+    ${hasPhase1 ? makePhase(1, '🔧', 'Critical Hardware Remediation', '#ef4444', phase1Steps) : ''}
+    ${hasPhase2 ? makePhase(2, '⚡', 'Firmware Updates (Disk → Shelf → SP/BMC → Switch)', '#f59e0b', phase2Steps) : ''}
+    ${hasPhase3 ? makePhase(3, '⚙️', 'ONTAP Configuration Remediation', '#a78bfa', phase3Steps) : ''}
+    ${hasPhase4 ? makePhase(4, '💿', 'ONTAP Software Upgrade: ' + ontapVer + ' → ' + targetOntap, '#34d399', phase4Steps) : ''}
+    ${hasPhase5 ? makePhase(5, '🔄', 'MetroCluster-Specific Steps', '#fb923c', phase5Steps) : ''}
+    ${makePhase(6, '✅', 'Post-Remediation Validation & Close', '#22c55e', phase6Steps)}
+  </div>`;
+
+  // ─── SECTION D: Runbook Export ────────────────────────────────────────────
+  const allPhasedSteps = [
+    { label: 'PHASE 0: Pre-Remediation Health Check', steps: phase0Steps },
+    { label: 'PHASE 1: Critical Hardware Remediation', steps: phase1Steps },
+    { label: 'PHASE 2: Firmware Updates', steps: phase2Steps },
+    { label: 'PHASE 3: ONTAP Configuration Remediation', steps: phase3Steps },
+    { label: 'PHASE 4: ONTAP Software Upgrade', steps: phase4Steps },
+    { label: 'PHASE 5: MetroCluster Steps', steps: phase5Steps },
+    { label: 'PHASE 6: Post-Remediation Validation', steps: phase6Steps },
+  ].filter(p => p.steps.length > 0);
+
+  const buildRunbookText = () => {
+    let txt = `NETAPP REMEDIATION RUNBOOK\n`;
+    txt += `Generated: ${new Date().toISOString()}\n`;
+    txt += `System: ${model} | ONTAP: ${ontapVer} | Serial: ${serial}\n`;
+    txt += `Nodes: ${nodeNames.join(', ')}\n`;
+    txt += `${'='.repeat(80)}\n\n`;
+    allPhasedSteps.forEach(p => {
+      txt += `${'='.repeat(80)}\n${p.label}\n${'='.repeat(80)}\n\n`;
+      p.steps.forEach((s, i) => {
+        txt += `--- Step ${i+1}: ${s.title} ---\n`;
+        if (s.objective) txt += `Objective: ${s.objective}\n`;
+        if (s.risk) txt += `Risk if skipped: ${s.risk}\n`;
+        if (s.cmd) txt += `\nCommands:\n${s.cmd}\n`;
+        if (s.expected) txt += `\nExpected: ${s.expected}\n`;
+        txt += `\n`;
       });
+    });
+    return txt;
+  };
 
-      const allocation = document.getElementById("disk-allocation").value;
-      if (allocation === "expand") {
-        const inputs = document.querySelectorAll(".aggr-alloc-input");
-        inputs.forEach(input => {
-          const D = parseInt(input.value) || 0;
-          if (D > 0) {
-            const aggrName = input.getAttribute("data-aggr");
-            actionSteps.push({
-              num: stepCounter++,
-              title: `Extend Storage Usable Aggregate: ${aggrName}`,
-              desc: `Add ${D} newly inserted drives to expand aggregate capacity parameters. ONTAP will execute disk additions dynamically.`,
-              cmd: `storage aggregate add-disks -aggregate ${aggrName} -diskcount ${D}`
-            });
-          }
-        });
-      } else if (allocation === "new") {
-        actionSteps.push({
-          num: stepCounter++,
-          title: "Provision New Storage Aggregate volume",
-          desc: "Construct a new RAID-DP layout aggregate pool using the newly mapped shelf drives.",
-          cmd: `storage aggregate create -aggregate aggr_expansion_a -diskcount ${document.getElementById("disk-count").value - 2} -raidtype raid_dp`
-        });
-      }
-    }
-  
-    const upgradeConsiderations = getUpgradeHopsConsiderations(currentState.version.ontap, targetOntap, currentState.version.model);
+  const secD = `
+  <div class="report-section" style="margin-bottom:1.5rem;">
+    <h3 style="font-size:1rem; font-weight:700; color:#fff; margin-bottom:0.75rem;">💾 Runbook Export</h3>
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+      <button id="copy-all-commands-btn" class="btn-primary" style="font-size:0.82rem; padding:0.5rem 1.25rem;">📋 Copy All Commands</button>
+      <button id="download-runbook-btn" class="btn-secondary" style="font-size:0.82rem; padding:0.5rem 1.25rem;">💾 Download Runbook (.txt)</button>
+    </div>
+  </div>`;
 
-  let introHtml = "";
-  if (isGreenfieldMode) {
-    introHtml = `
-      <p style="font-size: 1.05rem; line-height: 1.7; margin-bottom: 1.5rem; color:#e5e7eb;">
-        This document details the design and deployment architecture for a new NetApp storage cluster (Model: <strong>${currentState.version.model}</strong>, Serial: <strong>${currentState.version.serial}</strong>). 
-        The proposed configuration runs ONTAP <strong>${targetOntap}</strong>, achieving a Best Practice Compliance Score of <strong>${modScore}%</strong> by default.
-      </p>
-      <p style="font-size: 1.05rem; line-height: 1.7; margin-bottom: 1.5rem; color:#e5e7eb;">
-        The system is cabled in a redundant Multipath HA topology with active protocol licenses. This report outlines the cabling, storage, and PCIe host interface card configuration details for the new Greenfield deployment.
-      </p>
-    `;
-  } else {
-    introHtml = `
-      <p style="font-size: 1.05rem; line-height: 1.7; margin-bottom: 1.5rem; color:#e5e7eb;">
-        This document details the modernization strategy for the NetApp storage cluster (Model: <strong>${currentState.version.model}</strong>, Serial: <strong>${currentState.version.serial}</strong>). 
-        The current deployment runs ONTAP <strong>${currentState.version.ontap}</strong>, yielding a Best Practice Compliance Score of <strong>${curScore}%</strong>. 
-        Critical lifecycle support limits, single path vulnerabilities, capacity buffers, and expired licenses represent exposure windows.
-      </p>
-      <p style="font-size: 1.05rem; line-height: 1.7; margin-bottom: 1.5rem; color:#e5e7eb;">
-        Through implementation of this modeling roadmap—upgrading to ONTAP <strong>${targetOntap}</strong>, updating hardware loop pathways, resolving license key deficits, appending storage shelves, and installing PCIe host adapters—the cluster's health and best practice rating increases to <strong>${modScore}%</strong>, establishing a fully compliant storage topology.
-      </p>
-    `;
-  }
-
-  let metaGridHtml = "";
-  if (isGreenfieldMode) {
-    metaGridHtml = `
-      <div class="report-meta-grid">
-        <div>
-          <div class="detail-label">Compliance Score</div>
-          <div style="font-size: 1.4rem; font-weight:700; color:var(--color-success);">${modScore}% (Compliant)</div>
-        </div>
-        <div>
-          <div class="detail-label">Usable Storage Volume</div>
-          <div style="font-size: 1.4rem; font-weight:700; color:#fff;">${formatGB(capAfter.usable)}</div>
-        </div>
-        <div>
-          <div class="detail-label">Firmware Alignment</div>
-          <div style="font-size: 1.4rem; font-weight:700; color:#fff;">Latest Qualified</div>
-        </div>
-        <div>
-          <div class="detail-label">Path Resiliency</div>
-          <div style="font-size: 1.4rem; font-weight:700; color:#fff;">Multipath HA</div>
-        </div>
-      </div>
-    `;
-  } else {
-    metaGridHtml = `
-      <div class="report-meta-grid">
-        <div>
-          <div class="detail-label">Compliance Gain</div>
-          <div style="font-size: 1.4rem; font-weight:700; color:var(--color-success);">${curScore}% ➔ ${modScore}%</div>
-        </div>
-        <div>
-          <div class="detail-label">Usable Storage Delta</div>
-          <div style="font-size: 1.4rem; font-weight:700; color:#fff;">${formatGB(capBefore.usable)} ➔ ${formatGB(capAfter.usable)}</div>
-        </div>
-        <div>
-          <div class="detail-label">Firmware Baselines</div>
-          <div style="font-size: 1.4rem; font-weight:700; color:#fff;">${fixFw ? 'Aligned' : 'No Action'}</div>
-        </div>
-        <div>
-          <div class="detail-label">Path Resiliency</div>
-          <div style="font-size: 1.4rem; font-weight:700; color:#fff;">${fixCable ? 'Multipath HA' : 'Unchanged'}</div>
-        </div>
-      </div>
-    `;
-  }
-
-  let metroClusterDetailsHtml = "";
-  if (isMetroCluster) {
-    const nodes = currentState.nodes || [];
-    const nodesPerSite = Math.floor(nodes.length / 2) || 1;
-    let siteANodeItems = "";
-    let siteBNodeItems = "";
-    for (let k = 0; k < nodesPerSite; k++) {
-      const nodeA = nodes[2 * k];
-      const nodeB = nodes[2 * k + 1];
-      if (nodeA) {
-        siteANodeItems += `<li><strong>${nodeA.name.toUpperCase()}</strong> (S/N: ${nodeA.serial || "N/A"})</li>`;
-      }
-      if (nodeB) {
-        siteBNodeItems += `<li><strong>${nodeB.name.toUpperCase()}</strong> (S/N: ${nodeB.serial || "N/A"})</li>`;
-      }
-    }
-    metroClusterDetailsHtml = `
-      <div style="margin-top: 1.25rem; padding: 1rem; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.15); border-radius: var(--radius-md);">
-        <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--color-info); font-size: 0.95rem; display: flex; align-items: center; gap: 0.35rem;">
-          <svg style="width: 16px; height: 16px; fill: currentColor;" viewBox="0 0 24 24">
-            <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/>
-          </svg>
-          MetroCluster DR Node Site Allocation
-        </h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
-          <div style="background: rgba(0,0,0,0.15); padding: 0.5rem 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
-            <strong style="color: var(--color-primary); font-size: 0.85rem;">Local Site (Site-A) Nodes:</strong>
-            <ul style="margin: 0.25rem 0 0 0; padding-left: 1.1rem; font-size: 0.8rem; line-height: 1.4; color: #d1d5db;">
-              ${siteANodeItems}
-            </ul>
-          </div>
-          <div style="background: rgba(0,0,0,0.15); padding: 0.5rem 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
-            <strong style="color: var(--color-info); font-size: 0.85rem;">Remote Partner Site (Site-B) Nodes:</strong>
-            <ul style="margin: 0.25rem 0 0 0; padding-left: 1.1rem; font-size: 0.8rem; line-height: 1.4; color: #d1d5db;">
-              ${siteBNodeItems}
-            </ul>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  let softwareSectionHtml = "";
-  let alertsSectionHtml = "";
-  let complianceSectionHtml = "";
-  let checklistSectionHeader = "";
-  let portSectionHeader = "";
-  let cablingSectionHeader = "";
-
-  if (isGreenfieldMode) {
-    complianceSectionHtml = `
-      <!-- Best Practice Compliance Verification -->
-      <div class="report-section">
-        <h3>3. Best Practice Compliance Design Verification</h3>
-        <p style="margin-bottom: 1rem; color:#e5e7eb;">The proposed design conforms completely to all NetApp hardware, software, cabling, and licensing best-practice metrics:</p>
-        ${generateScoreBreakdownHtml(curReports, modReports)}
-      </div>
-    `;
-    checklistSectionHeader = "<h3>4. Technical Execution & Implementation Plan</h3>";
-    portSectionHeader = "<h3>5. Front-End Port Sizing & Connectivity Recommendations</h3>";
-    cablingSectionHeader = "<h3>6. Detailed Cabling Port-to-Port Connections</h3>";
-  } else {
-    softwareSectionHtml = `
-      <!-- Software Upgrade Hops & Risks -->
-      <div class="report-section">
-        <h3>3. Software Architecture Pathway</h3>
-        <p style="margin-bottom: 1rem; color:#e5e7eb;">To move the cluster safely to the target ONTAP release, execution of the following upgrade path is recommended:</p>
-        <div style="background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: var(--radius-md); border:1px solid var(--border-color); display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.5rem;">
-          <div style="color:#fff;"><strong>Current:</strong> ONTAP ${currentState.version.ontap}</div>
-          <div style="color:#fff;"><strong>Upgrade Hop Timeline:</strong> <span style="font-family:var(--font-mono); color:var(--color-info);">${hopListText}</span></div>
-          <div style="font-size:0.8rem; color:var(--color-muted);">
-            * Upgrades beyond 2 major versions require sequential hop installations to protect metadata schema mappings.
-          </div>
-        </div>
-
-        ${upgradeConsiderations.length > 0 ? `
-          <h4 style="color:#fff; font-size:1rem; margin-bottom:0.75rem;">Dynamic Step-by-Step Upgrade Risks & Considerations</h4>
-          <div style="display:flex; flex-direction:column; gap:1rem; margin-bottom:1.5rem;">
-            ${upgradeConsiderations.map(hop => `
-              <div style="border: 1px solid var(--border-color); padding: 1rem; border-radius: var(--radius-md); background: rgba(0,0,0,0.15);">
-                <h5 style="margin-top:0; margin-bottom:0.5rem; color:#fde047; font-size:0.9rem; display:flex; align-items:center; gap:0.5rem;">
-                  <span style="font-size:0.6rem; background:var(--color-warning); color:#000; padding:1px 4px; border-radius:2px; font-weight:700;">
-                    ${hop.directUpgrade ? "DIRECT" : "MULTI-HOP"}
-                  </span>
-                  ${hop.title}
-                </h5>
-                <div style="font-size:0.8rem; line-height:1.4; color:#d1d5db;">
-                  <strong style="color:#fca5a5;">Risks:</strong>
-                  <ul style="margin-top:2px; margin-bottom:6px; padding-left:15px;">
-                    ${hop.risks.map(r => `<li>${r}</li>`).join("")}
-                  </ul>
-                  <strong style="color:#a7f3d0;">Pre-Requisites:</strong>
-                  <ul style="margin-top:2px; margin-bottom:6px; padding-left:15px;">
-                    ${hop.preReqs.map(r => `<li>${r}</li>`).join("")}
-                  </ul>
-                  <strong style="color:var(--color-info);">Verification Commands:</strong>
-                  <pre style="margin-top:2px; margin-bottom:0; background:rgba(0,0,0,0.3); padding:6px; border-radius:2px; font-family:var(--font-mono); color:var(--color-info); font-size:0.75rem;">${hop.commands.join("\n")}</pre>
-                </div>
-              </div>
-            `).join("")}
-          </div>
-        ` : ""}
-      </div>
-    `;
-
-    alertsSectionHtml = `
-      <!-- AutoSupport Event Alerts & Log Warnings -->
-      <div class="report-section">
-        <h3>4. AutoSupport Event Alerts & Log Warnings</h3>
-        <p style="margin-bottom: 1rem; color:#e5e7eb;">The following alerts, hardware faults, and log warnings were parsed from the imported AutoSupport message bundle:</p>
-        ${generateReportASUPAlertsHtml()}
-      </div>
-    `;
-
-    complianceSectionHtml = `
-      <!-- Best Practice Compliance Remediation Details -->
-      <div class="report-section">
-        <h3>5. Best Practice Compliance Remediation Details</h3>
-        <p style="margin-bottom: 1rem; color:#e5e7eb;">The following analysis outlines the failing or sub-optimal best practices in the baseline configuration and the corresponding remediation actions modeled in the target design:</p>
-        ${generateScoreBreakdownHtml(curReports, modReports)}
-      </div>
-    `;
-
-    checklistSectionHeader = "<h3>6. Technical Execution & Implementation Plan</h3>";
-    portSectionHeader = "<h3>7. Front-End Port Sizing & Connectivity Recommendations</h3>";
-    cablingSectionHeader = "<h3>8. Detailed Cabling Port-to-Port Connections</h3>";
-  }
-
+  // ─── Assemble Full Report HTML ────────────────────────────────────────────
   frame.innerHTML = `
-    <div class="report-header">
-      <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem; color:#fff;">${isGreenfieldMode ? 'NetApp Architecture & Sizing Deployment Design' : 'NetApp Infrastructure Migration & Modernization Plan'}</h1>
-      <p style="color: var(--color-muted); font-size: 0.95rem;">Generated on: ${new Date().toLocaleDateString()} | System Reference: ${currentState.version.serial}</p>
-    </div>
-
-    <!-- Executive Summary Section -->
-    <div class="report-section">
-      <h3>1. Executive Summary</h3>
-      ${introHtml}
-      ${metaGridHtml}
-      ${metroClusterDetailsHtml}
-    </div>
-
-    <!-- Physical Sizing Impact -->
-    <div class="report-section">
-      <h3>2. Sizing & Power Considerations</h3>
-      <p style="margin-bottom: 1rem; color:#e5e7eb;">The physical implementation details of the modeling additions are captured below:</p>
-      <table class="compare-table" style="width:100%; margin-bottom: 1.5rem; font-size:0.85rem;">
-        <thead>
-          <tr>
-            <th>Specification Metric</th>
-            <th>Existing (Before)</th>
-            <th>Proposed (After)</th>
-            <th>Delta (Change)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Cabinet Rack Space (RU)</td>
-            <td>${footprintBefore.ru} U</td>
-            <td>${footprintAfter.ru} U</td>
-            <td style="font-weight:600; color:#34d399;">+${footprintAfter.ru - footprintBefore.ru} U ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
-          </tr>
-          <tr>
-            <td>Power Budget (Watts)</td>
-            <td>${footprintBefore.watts} W</td>
-            <td>${footprintAfter.watts} W</td>
-            <td style="font-weight:600; color:#34d399;">+${footprintAfter.watts - footprintBefore.watts} W ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
-          </tr>
-          <tr>
-            <td>Thermal Output (BTU/hr)</td>
-            <td>${footprintBefore.btu} BTU/hr</td>
-            <td>${footprintAfter.btu} BTU/hr</td>
-            <td style="font-weight:600; color:#34d399;">+${footprintAfter.btu - footprintBefore.btu} BTU/hr ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
-          </tr>
-          <tr>
-            <td>Raw Capacity Volume</td>
-            <td>${formatGB(rawCapBeforeGB)}</td>
-            <td>${formatGB(rawCapAfterGB)}</td>
-            <td style="font-weight:600; color:#34d399;">+${formatGB(rawCapAfterGB - rawCapBeforeGB)} ${isMetroCluster ? '(Site A & B Symmetrical)' : ''}</td>
-          </tr>
-          <tr>
-            <td>PCIe Expansion Cards</td>
-            <td>-</td>
-            <td>${cards.length} cards installed</td>
-            <td style="font-weight:600; color:#fff;">Sized Symmetrically</td>
-          </tr>
-        </tbody>
-      </table>
-      
-      ${!isGreenfieldMode ? `
-        <h4 style="color: #fff; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem;">Parsed Existing Storage & Disk Drive Inventory</h4>
-        ${generateReportStorageInventoryHtml(currentState)}
-        
-        <h4 style="color: #fff; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem;">Parsed Existing Aggregates & Storage Pools</h4>
-        ${generateReportAggregateInventoryHtml(currentState)}
-      ` : ''}
-
-      <h4 style="color: #fff; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem;">Modeled Target Storage & Disk Drive Inventory</h4>
-      ${generateReportStorageInventoryHtml(modeledState)}
-      
-      <h4 style="color: #fff; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem;">Modeled Target Aggregates & Storage Pools</h4>
-      ${generateReportAggregateInventoryHtml(modeledState)}
-    </div>
-
-    ${softwareSectionHtml}
-    ${alertsSectionHtml}
-    ${complianceSectionHtml}
-
-    <!-- Step-by-Step Technical action checklist -->
-    <div class="report-section">
-      ${checklistSectionHeader}
-      <p style="margin-bottom: 1.5rem; color:#e5e7eb;">Execute these steps sequentially. Run validation commands prior to entering subsequent phases.</p>
-      <div class="action-list">
-        ${actionSteps.map(step => `
-          <div class="action-step">
-            <div class="step-num">${step.num}</div>
-            <div class="step-details" style="width:100%;">
-              <h4 style="color:#fff; margin-top:0;">${step.title}</h4>
-              <p style="color:#d1d5db; font-size:0.85rem; margin-bottom:8px;">${step.desc}</p>
-              <pre class="step-command" style="font-size:0.75rem;">${step.cmd}</pre>
-            </div>
-          </div>
-        `).join("")}
+    <div style="max-width:100%; padding:0.5rem 0;">
+      <h2 style="font-size:1.1rem; font-weight:800; color:#fff; margin:0 0 1.25rem 0; padding-bottom:0.5rem; border-bottom:1px solid rgba(255,255,255,0.1);">📄 System Remediation Report — ${model}</h2>
+      ${secA}
+      ${secB}
+      ${secC}
+      ${secD}
+      <div style="margin-top:1rem; padding:0.75rem 1rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:6px; font-size:0.72rem; color:var(--color-muted);">
+        <strong style="color:var(--color-text);">⚠️ Legal Disclaimer:</strong> This report is generated by an automated analysis tool and is provided for informational and planning purposes only. All physical rack installations, cable topologies, card slots, aggregate layouts, firmware updates, and ONTAP upgrades must be reviewed and approved by certified NetApp professionals against current official documentation prior to execution. NetApp® is a registered trademark of NetApp, Inc.
       </div>
-    </div>
+    </div>`;
 
-    <!-- Front-End Port Sizing & connectivity recommendations -->
-    <div class="report-section">
-      ${portSectionHeader}
-      <p style="margin-bottom: 1rem; color:#e5e7eb;">The physical network and storage Target ports have been audited for host connectivity and license alignment:</p>
-      <table class="compare-table" style="width: 100%; font-size:0.8rem; margin-bottom: 1.5rem;">
-        <thead>
-          <tr>
-            <th>Node</th>
-            <th>Physical Port</th>
-            <th>Assigned Role</th>
-            <th>Negotiated Speed</th>
-            <th>Link Status</th>
-            <th>Configuration Recommendation</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${generateReportPortsHtml()}
-        </tbody>
-      </table>
-    </div>
+  // ─── Wire up export buttons ───────────────────────────────────────────────
+  const copyBtn = document.getElementById('copy-all-commands-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const allCmds = allPhasedSteps.flatMap(p =>
+        p.steps.filter(s => s.cmd).map(s => `# === ${p.label} — ${s.title} ===\n${s.cmd}`)
+      ).join('\n\n');
+      navigator.clipboard.writeText(allCmds).then(() => {
+        copyBtn.textContent = '✅ Copied!';
+        setTimeout(() => { copyBtn.textContent = '📋 Copy All Commands'; }, 2000);
+      }).catch(() => {
+        copyBtn.textContent = '⚠️ Copy failed — use browser copy';
+      });
+    });
+  }
 
-    <!-- Detailed Cabling Port-to-Port Connections -->
-    <div class="report-section">
-      ${cablingSectionHeader}
-      <p style="margin-bottom: 1rem; color:#e5e7eb;">The physical port-to-port connections for all storage shelf loops in the modeled target configuration are detailed below:</p>
-      ${generateCablingTableHtml(modeledState)}
-    </div>
+  const dlBtn = document.getElementById('download-runbook-btn');
+  if (dlBtn) {
+    dlBtn.addEventListener('click', () => {
+      const txt = buildRunbookText();
+      const blob = new Blob([txt], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = \`NetApp_Runbook_\${model.replace(/\\s+/g,'_')}_\${new Date().toISOString().split('T')[0]}.txt\`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
 
-    <!-- Legal Disclaimer and Indemnification Agreement -->
-    <div class="report-section" style="border-top: 2px solid var(--border-color); padding-top: 1.5rem; margin-top: 2rem; page-break-inside: avoid;">
-      <h3 style="color:#f87171; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
-        <svg style="width:20px; height:20px; fill:#f87171;" viewBox="0 0 24 24">
-          <path d="M12,2L1,21H23L12,2M12,6L19.53,19H4.47L12,6M11,10V14H13V10H11M11,16V18H13V16H11Z"/>
-        </svg>
-        9. Legal Disclaimer & Indemnification Notice
-      </h3>
-      <p style="font-size: 0.8rem; color: #e5e7eb; line-height: 1.5; margin-bottom: 0.5rem;">
-        <strong>NOTICE TO USER:</strong> THIS REPORT IS AN AUTOMATED ESTIMATION AND PROPOSAL AND IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. BY PRINTING, DOWNLOADING, SHARING, OR EXECUTING THIS PLAN, YOU ACKNOWLEDGE AND AGREE TO FULLY INDEMNIFY, DEFEND, AND HOLD HARMLESS THE AUTHORS, CREATORS, AND DISTRIBUTORS OF THIS TOOL FROM ANY AND ALL CLAIMS, LIABILITIES, DAMAGES, COSTS, LOSS OF DATA, DOWNTIME, OR SYSTEM FAILURE RESULTING FROM THE USE OR MISUSE OF THIS MATERIAL.
-      </p>
-      <p style="font-size: 0.8rem; color: var(--color-muted); line-height: 1.5;">
-        All physical rack installations, cable topologies, card slots, aggregate layouts, and ONTAP firmware updates must be manually reviewed and approved by certified NetApp professionals against official hardware and platform documentation.
-      </p>
-    </div>
-  `;
-
+  // ─── SnapMirror section (existing) ───────────────────────────────────────
   if (currentState.snapmirrorRelationships && currentState.snapmirrorRelationships.length > 0) {
     let smHTML = '<h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;">SnapMirror Replication Relationships</h3>';
     smHTML += '<table class="compare-table" style="width:100%;font-size:0.85rem;"><thead><tr><th>Source</th><th>Destination</th><th>Status</th><th>Lag</th><th>Healthy</th></tr></thead><tbody>';
     currentState.snapmirrorRelationships.forEach(rel => {
       const healthIcon = rel.healthy ? '✅' : '❌';
-      smHTML += `<tr><td>${rel.source}</td><td>${rel.destination}</td><td>${rel.status}</td><td>${rel.lag}</td><td>${healthIcon}</td></tr>`;
+      smHTML += \`<tr><td>\${rel.source}</td><td>\${rel.destination}</td><td>\${rel.status}</td><td>\${rel.lag}</td><td>\${healthIcon}</td></tr>\`;
     });
     smHTML += '</tbody></table>';
     const smSection = document.getElementById("snapmirror-section");

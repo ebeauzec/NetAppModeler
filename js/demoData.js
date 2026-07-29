@@ -27,7 +27,7 @@ slot 2: Quad-port 12G SAS Adapter (PMC-Sierra PM8068)
 slot 3: Dual-port 100GbE NIC
 
 Shelf 1: DS224C (S/N: SHFL-000001) v0212 (Latest: v0224)
-    Disk 0: NETAPP X343_S163A960ATE (960GB, SSD, FW: NA04, S/N: SSD0001)
+    Disk 0: NETAPP X343_S163A960ATE (960GB, SSD, FW: NA02, S/N: SSD0001)
     Disk 1: NETAPP X343_S163A960ATE (960GB, SSD, FW: NA04, S/N: SSD0002)
     Disk 2: NETAPP X343_S163A960ATE (960GB, SSD, FW: NA04, S/N: SSD0003)
     Disk 3: NETAPP X343_S163A960ATE (960GB, SSD, S/N: SSD0004)
@@ -132,7 +132,14 @@ node-b e0d    Default   Default            up     1500  auto/10000`,
 
       "SWITCHES": `===== Ethernet Switch Show =====
 Switch Name: CSW-BES-01 Model: BES-53248 Version: 1.2.0.1
-Switch Name: CSW-BES-02 Model: BES-53248 Version: 1.2.0.1`
+Switch Name: CSW-BES-02 Model: BES-53248 Version: 1.2.0.1`,
+      
+      "SP-FIRMWARE": `System Service Processor show
+
+Node               IP-Address      Firmware Version  Status
+-----              ----------      ----------------  ------
+fas8300-01         192.168.10.100  11.7              online
+fas8300-02         192.168.10.101  11.7              online`
     }
   },
   
@@ -348,6 +355,16 @@ node-a1 e0d    Default   Default            up     9000  auto/25000`,
       "SWITCHES": `===== Ethernet Switch Show =====
 Switch Name: CSW-NEXUS-01 Model: Nexus 9336C-FX2 Version: 9.3(8)
 Switch Name: CSW-NEXUS-02 Model: Nexus 9336C-FX2 Version: 9.3(8)`,
+
+      "SW-INFO": `System switch ethernet show
+
+Switch                      Type                  Address         Model
+--------------------------- --------------------- --------------- --------
+cs1 (sn1:0)                 cluster-network       192.168.1.1     BES-53248
+cs2 (sn1:1)                 cluster-network       192.168.1.2     BES-53248
+
+RCF Version:                1.10
+EFOS Version:               3.9.0.2`,
 
       "METROCLUSTER-SHOW": `===== METROCLUSTER SHOW =====
 Cluster        Partner Cluster        Configuration State
