@@ -764,25 +764,32 @@ export const NETAPP_PLATFORMS = {
     maxPcieSlots: 2
   },
   "FAS2750": {
-    maxOntap: "9.19.1",
-    supportedShelves: ["ds224c", "ds212c", "ds460c"],
-    unsupportedShelves: ["ns224", "ds2246"],
-    shelfWarnings: { "ds224c": "DS224C SFF expansion supported." },
+    maxOntap: "9.15.1",
+    // DS2246 (IOM6, 6Gb SAS) is supported — FAS2750's 12Gb SAS is backward-compatible with 6G shelves.
+    // DS224C (IOM12, 12Gb SAS) is the native shelf; DS212C and DS460C are also supported.
+    supportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246", "ds4246"],
+    unsupportedShelves: ["ns224"],
+    shelfWarnings: {
+      "ds2246": "DS2246 (IOM6, 6Gb SAS) runs at 6Gb speed on FAS2750's 12Gb controller. Supported but consider upgrading to DS224C for full 12Gb throughput.",
+      "ds4246": "DS4246 (IOM6, 6Gb SAS) runs at 6Gb speed. Supported but consider upgrading shelves."
+    },
     shelfErrors: {
-      "ns224": "FAS2750 does not support NVMe shelves.",
-      "ds2246": "Legacy 6G SAS not supported."
+      "ns224": "FAS2750 does not support NVMe/RoCE shelves (NS224). NS224 requires AFF A-series or newer FAS platforms."
     },
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
-    maxFirmware: "v11.7",
-    description: "Legacy entry SFF hybrid array (End of Support on ONTAP 9.15.1+).",
+    maxFirmware: "v11.9",
+    description: "Entry-level 2U SFF hybrid controller. End of Software Support: ONTAP 9.15.1 (no 9.16+).",
     ports: {
       cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
-      san: ["0e", "0f"],
-      storage: ["0a", "0b"]
+      data:    ["e0c", "e0d"],
+      san:     ["0e", "0f"],
+      // 4 onboard SAS ports in 2 pairs — required for full multipath HA with DS2246/DS224C stacks
+      storage: ["0a", "0b", "0c", "0d"]
     },
     supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
-    maxPcieSlots: 2
+    // FAS2750 2U chassis: 3 PCIe slots per controller (slots 1, 2, 3)
+    // In an HA pair in the same chassis: A-side uses slots 1-3, B-side uses slots 4-6
+    maxPcieSlots: 3
   },
   "FAS2650": {
     maxOntap: "9.11.1",
