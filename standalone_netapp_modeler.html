@@ -11270,13 +11270,20 @@ function populatePcieSlotDropdown(selectedCardKey) {
         // 2. Slot Type Recommendation Alignment check
         const isTypeMatch = slot.recType === "any" || slot.recType === cardType;
         if (!isTypeMatch) {
-          // If there is an idle/free slot optimized specifically for this card type, disable this sub-optimal slot
-          const hasBetterSlotFree = slots.some(s => !occupiedSlots.has(s.num) && s.recType === cardType && !(is100G && (s.type || '').includes("x8")));
-          if (hasBetterSlotFree) {
+          // Only disable this slot if a GENUINELY AVAILABLE better-typed slot exists
+          // (free, not occupied, not an x8 bottleneck for 100G cards)
+          const betterSlot = slots.find(s =>
+            !occupiedSlots.has(s.num) &&
+            s.num !== slot.num &&
+            s.recType === cardType &&
+            !(is100G && (s.type || '').includes("x8"))
+          );
+          if (betterSlot) {
             opt.disabled = true;
-            labelSuffix = ` [Sub-optimal: Use Slot ${slots.find(s => !occupiedSlots.has(s.num) && s.recType === cardType).num}]`;
+            labelSuffix = ` [Sub-optimal: Use Slot ${betterSlot.num}]`;
           } else {
-            labelSuffix = " (Sub-optimal slot)";
+            // No better slot available — allow this one as a fallback
+            labelSuffix = " (Sub-optimal — no preferred slot free)";
           }
         } else {
           labelSuffix = " (Recommended slot)";
@@ -12067,48 +12074,54 @@ function updateCapacityImpactDetails() {
 
       const finalPorts = countAvailablePorts();
       const nodes = currentState.nodes || [];
-      const haPairsCount = Math.floor(nodes.length / 2) || 1;
-      const nvmeShelvesPerHA = Math.ceil(totalNvmeShelves / haPairsCount);
-      const sasShelvesPerHA = Math.ceil(totalSasShelves / haPairsCount);
+
+      // In MetroCluster, port requirements are per-site (not total across all sites).
+      // Each site is an independent HA pair with its own set of ports.
+      // Divide total shelf count by number of sites (2 for MCC, 1 for standard).
+      const siteCount = isMetroCluster ? 2 : 1;
+      const haPairsCount = Math.max(1, Math.floor(nodes.length / 2 / siteCount));
+      const nvmeShelvesPerHA = Math.ceil((totalNvmeShelves / siteCount) / Math.max(1, haPairsCount));
+      const sasShelvesPerHA = Math.ceil((totalSasShelves / siteCount) / Math.max(1, haPairsCount));
 
       const isHighEnd = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'].some(m => currentState.version.model.toUpperCase().includes(m));
       const requiredRocePorts = isHighEnd ? Math.ceil(nvmeShelvesPerHA / 2) * 2 : nvmeShelvesPerHA * 2;
       const requiredSasPorts = Math.ceil(sasShelvesPerHA / 4) * 2;
 
-      if (totalNvmeShelves > 0 && finalPorts.roce < requiredRocePorts) {
+      if (nvmeShelvesPerHA > 0 && finalPorts.roce < requiredRocePorts) {
         // If ports.roce === 0, this likely means ports weren't parsed from ASUP (incomplete data)
         // — show as a warning rather than a hard block so the user can still proceed
         if (finalPorts.roce === 0 && finalPorts.sas === 0) {
           // No port data at all — cannot validate, show advisory but don't block
           mcNoticeHtml += `
             <div style="background: rgba(245,158,11,0.12); border: 1px solid var(--color-warning); color: #fde047; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.75rem;">
-              <strong>⚠️ Port Inventory Incomplete:</strong> Storage port data was not parsed from the ASUP file. Manually verify that sufficient RoCE/SAS ports exist on each node before proceeding. Required: ${requiredRocePorts} × 100G RoCE port(s) per node for ${nvmeShelvesPerHA} NVMe shelf(ves).
+              <strong>⚠️ Port Inventory Incomplete:</strong> Storage port data was not parsed from the ASUP file. Manually verify that sufficient RoCE/SAS ports exist on each node before proceeding. Required: ${requiredRocePorts} × 100G RoCE port(s) per node for ${nvmeShelvesPerHA} NVMe shelf(ves) per site.
             </div>
           `;
         } else {
-          errorMsg = `Port Exhaustion (RoCE): Required RoCE ports per controller: ${requiredRocePorts} (for ${nvmeShelvesPerHA} NVMe shelves), but only ${finalPorts.roce} 100G RoCE ports are available and no free PCIe slots remain on Node A.`;
+          errorMsg = `Port Exhaustion (RoCE): Required RoCE ports per controller: ${requiredRocePorts} (for ${nvmeShelvesPerHA} NVMe shelves per site), but only ${finalPorts.roce} 100G RoCE ports are available and no free PCIe slots remain on Node A.`;
           isSupported = false;
         }
-      } else if (totalSasShelves > 0 && finalPorts.sas < requiredSasPorts) {
+      } else if (sasShelvesPerHA > 0 && finalPorts.sas < requiredSasPorts) {
         if (finalPorts.roce === 0 && finalPorts.sas === 0) {
           mcNoticeHtml += `
             <div style="background: rgba(245,158,11,0.12); border: 1px solid var(--color-warning); color: #fde047; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.75rem;">
-              <strong>⚠️ Port Inventory Incomplete:</strong> SAS port data was not parsed from the ASUP. Manually verify SAS HBA ports are available. Required: ${requiredSasPorts} SAS port(s) for ${sasShelvesPerHA} SAS shelf(ves).
+              <strong>⚠️ Port Inventory Incomplete:</strong> SAS port data was not parsed from the ASUP. Manually verify SAS HBA ports are available. Required: ${requiredSasPorts} SAS port(s) for ${sasShelvesPerHA} SAS shelf(ves) per site.
             </div>
           `;
         } else {
-          errorMsg = `Port Exhaustion (SAS): Required SAS ports per controller: ${requiredSasPorts} (for ${sasShelvesPerHA} SAS shelves), but only ${finalPorts.sas} SAS ports are available and no free PCIe slots remain on Node A.`;
+          errorMsg = `Port Exhaustion (SAS): Required SAS ports per controller: ${requiredSasPorts} (for ${sasShelvesPerHA} SAS shelves per site), but only ${finalPorts.sas} SAS ports are available and no free PCIe slots remain on Node A.`;
           isSupported = false;
         }
       }
 
-      // Validate daisy chain limits — only if port data is actually available
+      // Validate daisy chain limits per site — only when port data is available
+      // nvmeShelvesPerHA already represents per-site count, so compare against one node's ports
       const maxShelves = isHighEnd ? finalPorts.roce : Math.floor(finalPorts.roce / 2);
-      if (finalPorts.roce > 0 && totalNvmeShelves > maxShelves) {
+      if (finalPorts.roce > 0 && nvmeShelvesPerHA > maxShelves) {
         if (!isHighEnd) {
-          errorMsg = `Daisy-Chaining Unsupported: NVMe shelf daisy-chaining is not supported on platform ${currentState.version.model}. Each of the ${totalNvmeShelves} NVMe shelves requires a dedicated direct connection pair. Max shelves supported with current ports: ${maxShelves}.`;
+          errorMsg = `Daisy-Chaining Unsupported: NVMe shelf daisy-chaining is not supported on platform ${currentState.version.model}. Each of the ${nvmeShelvesPerHA} NVMe shelves per site requires a dedicated direct connection pair. Max shelves supported with current ports: ${maxShelves}.`;
         } else {
-          errorMsg = `Daisy-Chain Limit Exceeded: NS224 NVMe shelves support a maximum daisy-chain stack depth of 2 shelves per loop. Max shelves supported with current ports: ${maxShelves}. Current configuration has ${totalNvmeShelves} shelves.`;
+          errorMsg = `Daisy-Chain Limit Exceeded: NS224 NVMe shelves support a maximum daisy-chain stack depth of 2 shelves per loop. Max shelves supported with current ports: ${maxShelves}. Current configuration has ${nvmeShelvesPerHA} shelves per site.`;
         }
         isSupported = false;
       }
