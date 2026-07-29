@@ -1059,7 +1059,9 @@ export function parseASUP(files) {
     }
   });
 
-  // --- 8  const switches = [];
+  // --- 8. Parse Cluster Switches ---
+  const switches = [];
+
   const seenSwitchNames = new Set();
 
   // Known switch model patterns — used for keyword scan and model normalization
