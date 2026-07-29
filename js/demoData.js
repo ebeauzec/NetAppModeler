@@ -255,51 +255,116 @@ System ID: 936870915 (node-b2); System Serial Number: 900000222222 (node-b2)
 Memory Size: 262144 MB
 Number of Processors: 32
 
-slot 0: M.2 NVMe SSD
+slot 0: M.2 NVMe Boot Device
 slot 1: Quad-port 25GbE SFP28 Adapter
 slot 2: Dual-port 100GbE NVMe-oF Shelf Adapter
-        cabling: loop 1a cabled to Shelf 1 (NS224) Multipath HA
+         cabling: loop 1a cabled to Shelf 1 (NS224) Multipath HA
+         cabling: loop 1b cabled to Shelf 2 (NS224) Multipath HA
 slot 3: Dual-port 32Gb FC Adapter
 
-Shelf 1: NS224 (S/N: NS224-000001) v0120 (Latest: v0130)
+Shelf 1: NS224 (S/N: NS224-STA0001) v0120 (Latest: v0130)
     Disk 0: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0001)
     Disk 1: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0002)
     Disk 2: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0003)
-    Disk 3: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0004)
-    Disk 4: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0005)
-    Disk 5: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0006)
-    Disk 6: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0007)
-    Disk 7: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0008)
-    Disk 8: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0009)
-    Disk 9: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0010)
-    Disk 10: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0011)
-    Disk 11: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0012)
-    Disk 12: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0013)
-    Disk 13: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0014)
-    Disk 14: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0015)
-    Disk 15: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0016)
-    Disk 16: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0017)
-    Disk 17: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0018)
-    Disk 18: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0019)
-    Disk 19: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0020)
-    Disk 20: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0021)
-    Disk 21: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0022)
-    Disk 22: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0023)
-    Disk 23: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0024)
+    Disk 3: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0004)
+    Disk 4: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0005)
+    Disk 5: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0006)
+    Disk 6: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0007)
+    Disk 7: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0008)
+    Disk 8: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0009)
+    Disk 9: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0010)
+    Disk 10: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0011)
+    Disk 11: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0012)
+    Disk 12: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0013)
+    Disk 13: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0014)
+    Disk 14: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0015)
+    Disk 15: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0016)
+    Disk 16: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0017)
+    Disk 17: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0018)
+    Disk 18: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0019)
+    Disk 19: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0020)
+    Disk 20: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0021)
+    Disk 21: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0022)
+    Disk 22: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0023)
+    Disk 23: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0024)
 
-Shelf 2: NS224 (S/N: NS224-000002) v0130 (Latest: v0130)
+Shelf 2: NS224 (S/N: NS224-STA0002) v0130 (Latest: v0130)
     Disk 0: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0101)
     Disk 1: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0102)
     Disk 2: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0103)
-    Disk 3: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0104)
-    Disk 4: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0105)
-    Disk 5: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0106)
-    Disk 6: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0107)
-    Disk 7: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0108)
-    Disk 8: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0109)
-    Disk 9: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0110)
-    Disk 10: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0111)
-    Disk 11: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, S/N: NVM0112)`,
+    Disk 3: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0104)
+    Disk 4: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0105)
+    Disk 5: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0106)
+    Disk 6: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0107)
+    Disk 7: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0108)
+    Disk 8: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0109)
+    Disk 9: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0110)
+    Disk 10: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0111)
+    Disk 11: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0112)
+    Disk 12: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0113)
+    Disk 13: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0114)
+    Disk 14: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0115)
+    Disk 15: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0116)
+    Disk 16: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0117)
+    Disk 17: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0118)
+    Disk 18: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0119)
+    Disk 19: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0120)
+    Disk 20: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0121)
+    Disk 21: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0122)
+    Disk 22: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0123)
+    Disk 23: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0124)
+
+Shelf 3: NS224 (S/N: NS224-STB0001) v0120 (Latest: v0130)
+    Disk 0: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0201)
+    Disk 1: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0202)
+    Disk 2: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0203)
+    Disk 3: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0204)
+    Disk 4: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0205)
+    Disk 5: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0206)
+    Disk 6: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0207)
+    Disk 7: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0208)
+    Disk 8: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0209)
+    Disk 9: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0210)
+    Disk 10: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0211)
+    Disk 11: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0212)
+    Disk 12: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0213)
+    Disk 13: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0214)
+    Disk 14: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0215)
+    Disk 15: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0216)
+    Disk 16: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0217)
+    Disk 17: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0218)
+    Disk 18: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0219)
+    Disk 19: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0220)
+    Disk 20: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0221)
+    Disk 21: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0222)
+    Disk 22: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0223)
+    Disk 23: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0224)
+
+Shelf 4: NS224 (S/N: NS224-STB0002) v0130 (Latest: v0130)
+    Disk 0: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0301)
+    Disk 1: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0302)
+    Disk 2: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0303)
+    Disk 3: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0304)
+    Disk 4: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0305)
+    Disk 5: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0306)
+    Disk 6: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0307)
+    Disk 7: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0308)
+    Disk 8: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0309)
+    Disk 9: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0310)
+    Disk 10: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0311)
+    Disk 11: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0312)
+    Disk 12: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0313)
+    Disk 13: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0314)
+    Disk 14: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0315)
+    Disk 15: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0316)
+    Disk 16: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0317)
+    Disk 17: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0318)
+    Disk 18: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0319)
+    Disk 19: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0320)
+    Disk 20: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0321)
+    Disk 21: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0322)
+    Disk 22: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0323)
+    Disk 23: NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD, FW: NA01, S/N: NVM0324)`,
 
       "SYSCONFIG-R": `Aggregate aggr0_a1 (online, raid_dp) (block-checksum)
     Size: 2200 GB, Usable: 1800 GB, Used: 1500 GB, Free: 300 GB
@@ -308,7 +373,7 @@ Shelf 2: NS224 (S/N: NS224-000002) v0130 (Latest: v0130)
         Spare Disks: 0
 
 Aggregate aggr_nvme_sync_a1 (online, raid_dp, mirrored) (block-checksum)
-    Size: 20900 GB, Usable: 17100 GB, Used: 14750 GB, Free: 23500 GB
+    Size: 20900 GB, Usable: 17100 GB, Used: 14750 GB, Free: 2350 GB
     RAID Group rg1 (dual parity, active)
         Disks: 11 (1.9TB NVMe SSD)
         Spare Disks: 1 of size 1.9TB NVMe SSD (node-a1)
@@ -319,12 +384,6 @@ Aggregate aggr_nvme_local_a2 (online, raid_dp) (block-checksum)
         Disks: 11 (1.9TB NVMe SSD)
         Spare Disks: 1 of size 1.9TB NVMe SSD (node-a2)
 
-Spare Disks (node-a1):
-    NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD) - 1 spares
-
-Spare Disks (node-a2):
-    NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD) - 1 spares
-
 Aggregate aggr0_b1 (online, raid_dp) (block-checksum)
     Size: 2200 GB, Usable: 1800 GB, Used: 1500 GB, Free: 300 GB
     RAID Group rg0 (dual parity, active)
@@ -332,7 +391,7 @@ Aggregate aggr0_b1 (online, raid_dp) (block-checksum)
         Spare Disks: 0
 
 Aggregate aggr_nvme_sync_b1 (online, raid_dp, mirrored) (block-checksum)
-    Size: 20900 GB, Usable: 17100 GB, Used: 14750 GB, Free: 23500 GB
+    Size: 20900 GB, Usable: 17100 GB, Used: 14750 GB, Free: 2350 GB
     RAID Group rg1 (dual parity, active)
         Disks: 11 (1.9TB NVMe SSD)
         Spare Disks: 1 of size 1.9TB NVMe SSD (node-b1)
@@ -341,13 +400,7 @@ Aggregate aggr_nvme_local_b2 (online, raid_dp) (block-checksum)
     Size: 20900 GB, Usable: 17100 GB, Used: 11500 GB, Free: 5600 GB
     RAID Group rg2 (dual parity, active)
         Disks: 11 (1.9TB NVMe SSD)
-        Spare Disks: 1 of size 1.9TB NVMe SSD (node-b2)
-
-Spare Disks (node-b1):
-    NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD) - 1 spares
-
-Spare Disks (node-b2):
-    NETAPP X371_S16431T9ATE (1.9TB, NVMe SSD) - 1 spares`,
+        Spare Disks: 1 of size 1.9TB NVMe SSD (node-b2)`,
 
       "LICENSE": `Base Licenses:
 System Serial Number: 900000111111 (node-a1)
@@ -364,21 +417,32 @@ System Serial Number: 900000111111 (node-a1)
 node-a1 e0a    Default   Cluster            up     9000  auto/25000
 node-a1 e0b    Default   Cluster            up     9000  auto/25000
 node-a1 e0c    Default   Default            up     9000  auto/25000
-node-a1 e0d    Default   Default            up     9000  auto/25000`,
+node-a1 e0d    Default   Default            up     9000  auto/25000
+node-a2 e0a    Default   Cluster            up     9000  auto/25000
+node-a2 e0b    Default   Cluster            up     9000  auto/25000
+node-b1 e0a    Default   Cluster            up     9000  auto/25000
+node-b1 e0b    Default   Cluster            up     9000  auto/25000
+node-b2 e0a    Default   Cluster            up     9000  auto/25000
+node-b2 e0b    Default   Cluster            up     9000  auto/25000`,
 
-      "SWITCHES": `===== Ethernet Switch Show =====
-Switch Name: CSW-NEXUS-01 Model: Nexus 9336C-FX2 Version: 9.3(8)
-Switch Name: CSW-NEXUS-02 Model: Nexus 9336C-FX2 Version: 9.3(8)`,
-
-      "SW-INFO": `System switch ethernet show
+      "SWITCHES": `system switch ethernet show
 
 Switch                      Type                  Address         Model
 --------------------------- --------------------- --------------- --------
-cs1 (sn1:0)                 cluster-network       192.168.1.1     BES-53248
-cs2 (sn1:1)                 cluster-network       192.168.1.2     BES-53248
+cs1                         cluster-network       192.168.10.1    N9K-C9336C-FX2
+cs2                         cluster-network       192.168.10.2    N9K-C9336C-FX2
 
-RCF Version:                1.10
-EFOS Version:               3.9.0.2`,
+Switch Name: cs1  Model: Nexus 9336C-FX2  Version: 9.3(8)
+Switch Name: cs2  Model: Nexus 9336C-FX2  Version: 9.3(8)
+RCF Version: 1.10`,
+
+      "SP-INFO": `system service-processor show
+Node      Type   Firmware Version  Status
+--------- ------ ----------------  ------
+node-a1   SP     11.9              online
+node-a2   SP     11.7              online
+node-b1   SP     11.9              online
+node-b2   SP     11.7              online`,
 
       "METROCLUSTER-SHOW": `===== METROCLUSTER SHOW =====
 Cluster        Partner Cluster        Configuration State
