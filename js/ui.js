@@ -1512,7 +1512,10 @@ async function handleFiles(fileList) {
   // Clear file status grid
   const grid = document.getElementById('file-status-grid');
   if (grid) grid.innerHTML = '';
-  // ────────────────────────────────────────────────────────────────────────
+  // ── Clear all localStorage gap_* keys so previous manual selections never bleed in ──
+  const GAP_FIELDS = ['ontapVersion','model','serial','spFirmware','switchFirmware','diskFirmware'];
+  GAP_FIELDS.forEach(f => { try { localStorage.removeItem('gap_' + f); } catch(e) {} });
+  // ──────────────────────────────────────────────────────────────────────────
 
   for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
@@ -1909,6 +1912,38 @@ function renderDataQualityPanel(state) {
     </div>
   ` : '';
 
+  // ── Parse Diagnostics (shown when confidence is 0%) ─────────────────────
+  const diagHtml = (() => {
+    const results = window._perFileResults || [];
+    if (overall > 0 || results.length === 0) return '';
+    const parts = results.map(r => {
+      const keys = (r.extractedKeys || []);
+      const chars = r.totalChars || 0;
+      const warns = (r.parseWarnings || []).slice(0, 2).map(w => (w.message || w)).join('<br>');
+      // Show a 120-char sample of the ALL bucket to see if content looks right
+      const allText = (window.uploadedFiles && window.uploadedFiles['ALL']) || '';
+      const sample = allText.trim().slice(0, 300).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      if (chars === 0) {
+        return `<div style="color:#f87171;"><strong>${r.filename}</strong>: No readable text extracted — file may be encrypted, binary, or use unsupported compression. Try extracting and uploading the text files directly.</div>`;
+      }
+      return `<div style="color:#fbbf24;"><strong>${r.filename}</strong>: Extracted ${(chars/1024).toFixed(0)} KB across ${keys.length} bucket(s): <em style="color:#c7d2fe;">${keys.join(', ')}</em><br>
+        ${warns ? `<span style="color:#94a3b8;">Notes: ${warns}</span><br>` : ''}
+        <details style="margin-top:4px;"><summary style="cursor:pointer;color:#94a3b8;font-size:0.68rem;">▶ Show extracted text sample (first 300 chars)</summary>
+          <pre style="margin:4px 0;padding:6px;background:rgba(0,0,0,0.3);border-radius:4px;font-size:0.65rem;color:#c7d2fe;white-space:pre-wrap;word-break:break-all;max-height:120px;overflow:auto;">${sample || '(empty)'}</pre>
+        </details></div>`;
+    }).join('<hr style="border-color:rgba(255,255,255,0.05);margin:0.4rem 0;">');
+    return `
+    <details style="margin-top:0.75rem;" open>
+      <summary style="cursor:pointer;font-size:0.72rem;font-weight:600;color:#f59e0b;padding:4px 0;list-style:none;">
+        🔍 Parse Diagnostic — Why is confidence 0%? (click to expand)
+      </summary>
+      <div style="margin-top:0.4rem;padding:0.5rem 0.6rem;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:6px;font-size:0.71rem;line-height:1.6;">
+        ${parts}
+        <div style="margin-top:0.5rem;color:#94a3b8;font-size:0.68rem;">ℹ Your ASUP file must contain ONTAP CLI text output (e.g. from <code>system node autosupport invoke</code>). If your file is a 7z archive, extract it first and upload the text files inside.</div>
+      </div>
+    </details>`;
+  })();
+
   panel.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
       <div>
@@ -1930,6 +1965,7 @@ function renderDataQualityPanel(state) {
     </div>
     ${filesHtml}
     ${conflictsHtml}
+    ${diagHtml}
     <div style="margin-top:0.5rem; font-size:0.68rem; color:#64748b; line-height:1.4;">
       🔶 Inferred = deduced from platform/version knowledge &nbsp;·&nbsp; ⬛ Default = placeholder — verify before proceeding
     </div>
@@ -1978,19 +2014,33 @@ function renderCriticalGapsPanel(state) {
   };
 
   const renderInput = (gap, isCritical) => {
-    const savedVal = localStorage.getItem('gap_' + gap.field) || '';
+    // NEVER read from localStorage — it was cleared on upload.
+    // Only read from currentState if the value was actually parsed.
+    const ds = (currentState && currentState.dataSources && currentState.dataSources[gap.field]) || null;
+    const parsedVal = ds && ds.source === 'parsed' ? (() => {
+      if (gap.field === 'ontapVersion') return currentState.version && currentState.version.ontap;
+      if (gap.field === 'model') return currentState.version && currentState.version.model;
+      if (gap.field === 'spFirmware') return currentState.spFirmware && currentState.spFirmware[0] && currentState.spFirmware[0].version;
+      return null;
+    })() : null;
+
     const color = isCritical ? '#ef4444' : '#f59e0b';
     const inputStyle = `flex:1; background:rgba(0,0,0,0.4); color:#fff; border:1px solid ${color}40; padding:6px 10px; border-radius:6px; font-size:0.78rem; min-width:0;`;
 
-    // Use select dropdown if promptType=select or we have a known option list
     const options = getOptions(gap.field) || gap.promptOptions || null;
     if (gap.promptType === 'select' || options) {
-      return `<select id="gap-input-${gap.field}" style="${inputStyle}">
+      const sourceLabel = parsedVal
+        ? `<span style="font-size:0.65rem;color:#22c55e;margin-bottom:3px;display:block;">✅ Parsed from ASUP: <strong>${parsedVal}</strong></span>`
+        : `<span style="font-size:0.65rem;color:#94a3b8;margin-bottom:3px;display:block;">⬛ Not found in ASUP — select manually</span>`;
+      return sourceLabel + `<select id="gap-input-${gap.field}" style="${inputStyle}">
         <option value="">-- Select ${gap.label} --</option>
-        ${(options || []).map(o => `<option value="${o}" ${savedVal===o?'selected':''}>${o}</option>`).join('')}
+        ${(options || []).map(o => `<option value="${o}" ${parsedVal===o?'selected':''}>${o}</option>`).join('')}
       </select>`;
     }
-    return `<input type="text" id="gap-input-${gap.field}" value="${savedVal}"
+    const sourceLabel = parsedVal
+      ? `<span style="font-size:0.65rem;color:#22c55e;margin-bottom:3px;display:block;">✅ Parsed from ASUP: <strong>${parsedVal}</strong></span>`
+      : `<span style="font-size:0.65rem;color:#94a3b8;margin-bottom:3px;display:block;">⬛ Not found in ASUP — enter manually</span>`;
+    return sourceLabel + `<input type="text" id="gap-input-${gap.field}" value="${parsedVal || ''}"
       placeholder="${gap.placeholder || 'Enter value...'}"
       style="${inputStyle}" />`;
   };

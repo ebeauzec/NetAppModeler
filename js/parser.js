@@ -68,12 +68,20 @@ export function parseASUP(files) {
 
   // --- 1. Parse Version ---
   let isOntapParsed = false;
-  const ontapMatch = combinedText.match(/NetApp Release ([\d\.\w_]+):/i) || 
-                     combinedText.match(/ONTAP Version:\s*([\d\.\w_]+)/i) ||
-                     combinedText.match(/Release\s+([\d\.\w_]+)/i);
+  // Broad set of patterns covering all real-world ONTAP ASUP output formats
+  const ontapMatch =
+    combinedText.match(/NetApp Release ([\d][\d\.]+[\w\-]*[\d]+)\s*[:P]/i) ||
+    combinedText.match(/ONTAP Version:\s*([\d][\d\.]+[\w\-]*)/i) ||
+    combinedText.match(/ontap release ([\d][\d\.]+[\w\-]*)/i) ||
+    combinedText.match(/running version\s+([\d][\d\.]+[\w\-]*)/i) ||
+    combinedText.match(/software version\s+([\d][\d\.]+[\w\-]*)/i) ||
+    combinedText.match(/\bversion\b[:\s]+(9\.\d+[\.\d]*[\w\-]*)/i);
   if (ontapMatch) {
     data.version.ontap = ontapMatch[1];
     isOntapParsed = true;
+    setSource('ontapVersion', 'parsed', 1.0, `Matched in text: "${ontapMatch[0].trim()}"`);
+  } else {
+    setSource('ontapVersion', 'missing', 0, 'No ONTAP version string found in uploaded text');
   }
   
   const sysFirmwareMatch = combinedText.match(/System Firmware Version:\s*([^\r\n]+)/i) ||
@@ -85,44 +93,51 @@ export function parseASUP(files) {
   }
   
   let isModelParsed = false;
-  const modelMatch = combinedText.match(/(?:System Model|Model Name|Platform|system type)\s*:\s*([A-Za-z0-9 \-\/]+)/i);
+  let modelSource = 'missing';
+  const modelMatch = combinedText.match(/(?:System Model|Model Name|Platform|system type)\s*:\s*([A-Za-z0-9 \-\/]+)/i) ||
+                     combinedText.match(/\bPlatform\s+Type\s*:\s*([A-Za-z0-9 \-\/]+)/i) ||
+                     combinedText.match(/Hardware Model\s*:\s*([A-Za-z0-9 \-\/]+)/i);
   if (modelMatch) {
     data.version.model = modelMatch[1].trim();
     isModelParsed = true;
+    modelSource = 'parsed';
   } else {
-    // Guess based on keywords
-    if (lowerText.includes("asa a1k")) { data.version.model = "ASA A1K"; isModelParsed = true; }
-    else if (lowerText.includes("asa a90")) { data.version.model = "ASA A90"; isModelParsed = true; }
-    else if (lowerText.includes("asa a70")) { data.version.model = "ASA A70"; isModelParsed = true; }
-    else if (lowerText.includes("asa a50")) { data.version.model = "ASA A50"; isModelParsed = true; }
-    else if (lowerText.includes("asa a30")) { data.version.model = "ASA A30"; isModelParsed = true; }
-    else if (lowerText.includes("asa a20")) { data.version.model = "ASA A20"; isModelParsed = true; }
-    else if (lowerText.includes("asa c30")) { data.version.model = "ASA C30"; isModelParsed = true; }
-    else if (lowerText.includes("a1k")) { data.version.model = "AFF A1K"; isModelParsed = true; }
-    else if (lowerText.includes("a90")) { data.version.model = "AFF A90"; isModelParsed = true; }
-    else if (lowerText.includes("a70")) { data.version.model = "AFF A70"; isModelParsed = true; }
-    else if (lowerText.includes("a50")) { data.version.model = "AFF A50"; isModelParsed = true; }
-    else if (lowerText.includes("a30")) { data.version.model = "AFF A30"; isModelParsed = true; }
-    else if (lowerText.includes("a20")) { data.version.model = "AFF A20"; isModelParsed = true; }
-    else if (lowerText.includes("c80")) { data.version.model = "AFF C80"; isModelParsed = true; }
-    else if (lowerText.includes("c60")) { data.version.model = "AFF C60"; isModelParsed = true; }
-    else if (lowerText.includes("c30")) { data.version.model = "AFF C30"; isModelParsed = true; }
-    else if (lowerText.includes("a400")) { data.version.model = "AFF A400"; isModelParsed = true; }
-    else if (lowerText.includes("fas90")) { data.version.model = "FAS90"; isModelParsed = true; }
-    else if (lowerText.includes("fas70")) { data.version.model = "FAS70"; isModelParsed = true; }
-    else if (lowerText.includes("fas50")) { data.version.model = "FAS50"; isModelParsed = true; }
-    else if (lowerText.includes("8300")) { data.version.model = "FAS8300"; isModelParsed = true; }
-    else if (lowerText.includes("a300")) { data.version.model = "AFF A300"; isModelParsed = true; }
-    else if (lowerText.includes("a250")) { data.version.model = "AFF A250"; isModelParsed = true; }
-    else if (lowerText.includes("c190")) { data.version.model = "AFF C190"; isModelParsed = true; }
+    // Infer from keyword presence — marked as 'inferred', not 'parsed'
+    if (lowerText.includes("asa a1k")) { data.version.model = "ASA A1K"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("asa a90")) { data.version.model = "ASA A90"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("asa a70")) { data.version.model = "ASA A70"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("asa a50")) { data.version.model = "ASA A50"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("asa a30")) { data.version.model = "ASA A30"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("asa a20")) { data.version.model = "ASA A20"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("asa c30")) { data.version.model = "ASA C30"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a1k")) { data.version.model = "AFF A1K"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a90")) { data.version.model = "AFF A90"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a70")) { data.version.model = "AFF A70"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a50")) { data.version.model = "AFF A50"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a30")) { data.version.model = "AFF A30"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a20")) { data.version.model = "AFF A20"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("c80")) { data.version.model = "AFF C80"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("c60")) { data.version.model = "AFF C60"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("c30")) { data.version.model = "AFF C30"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a400")) { data.version.model = "AFF A400"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("fas90")) { data.version.model = "FAS90"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("fas70")) { data.version.model = "FAS70"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("fas50")) { data.version.model = "FAS50"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("8300")) { data.version.model = "FAS8300"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a300")) { data.version.model = "AFF A300"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a250")) { data.version.model = "AFF A250"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("c190")) { data.version.model = "AFF C190"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("fas")) {
       const match = combinedText.match(/(FAS\d{4})/i);
-      if (match) { data.version.model = match[1].toUpperCase(); isModelParsed = true; }
+      if (match) { data.version.model = match[1].toUpperCase(); isModelParsed = true; modelSource = 'inferred'; }
     } else if (lowerText.includes("aff")) {
       const match = combinedText.match(/(AFF\s+[A-Z]?\d{2,3})/i);
-      if (match) { data.version.model = match[1].toUpperCase(); isModelParsed = true; }
+      if (match) { data.version.model = match[1].toUpperCase(); isModelParsed = true; modelSource = 'inferred'; }
     }
   }
+  // Always record model source so the Data Quality panel never shows ⬜ Unknown
+  setSource('model', modelSource, isModelParsed ? (modelSource === 'parsed' ? 1.0 : 0.6) : 0,
+    isModelParsed ? `Model: ${data.version.model}` : 'No platform model string found in uploaded text');
 
   if (!isDemoMode && (!isOntapParsed || !isModelParsed)) {
     data.parseWarnings.push({
@@ -133,7 +148,12 @@ export function parseASUP(files) {
   
   const serialMatch = combinedText.match(/System Serial Number:\s*([^\r\n]+)/i) ||
                       combinedText.match(/Serial Number:\s*([a-zA-Z0-9]{5,})/i);
-  if (serialMatch) data.version.serial = serialMatch[1].trim();
+  if (serialMatch) {
+    data.version.serial = serialMatch[1].trim();
+    setSource('serial', 'parsed', 1.0);
+  } else {
+    setSource('serial', 'missing', 0, 'Serial number not found');
+  }
 
   // --- 1.5. Parse MetroCluster ---
   let metrocluster = "none";
