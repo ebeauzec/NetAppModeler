@@ -77,9 +77,14 @@ export function parseASUP(files) {
     combinedText.match(/software version\s+([\d][\d\.]+[\w\-]*)/i) ||
     combinedText.match(/\bversion\b[:\s]+(9\.\d+[\.\d]*[\w\-]*)/i);
   if (ontapMatch) {
-    data.version.ontap = ontapMatch[1];
+    // Store raw version (may include suffix like P1, RC1) and clean version separately
+    const rawOntap = ontapMatch[1];
+    // Strip patch/RC suffixes: 9.14.1P3 → 9.14.1, 9.13.1RC1 → 9.13.1
+    const cleanOntap = rawOntap.replace(/[PR]C?\d+$/i, '').replace(/[-]RC[\d]+$/i, '');
+    data.version.ontap = cleanOntap;
+    data.version.rawOntap = rawOntap; // preserve original for display
     isOntapParsed = true;
-    setSource('ontapVersion', 'parsed', 1.0, `Matched in text: "${ontapMatch[0].trim()}"`);
+    setSource('ontapVersion', 'parsed', 1.0, `Matched in text: "${ontapMatch[0].trim()}"; clean: ${cleanOntap}`);
   } else {
     setSource('ontapVersion', 'missing', 0, 'No ONTAP version string found in uploaded text');
   }
@@ -98,7 +103,14 @@ export function parseASUP(files) {
                      combinedText.match(/\bPlatform\s+Type\s*:\s*([A-Za-z0-9 \-\/]+)/i) ||
                      combinedText.match(/Hardware Model\s*:\s*([A-Za-z0-9 \-\/]+)/i);
   if (modelMatch) {
-    data.version.model = modelMatch[1].trim();
+    // Normalize: strip hyphens, remove -HA/-2P/-HA-2P suffixes, collapse spaces
+    let rawModel = modelMatch[1].trim();
+    rawModel = rawModel
+      .replace(/[-_](HA|2P|2U|HA[-_]2P|HA[-_]2U)\b/gi, '') // strip controller-suffix variants
+      .replace(/-/g, ' ')  // hyphens to spaces (AFF-A400 → AFF A400)
+      .replace(/\s+/g, ' ')
+      .trim();
+    data.version.model = rawModel;
     isModelParsed = true;
     modelSource = 'parsed';
   } else {
@@ -1253,13 +1265,27 @@ export function inferMissingData(state, profile) {
     state.parseWarnings.push({ section: 'Cluster Switches', message: 'Switch type inferred as ' + swModel + ' from platform profile. Verify actual switch model and firmware.' });
   }
 
-  // Infer cluster name from node hostname (strip node suffix)
-  if (!state.clusterName && state.nodes && state.nodes.length > 0) {
-    const firstName = state.nodes[0].name || '';
-    const guess = firstName.replace(/[-_](0?[12]|node[12]|[ab])$/i, '');
-    if (guess && guess !== firstName) {
-      state.clusterName = guess;
-      setInferred('clusterName', 'Stripped node suffix from first node hostname: ' + firstName);
+  // Parse cluster name from cluster show output first; fall back to node-name inference
+  if (!state.version.clusterName) {
+    const clusterShowMatch =
+      combinedText.match(/^cluster\s+show[\s\S]*?^(\S+)\s+true\s+\d+/im) ||
+      combinedText.match(/Cluster Name:\s*(\S+)/i) ||
+      combinedText.match(/^cluster\s+(\S+)\s+\d+\s+node/im);
+    if (clusterShowMatch && clusterShowMatch[1]) {
+      state.version.clusterName = clusterShowMatch[1].trim();
+      state.clusterName = state.version.clusterName;
+      setSource('clusterName', 'parsed', 1.0, `Cluster name from cluster show: ${state.version.clusterName}`);
+    } else if (!state.clusterName && state.nodes && state.nodes.length > 0) {
+      const firstName = state.nodes[0].name || '';
+      const guess = firstName.replace(/[-_](0?[12]|node[12]|[ab])$/i, '');
+      if (guess && guess !== firstName) {
+        state.clusterName = guess;
+        state.version.clusterName = guess; // CRITICAL: ui.js reads currentState.version.clusterName
+        setInferred('clusterName', 'Stripped node suffix from first node hostname: ' + firstName);
+      }
+    } else if (state.clusterName) {
+      // Already set by other section — mirror to version
+      state.version.clusterName = state.clusterName;
     }
   }
 

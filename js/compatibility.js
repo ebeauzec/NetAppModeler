@@ -5,26 +5,50 @@
 
 export const EXP_CARDS_CATALOG = {
   // === Ethernet NICs ===
-  nic_10g_2port:        { name: "Dual-port 10GbE SFP+ NIC (X1117A)",            type: "nic",     ports: ["e0e","e0f"],           speed: "10GbE",       minOntap: "9.1",    power: 15 },
-  nic_25g_4port:        { name: "Quad-port 25GbE SFP28 NIC (X1146A)",           type: "nic",     ports: ["e1a","e1b","e1c","e1d"], speed: "25GbE",       minOntap: "9.3",    power: 22 },
-  nic_40g_2port:        { name: "Dual-port 40GbE QSFP+ NIC (X1146A)",           type: "nic",     ports: ["e1a","e1b"],           speed: "40GbE",       minOntap: "9.5",    power: 20 },
-  nic_100g_2port:       { name: "Dual-port 100GbE QSFP28 NIC (X91148A)",        type: "nic",     ports: ["e1a","e1b"],           speed: "100GbE",      minOntap: "9.8",    power: 35 },
-  nic_100g_4port:       { name: "Quad-port 100GbE SFP28 NIC (X91144A)",         type: "nic",     ports: ["e1a","e1b","e1c","e1d"], speed: "100GbE",      minOntap: "9.10.1", power: 45 },
-  nic_200g_2port:       { name: "Dual-port 200GbE QSFP56 NIC (X91160A)",        type: "nic",     ports: ["e1a","e1b"],           speed: "200GbE",      minOntap: "9.16.1", power: 45 },
+  // Port naming: each card type uses a distinct slot-keyed prefix to avoid collision.
+  // Slot 1 (primary NIC): e1a/e1b/...  Slot 2 (secondary NIC / 100G): e2a/e2b
+  // Slot 3 (RoCE storage): e3a/e3b     Slot 8 (NS224 RoCE v2): e8a/e8b
+  // FC/SAN adapters: 0g/0h (16G), 0i/0j (32G/64G FC), 0k/0l (NVMe/FC separate)
+  // SAS adapters: 0c/0d (SAS ports, not overlapping onboard 0e/0f SAN)
+  nic_10g_2port:          { name: "Dual-port 10GbE SFP+ NIC (X1117A)",                   type: "nic",     ports: ["e0e","e0f"],             speed: "10GbE",       minOntap: "9.1",    power: 15 },
+  nic_25g_4port:          { name: "Quad-port 25GbE SFP28 NIC (X1146A)",                  type: "nic",     ports: ["e1a","e1b","e1c","e1d"], speed: "25GbE",       minOntap: "9.3",    power: 22 },
+  nic_40g_2port:          { name: "Dual-port 40GbE QSFP+ NIC (X1146A)",                  type: "nic",     ports: ["e1a","e1b"],             speed: "40GbE",       minOntap: "9.5",    power: 20 },
+  nic_100g_2port:         { name: "Dual-port 100GbE QSFP28 NIC (X91148A)",               type: "nic",     ports: ["e2a","e2b"],             speed: "100GbE",      minOntap: "9.8",    power: 35 },
+  nic_100g_4port:         { name: "Quad-port 100GbE SFP28 NIC (X91144A)",                type: "nic",     ports: ["e1a","e1b","e1c","e1d"], speed: "100GbE",      minOntap: "9.10.1", power: 45 },
+  nic_200g_2port:         { name: "Dual-port 200GbE QSFP56 NIC (X91160A)",               type: "nic",     ports: ["e2a","e2b"],             speed: "200GbE",      minOntap: "9.16.1", power: 45 },
   // === Fibre Channel HBAs ===
-  fc_hba_16g_2port:     { name: "Dual-port 16Gb Fibre Channel HBA (X1132A)",    type: "san",     ports: ["0g","0h"],             speed: "16Gb FC",     minOntap: "9.1",    power: 18 },
-  fc_hba_32g_2port:     { name: "Dual-port 32Gb Fibre Channel HBA (X2106A)",    type: "san",     ports: ["0i","0j"],             speed: "32Gb FC",     minOntap: "9.5",    power: 25 },
-  fc_hba_64g_2port:     { name: "Dual-port 64Gb Fibre Channel HBA (X2107A)",    type: "san",     ports: ["0i","0j"],             speed: "64Gb FC",     minOntap: "9.14.1", power: 28 },
+  fc_hba_16g_2port:       { name: "Dual-port 16Gb Fibre Channel HBA (X1132A)",           type: "san",     ports: ["0g","0h"],               speed: "16Gb FC",     minOntap: "9.1",    power: 18 },
+  fc_hba_32g_2port:       { name: "Dual-port 32Gb Fibre Channel HBA (X2106A)",           type: "san",     ports: ["0i","0j"],               speed: "32Gb FC",     minOntap: "9.5",    power: 25 },
+  fc_hba_64g_2port:       { name: "Dual-port 64Gb Fibre Channel HBA (X2107A)",           type: "san",     ports: ["0i","0j"],               speed: "64Gb FC",     minOntap: "9.14.1", power: 28 },
   // === SAS Storage Adapters ===
-  sas_hba_12g_4port:    { name: "Quad-port 12G SAS Host Adapter (X1107A)",      type: "storage", ports: ["0c","0d","0e","0f"],   speed: "12Gb SAS",    minOntap: "9.1",    power: 20 },
+  // Ports 0c/0d avoid collision with onboard san ports 0e/0f
+  sas_hba_12g_4port:      { name: "Quad-port 12G SAS Host Adapter (X1107A)",             type: "storage", ports: ["0a","0b","0c","0d"],     speed: "12Gb SAS",    minOntap: "9.1",    power: 20 },
   // === NVMe / RoCE Storage Adapters ===
-  roce_hba_100g_2port:  { name: "Dual-port 100GbE NVMe-oF RoCE Adapter (X91148A)", type: "storage", ports: ["e3a","e3b"],      speed: "100GbE RoCE", minOntap: "9.8",    power: 38 },
-  roce_hba_100g_2port_v2: { name: "Dual-port 100GbE RoCE NS224 Shelf Adapter (X60141A)", type: "storage", ports: ["e8a","e8b"], speed: "100GbE RoCE", minOntap: "9.12.1", power: 38 },
-  nvme_tcp_100g_2port:  { name: "Dual-port 100GbE NVMe/TCP Host Adapter (X91148A)", type: "nic",  ports: ["e2a","e2b"],         speed: "100GbE",      minOntap: "9.10.1", power: 35 },
-  nvme_fc_32g_2port:    { name: "Dual-port 32Gb NVMe/FC HBA (X2106A)",           type: "san",     ports: ["0i","0j"],             speed: "32Gb FC",     minOntap: "9.9.1",  power: 25 },
+  roce_hba_100g_2port:    { name: "Dual-port 100GbE NVMe-oF RoCE Adapter (X91148A)",     type: "storage", ports: ["e3a","e3b"],             speed: "100GbE RoCE", minOntap: "9.8",    power: 38 },
+  roce_hba_100g_2port_v2: { name: "Dual-port 100GbE RoCE NS224 Shelf Adapter (X60141A)", type: "storage", ports: ["e8a","e8b"],             speed: "100GbE RoCE", minOntap: "9.12.1", power: 38 },
+  nvme_tcp_100g_2port:    { name: "Dual-port 100GbE NVMe/TCP Host Adapter (X91148A)",    type: "nic",     ports: ["e2a","e2b"],             speed: "100GbE",      minOntap: "9.10.1", power: 35 },
+  // NVMe/FC gets distinct ports 0k/0l so it can coexist with fc_hba_32g_2port (0i/0j)
+  nvme_fc_32g_2port:      { name: "Dual-port 32Gb NVMe/FC HBA (X2106A)",                type: "san",     ports: ["0k","0l"],               speed: "32Gb FC",     minOntap: "9.9.1",  power: 25 },
 };
 
 export const PLATFORM_SLOT_DETAILS = {
+  // 0 slots — virtual/cloud platforms (ONTAP Select, CVO)
+  0: [],
+  // 12 slots — AFX 2K ultra-high-performance
+  12: [
+    { num: 1,  type: "PCIe Gen5 x16", recType: "nic",     rec: "Primary 200G/400G data/cluster networking" },
+    { num: 2,  type: "PCIe Gen5 x16", recType: "nic",     rec: "Secondary 200G/400G data/cluster networking" },
+    { num: 3,  type: "PCIe Gen5 x16", recType: "nic",     rec: "Tertiary 100G data networking" },
+    { num: 4,  type: "PCIe Gen5 x16", recType: "san",     rec: "64Gb/32Gb Fibre Channel SAN HBA" },
+    { num: 5,  type: "PCIe Gen5 x16", recType: "san",     rec: "64Gb/32Gb Fibre Channel SAN HBA" },
+    { num: 6,  type: "PCIe Gen5 x16", recType: "storage", rec: "High-speed NVMe-oF RoCE adapter" },
+    { num: 7,  type: "PCIe Gen5 x16", recType: "storage", rec: "High-speed NVMe-oF RoCE adapter" },
+    { num: 8,  type: "PCIe Gen5 x16", recType: "storage", rec: "High-speed NVMe-oF RoCE NS224 adapter" },
+    { num: 9,  type: "PCIe Gen5 x16", recType: "storage", rec: "High-speed NVMe-oF RoCE NS224 adapter" },
+    { num: 10, type: "PCIe Gen5 x16", recType: "nic",     rec: "Auxiliary 100G/200G data networking" },
+    { num: 11, type: "PCIe Gen5 x16", recType: "san",     rec: "FC HBA target adapter" },
+    { num: 12, type: "PCIe Gen5 x16", recType: "storage", rec: "High-speed storage extension" }
+  ],
   11: [
     { num: 1, type: "PCIe Gen5 x16", recType: "nic", rec: "Primary 200G/100G data/cluster networking" },
     { num: 2, type: "PCIe Gen5 x16", recType: "nic", rec: "Secondary 200G/100G data/cluster networking" },
@@ -1455,25 +1479,8 @@ export const NETAPP_PLATFORMS = {
   ports: { cluster: ["e0a","e0b"], data: ["e0c","e0d"], san: ["0e","0f"], storage: ["e0g","e0h"] },
   supportedCards: ["nic_25g_4port","fc_hba_32g_2port","roce_hba_100g_2port"], maxPcieSlots: 2
 },
-// FAS8020 / FAS8040 (legacy enterprise, EOL)
-"FAS8020": {
-  tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 256,
-  supportedShelves: ["ds2246","ds460c","ds224c"], unsupportedShelves: ["ns224"],
-  shelfWarnings: { "ds2246": "Legacy 6G SAS shelf supported." }, shelfErrors: { "ns224": "NVMe shelves not supported." },
-  supportedLicenses: ["Cluster","NFS","CIFS","FCP","iSCSI","SnapMirror","FlexClone"],
-  maxFirmware: "v8.6", description: "Legacy EOL enterprise FAS controller (max ONTAP 9.5).",
-  ports: { cluster: ["e0a","e0b"], data: ["e0c","e0d"], san: ["0e","0f"], storage: ["0a","0b"] },
-  supportedCards: ["nic_10g_2port","fc_hba_16g_2port","sas_hba_12g_4port"], maxPcieSlots: 4
-},
-"FAS8040": {
-  tier: "enterprise", minOntap: "8.2", maxOntap: "9.5", maxRamGB: 512,
-  supportedShelves: ["ds2246","ds460c","ds224c"], unsupportedShelves: ["ns224"],
-  shelfWarnings: { "ds2246": "Legacy 6G SAS shelf supported." }, shelfErrors: { "ns224": "NVMe shelves not supported." },
-  supportedLicenses: ["Cluster","NFS","CIFS","FCP","iSCSI","SnapMirror","FlexClone"],
-  maxFirmware: "v8.6", description: "Legacy EOL enterprise FAS controller (max ONTAP 9.5).",
-  ports: { cluster: ["e0a","e0b"], data: ["e0c","e0d"], san: ["0e","0f"], storage: ["0a","0b"] },
-  supportedCards: ["nic_10g_2port","fc_hba_16g_2port","sas_hba_12g_4port"], maxPcieSlots: 4
-},
+// FAS8020 / FAS8040 — full definitions are already in the detailed section above (lines ~1283, 1263).
+// DO NOT redefine them here; duplicate keys in JS silently overwrite the detailed entry.
 // AFX 2K (all-flash extreme — new July 2026)
 "AFX 2K": {
   tier: "enterprise", minOntap: "9.19.1", maxOntap: "9.19.1", maxRamGB: 4096,
@@ -1487,79 +1494,95 @@ export const NETAPP_PLATFORMS = {
 }
 };
 
-// Returns compatibility profile for a parsed model
+// Returns compatibility profile for a parsed model string.
+// Normalizes hyphens, extra spaces, and case before matching.
 export function getPlatformProfile(modelStr) {
   if (!modelStr) return NETAPP_PLATFORMS["Default"];
-  
-  const upper = modelStr.toUpperCase();
-  
-  // Match ASA models first to prevent incorrect AFF fallbacks
-  if (upper.includes("ASA A1K")) return NETAPP_PLATFORMS["ASA A1K"];
-  if (upper.includes("ASA A90")) return NETAPP_PLATFORMS["ASA A90"];
-  if (upper.includes("ASA A70")) return NETAPP_PLATFORMS["ASA A70"];
-  if (upper.includes("ASA A50")) return NETAPP_PLATFORMS["ASA A50"];
-  if (upper.includes("ASA A30")) return NETAPP_PLATFORMS["ASA A30"];
-  if (upper.includes("ASA A20")) return NETAPP_PLATFORMS["ASA A20"];
-  if (upper.includes("ASA C30")) return NETAPP_PLATFORMS["ASA C30"];
+
+  // Normalize: uppercase, replace hyphens/underscores with spaces, collapse whitespace
+  const upper = modelStr.toUpperCase().replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // Direct lookup first — exact match wins (fastest, no ambiguity)
+  // Try both normalized and original-cased key
+  const directKey = Object.keys(NETAPP_PLATFORMS).find(k => k.toUpperCase() === upper);
+  if (directKey) return NETAPP_PLATFORMS[directKey];
+
+  // === ASA models — must be matched BEFORE AFF/FAS patterns to avoid fallthrough ===
+  // Longer/more-specific strings first to prevent partial matches
+  if (upper.includes("ASA A1K"))  return NETAPP_PLATFORMS["ASA A1K"];
+  if (upper.includes("ASA A900")) return NETAPP_PLATFORMS["ASA A900"];
+  if (upper.includes("ASA A800")) return NETAPP_PLATFORMS["ASA A800"];
+  if (upper.includes("ASA A400")) return NETAPP_PLATFORMS["ASA A400"];
+  if (upper.includes("ASA A250")) return NETAPP_PLATFORMS["ASA A250"];
+  if (upper.includes("ASA A150")) return NETAPP_PLATFORMS["ASA A150"];
+  if (upper.includes("ASA A90"))  return NETAPP_PLATFORMS["ASA A90"];
+  if (upper.includes("ASA A70"))  return NETAPP_PLATFORMS["ASA A70"];
+  if (upper.includes("ASA A50"))  return NETAPP_PLATFORMS["ASA A50"];
+  if (upper.includes("ASA A30"))  return NETAPP_PLATFORMS["ASA A30"];
+  if (upper.includes("ASA A20"))  return NETAPP_PLATFORMS["ASA A20"];
   if (upper.includes("ASA C800")) return NETAPP_PLATFORMS["ASA C800"];
   if (upper.includes("ASA C400")) return NETAPP_PLATFORMS["ASA C400"];
   if (upper.includes("ASA C250")) return NETAPP_PLATFORMS["ASA C250"];
-  if (upper.includes("ASA A800")) return NETAPP_PLATFORMS["ASA A800"];
-  if (upper.includes("ASA A400")) return NETAPP_PLATFORMS["ASA A400"];
-  if (upper.includes("ASA A900")) return NETAPP_PLATFORMS["ASA A900"];
-  
-  // Match key patterns
-  if (upper.includes("A1K")) return NETAPP_PLATFORMS["AFF A1K"];
-  if (upper.includes("A900")) return NETAPP_PLATFORMS["AFF A900"];
-  if (upper.includes("A800")) return NETAPP_PLATFORMS["AFF A800"];
-  if (upper.includes("A400") || upper.includes("AFF400")) return NETAPP_PLATFORMS["AFF A400"];
-  if (upper.includes("A300")) return NETAPP_PLATFORMS["AFF A300"];
-  if (upper.includes("A250")) return NETAPP_PLATFORMS["AFF A250"];
-  if (upper.includes("A220")) return NETAPP_PLATFORMS["AFF A220"];
-  if (upper.includes("A150")) return NETAPP_PLATFORMS["AFF A150"];
-  if (upper.includes("A90")) return NETAPP_PLATFORMS["AFF A90"];
-  if (upper.includes("A700")) return NETAPP_PLATFORMS["Default"];
-  if (upper.includes("A70")) return NETAPP_PLATFORMS["AFF A70"];
-  if (upper.includes("A50")) return NETAPP_PLATFORMS["AFF A50"];
-  if (upper.includes("A30")) return NETAPP_PLATFORMS["AFF A30"];
-  if (upper.includes("A200")) return NETAPP_PLATFORMS["Default"];
-  if (upper.includes("A20")) return NETAPP_PLATFORMS["AFF A20"];
-  
-  if (upper.includes("AFX") || upper.includes("AFX 2K")) return NETAPP_PLATFORMS["AFX 2K"];
-  if (upper.includes("C800")) return NETAPP_PLATFORMS["AFF C800"];
-  if (upper.includes("C80")) return NETAPP_PLATFORMS["AFF C80"];
-  if (upper.includes("C400")) return NETAPP_PLATFORMS["AFF C400"];
-  if (upper.includes("C250")) return NETAPP_PLATFORMS["AFF C250"];
-  if (upper.includes("C190")) return NETAPP_PLATFORMS["AFF C190"];
-  if (upper.includes("C30")) return NETAPP_PLATFORMS["AFF C30"];
-  if (upper.includes("C60")) return NETAPP_PLATFORMS["AFF C60"];
-  
-  if (upper.includes("9500")) return NETAPP_PLATFORMS["FAS9500"];
-  if (upper.includes("9000")) return NETAPP_PLATFORMS["FAS9000"];
-  if (upper.includes("8700")) return NETAPP_PLATFORMS["FAS8700"];
-  if (upper.includes("8300")) return NETAPP_PLATFORMS["FAS8300"];
-  if (upper.includes("8200")) return NETAPP_PLATFORMS["FAS8200"];
-  if (upper.includes("2820")) return NETAPP_PLATFORMS["FAS2820"];
-  if (upper.includes("2750")) return NETAPP_PLATFORMS["FAS2750"];
-  if (upper.includes("2720")) return NETAPP_PLATFORMS["FAS2720"];
-  if (upper.includes("2650")) return NETAPP_PLATFORMS["FAS2650"];
-  if (upper.includes("2620")) return NETAPP_PLATFORMS["FAS2620"];
-  
-  if (upper.includes("8080")) return NETAPP_PLATFORMS["FAS8080"];
-  if (upper.includes("8060")) return NETAPP_PLATFORMS["FAS8060"];
-  if (upper.includes("8040")) return NETAPP_PLATFORMS["FAS8040"];
-  if (upper.includes("8020")) return NETAPP_PLATFORMS["FAS8020"];
-  if (upper.includes("2554")) return NETAPP_PLATFORMS["FAS2554"];
-  if (upper.includes("2552")) return NETAPP_PLATFORMS["FAS2552"];
-  if (upper.includes("2520")) return NETAPP_PLATFORMS["FAS2520"];
-  
-  if (upper.includes("FAS90")) return NETAPP_PLATFORMS["FAS90"];
-  if (upper.includes("FAS70")) return NETAPP_PLATFORMS["FAS70"];
-  if (upper.includes("FAS50")) return NETAPP_PLATFORMS["FAS50"];
-  
-  if (upper.includes("SELECT") || upper.includes("ONTAP SELECT")) return NETAPP_PLATFORMS["ONTAP Select"];
-  if (upper.includes("CLOUD VOLUMES ONTAP") || upper.includes("CVO")) return NETAPP_PLATFORMS["Cloud Volumes ONTAP"];
-  
+  if (upper.includes("ASA C30"))  return NETAPP_PLATFORMS["ASA C30"];
+  if (upper.includes("ASA R2") || upper.includes("ASA R2")) return NETAPP_PLATFORMS["ASA r2"] || NETAPP_PLATFORMS["Default"];
+
+  // === AFF A-Series — longest/most-specific strings first ===
+  if (upper.includes("AFF A1K") || upper.includes("AFFA1K"))    return NETAPP_PLATFORMS["AFF A1K"];
+  if (upper.includes("AFF A900") || upper.includes("AFFA900"))  return NETAPP_PLATFORMS["AFF A900"];
+  if (upper.includes("AFF A800") || upper.includes("AFFA800"))  return NETAPP_PLATFORMS["AFF A800"];
+  if (upper.includes("AFF A700S") || upper.includes("AFFA700S")) return NETAPP_PLATFORMS["AFF A700s"];
+  if (upper.includes("AFF A700") || upper.includes("AFFA700"))  return NETAPP_PLATFORMS["AFF A700"];
+  if (upper.includes("AFF A400") || upper.includes("AFFA400"))  return NETAPP_PLATFORMS["AFF A400"];
+  if (upper.includes("AFF A300") || upper.includes("AFFA300"))  return NETAPP_PLATFORMS["AFF A300"];
+  if (upper.includes("AFF A250") || upper.includes("AFFA250"))  return NETAPP_PLATFORMS["AFF A250"];
+  if (upper.includes("AFF A220") || upper.includes("AFFA220"))  return NETAPP_PLATFORMS["AFF A220"];
+  if (upper.includes("AFF A200") || upper.includes("AFFA200"))  return NETAPP_PLATFORMS["AFF A200"];
+  if (upper.includes("AFF A150") || upper.includes("AFFA150"))  return NETAPP_PLATFORMS["AFF A150"];
+  if (upper.includes("AFF A90")  || upper.includes("AFFA90"))   return NETAPP_PLATFORMS["AFF A90"];
+  if (upper.includes("AFF A70")  || upper.includes("AFFA70"))   return NETAPP_PLATFORMS["AFF A70"];
+  if (upper.includes("AFF A50")  || upper.includes("AFFA50"))   return NETAPP_PLATFORMS["AFF A50"];
+  if (upper.includes("AFF A30")  || upper.includes("AFFA30"))   return NETAPP_PLATFORMS["AFF A30"];
+  if (upper.includes("AFF A20")  || upper.includes("AFFA20"))   return NETAPP_PLATFORMS["AFF A20"];
+
+  // === AFF C-Series ===
+  if (upper.includes("AFF C800") || upper.includes("AFFC800"))  return NETAPP_PLATFORMS["AFF C800"];
+  if (upper.includes("AFF C400") || upper.includes("AFFC400"))  return NETAPP_PLATFORMS["AFF C400"];
+  if (upper.includes("AFF C250") || upper.includes("AFFC250"))  return NETAPP_PLATFORMS["AFF C250"];
+  if (upper.includes("AFF C190") || upper.includes("AFFC190"))  return NETAPP_PLATFORMS["AFF C190"];
+  if (upper.includes("AFF C80")  || upper.includes("AFFC80"))   return NETAPP_PLATFORMS["AFF C80"];
+  if (upper.includes("AFF C60")  || upper.includes("AFFC60"))   return NETAPP_PLATFORMS["AFF C60"];
+  if (upper.includes("AFF C30")  || upper.includes("AFFC30"))   return NETAPP_PLATFORMS["AFF C30"];
+
+  // === AFX (ultra-high-performance, new 2026) ===
+  if (upper.includes("AFX")) return NETAPP_PLATFORMS["AFX 2K"];
+
+  // === FAS — longer/newer strings first to avoid partial matches ===
+  if (upper.includes("FAS9500"))  return NETAPP_PLATFORMS["FAS9500"];
+  if (upper.includes("FAS9000"))  return NETAPP_PLATFORMS["FAS9000"];
+  if (upper.includes("FAS8700"))  return NETAPP_PLATFORMS["FAS8700"];
+  if (upper.includes("FAS8300"))  return NETAPP_PLATFORMS["FAS8300"];
+  if (upper.includes("FAS8200"))  return NETAPP_PLATFORMS["FAS8200"];
+  if (upper.includes("FAS8080"))  return NETAPP_PLATFORMS["FAS8080"];
+  if (upper.includes("FAS8060"))  return NETAPP_PLATFORMS["FAS8060"];
+  if (upper.includes("FAS8040"))  return NETAPP_PLATFORMS["FAS8040"];
+  if (upper.includes("FAS8020"))  return NETAPP_PLATFORMS["FAS8020"];
+  if (upper.includes("FAS2820"))  return NETAPP_PLATFORMS["FAS2820"];
+  if (upper.includes("FAS2750"))  return NETAPP_PLATFORMS["FAS2750"];
+  if (upper.includes("FAS2720"))  return NETAPP_PLATFORMS["FAS2720"];
+  if (upper.includes("FAS2650"))  return NETAPP_PLATFORMS["FAS2650"];
+  if (upper.includes("FAS2620"))  return NETAPP_PLATFORMS["FAS2620"];
+  if (upper.includes("FAS2554"))  return NETAPP_PLATFORMS["FAS2554"];
+  if (upper.includes("FAS2552"))  return NETAPP_PLATFORMS["FAS2552"];
+  if (upper.includes("FAS2520"))  return NETAPP_PLATFORMS["FAS2520"];
+  // FAS next-gen (FAS90/70/50) — must come AFTER 4-digit FAS patterns
+  if (upper.includes("FAS90"))    return NETAPP_PLATFORMS["FAS90"];
+  if (upper.includes("FAS70"))    return NETAPP_PLATFORMS["FAS70"];
+  if (upper.includes("FAS50"))    return NETAPP_PLATFORMS["FAS50"];
+
+  // === Virtual / Cloud ===
+  if (upper.includes("SELECT") || upper.includes("ONTAP SELECT"))         return NETAPP_PLATFORMS["ONTAP Select"]  || NETAPP_PLATFORMS["Default"];
+  if (upper.includes("CLOUD VOLUMES ONTAP") || upper.includes("CVO"))     return NETAPP_PLATFORMS["Cloud Volumes ONTAP"] || NETAPP_PLATFORMS["Default"];
+
   return NETAPP_PLATFORMS["Default"];
 }
 
@@ -1621,6 +1644,36 @@ export function getUpgradeHopsConsiderations(currentVersion, targetVersion, cont
       "system node show -fields model",
       "consistency-group show"
     ]},
+    { from: "9.12.1", to: "9.13.1", title: "Hop 9.12.1 ➔ 9.13.1 Considerations", directUpgrade: true, risks: [
+      "ASA Platform Introduction: ONTAP 9.13.1 adds the ASA (All-SAN Array) platform family. If migrating from AFF to ASA personality, the cluster must be re-initialized — it cannot be done in-place.",
+      "NVMe-oF Namespace Limit: ONTAP 9.13.1 changes how NVMe namespace group limits are enforced. Review NVMe subsystem configurations before upgrade."
+    ], preReqs: [
+      "Verify NVMe subsystem namespace group membership is within 9.13.1 limits.",
+      "Confirm cluster health with 'cluster show' before starting ANDU."
+    ], commands: [
+      "vserver nvme subsystem show",
+      "cluster image validate -version 9.13.1"
+    ]},
+    { from: "9.13.1", to: "9.14.1", title: "Hop 9.13.1 ➔ 9.14.1 Considerations", directUpgrade: true, risks: [
+      "64Gb FC GA: ONTAP 9.14.1 adds native support for 64Gb Fibre Channel HBAs. Ensure SAN zone configuration is ready for high-speed FC adapters if these will be installed post-upgrade.",
+      "SnapMirror Async Throttle Change: Default throttle for SnapMirror async transfers changes. Review SnapMirror policy throttle settings to avoid unexpected bandwidth usage."
+    ], preReqs: [
+      "Review all SnapMirror policy max-transfer-rate settings.",
+      "Verify current disk firmware is at recommended levels before upgrade."
+    ], commands: [
+      "snapmirror policy show -fields type,max-transfer-rate",
+      "storage disk show -fields disk,firmware-revision"
+    ]},
+    { from: "9.14.1", to: "9.15.1", title: "Hop 9.14.1 ➔ 9.15.1 Considerations", directUpgrade: true, risks: [
+      "ONTAP One License Enforcement: 9.15.1 activates ONTAP One unified license enforcement. Legacy per-feature license keys (NFS, CIFS, FCP, iSCSI, SnapMirror individually) will begin reporting as non-compliant. Plan migration to ONTAP One or NLF bundles.",
+      "Platform EOS: ONTAP 9.15.1 is the last supported release for AFF A220, AFF A300, FAS8200, FAS2750, and FAS2720. These controllers will not boot ONTAP 9.16.1+."
+    ], preReqs: [
+      "Verify all license keys and convert legacy 24-character keys to ONTAP One or NLF format via NetApp Support Site.",
+      "Confirm all controllers in cluster are on the 9.15.1 support list."
+    ], commands: [
+      "system license show",
+      "system node show -fields model"
+    ]},
     { from: "9.9.1", to: "9.12.1", title: "Hop 9.9.1 ➔ 9.12.1 Considerations", directUpgrade: false, risks: [
       "Direct Upgrade Limit: Direct upgrade from 9.9.1 is supported ONLY if the cluster is currently running 9.9.1P13 or higher patch release; otherwise, an intermediate hop to ONTAP 9.10.1 is required.",
       "FAS2500 Hardware EOS: ONTAP 9.10.1+ completely removes kernel drivers for FAS2520, FAS2552, and FAS2554. DO NOT proceed if cluster contains these controller models.",
@@ -1654,6 +1707,36 @@ export function getUpgradeHopsConsiderations(currentVersion, targetVersion, cont
     ], commands: [
       "volume show -fields block-type",
       "security ssl show"
+    ]},
+    { from: "9.16.1", to: "9.17.1", title: "Hop 9.16.1 ➔ 9.17.1 Considerations", directUpgrade: true, risks: [
+      "AFF A900 / FAS9000 Firmware Dependency: ONTAP 9.17.1 requires minimum controller firmware v18.5 on AFF A900 and FAS9000 platforms. Verify and update controller firmware before ANDU.",
+      "SnapMirror Cloud Sync Protocol Enforcement: ONTAP 9.17.1 enforces secure-channel-only for SnapMirror Cloud sync jobs. Any existing HTTP-based cloud mirror relationships will fail post-upgrade."
+    ], preReqs: [
+      "Verify controller firmware version using 'system node image show'.",
+      "Review and update any SnapMirror Cloud sync policies to use HTTPS endpoints."
+    ], commands: [
+      "system node image show",
+      "snapmirror show -type XDP -fields healthy,status"
+    ]},
+    { from: "9.17.1", to: "9.18.1", title: "Hop 9.17.1 ➔ 9.18.1 Considerations", directUpgrade: true, risks: [
+      "Autonomous Ransomware Protection v3: ONTAP 9.18.1 updates ARP detection algorithms. Existing ARP-enabled volumes may trigger initial learning-mode re-entry post-upgrade.",
+      "BlueXP Integration: ONTAP 9.18.1 deepens BlueXP integration for cloud tiering and backup. Ensure connector version is 3.9.30+ if BlueXP is in use."
+    ], preReqs: [
+      "Review ARP volume configurations and document current threat-detection thresholds.",
+      "Update BlueXP connector to minimum required version if applicable."
+    ], commands: [
+      "security anti-ransomware volume show -fields state",
+      "system node show"
+    ]},
+    { from: "9.18.1", to: "9.19.1", title: "Hop 9.18.1 ➔ 9.19.1 Considerations", directUpgrade: true, risks: [
+      "AI/ML Workload Optimizations: ONTAP 9.19.1 introduces native GPU-direct storage path optimizations. Jumbo frames (MTU 9000) are mandatory on RoCE data paths for NVMe-oF workloads.",
+      "Switch RCF v2.1+ Requirement: Cluster and storage switch Reference Configuration Files must be at v2.1 minimum. Upgrading with older RCFs may cause packet retransmission warnings under high load."
+    ], preReqs: [
+      "Set MTU 9000 on all NVMe-oF RoCE storage data ports.",
+      "Update cluster switch RCF files to v2.1+ before initiating ANDU."
+    ], commands: [
+      "network port modify -node * -port e3a,e3b -mtu 9000",
+      "system switch ethernet show -fields model,version"
     ]},
     { from: "9.16.1", to: "9.18.1", title: "Hop 9.16.1 ➔ 9.18.1 Considerations", directUpgrade: true, risks: [
       "Hardware Lifecycles: ONTAP 9.18.1 does not support AFF A300, AFF A220, FAS8200, or FAS2700. Verify the system model is FAS8300, FAS8700, AFF A400, or newer before proceeding.",
