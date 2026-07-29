@@ -108,7 +108,22 @@ const UI_UPGRADE_HOPS = {
   },
   // From 9.16.1 — currently latest, no further path
   "9.16.1": {
-    "9.16.1": []
+    "9.16.1": [],
+    "9.17.1": ["9.17.1"],
+    "9.18.1": ["9.17.1", "9.18.1"],
+    "9.19.1": ["9.17.1", "9.18.1", "9.19.1"]
+  },
+  "9.17.1": {
+    "9.17.1": [],
+    "9.18.1": ["9.18.1"],
+    "9.19.1": ["9.18.1", "9.19.1"]
+  },
+  "9.18.1": {
+    "9.18.1": [],
+    "9.19.1": ["9.19.1"]
+  },
+  "9.19.1": {
+    "9.19.1": []
   }
 };
 
@@ -174,7 +189,7 @@ const SHELF_SPEC_MAP = {
 
 // Robust version baseline key resolver
 function resolveBaseVersionKey(version) {
-  if (!version) return '9.16.1';
+  if (!version) return '9.19.1';
   const v = version.trim();
   if (UI_UPGRADE_HOPS[v]) return v;
   const base = v.split('P')[0].trim();
@@ -188,9 +203,11 @@ function resolveBaseVersionKey(version) {
   if (base === "9.13") return "9.13.1";
   if (base === "9.14" || base === "9.15") return "9.15.1";
   if (base === "9.16") return "9.16.1";
-  if (base === "9.17") return "9.16.1";
-  if (base.startsWith('9.1')) return '9.16.1'; // future versions not yet released — fallback to current
-  return "9.16.1";
+  if (base === "9.17") return "9.17.1";
+  if (base === "9.18") return "9.18.1";
+  if (base === "9.19") return "9.19.1";
+  if (base.startsWith('9.1')) return '9.19.1'; // future versions not yet released — fallback to current
+  return "9.19.1";
 }
 
 // --- DOM References ---
@@ -287,7 +304,7 @@ function populateManualPlatformDropdown() {
     const selectedModel = select.value;
     const profile = getPlatformProfile(selectedModel);
     
-    const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1"];
+    const targetOptions = ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.14.1P1','9.14.1P2','9.14.1P3','9.15.1','9.15.1P1','9.15.1P2','9.16.1','9.16.1P1','9.16.1P2','9.17.1','9.17.1P1','9.18.1','9.18.1P1','9.19.1'];
     
     targetOptions.forEach(optVal => {
       if (compareVersions(optVal, profile.maxOntap) <= 0) {
@@ -1543,6 +1560,20 @@ Accepted formats: plain text, .zip, .tar.gz / .tgz`;
       uploadedFiles = origUploadedFiles; // restore global
       Object.assign(uploadedFiles, fileUploadedFiles); // also keep global merged
 
+      // Diagnostic: what did we actually extract?
+      const extractedKeys = Object.keys(fileUploadedFiles);
+      const totalChars = Object.values(fileUploadedFiles).reduce((s, v) => s + v.length, 0);
+
+      // XML ASUP detection — newer ASUPs may be XML-wrapped; extract text content
+      const xmlEntry = Object.entries(fileUploadedFiles).find(([k, v]) => v.trimStart().startsWith('<?xml'));
+      if (xmlEntry) {
+        const xmlText = xmlEntry[1];
+        // Strip XML tags and use raw text content for parsing
+        const stripped = xmlText.replace(/<[^>]+>/g, ' ').replace(/\s{2,}/g, '\n').trim();
+        fileUploadedFiles['ALL'] = (fileUploadedFiles['ALL'] || '') + '\n' + stripped;
+        Object.assign(uploadedFiles, fileUploadedFiles);
+      }
+
       // Parse this file independently
       const fileState = parseASUP(fileUploadedFiles);
 
@@ -1558,7 +1589,11 @@ Accepted formats: plain text, .zip, .tar.gz / .tgz`;
         coverage: coverage.coverage,
         sectionsFound: coverage.found,
         sectionsMissing: coverage.missing,
-        nodeNames: fileState.nodes.map(n => n.name).filter(n => n !== 'node-a' && n !== 'node-b')
+        nodeNames: fileState.nodes.map(n => n.name).filter(n => n !== 'node-a' && n !== 'node-b'),
+        // Diagnostics — shown in the status card to help troubleshoot parse failures
+        extractedKeys: extractedKeys,
+        totalChars: totalChars,
+        parseWarnings: fileState.parseWarnings || []
       });
     }
 
@@ -1642,6 +1677,25 @@ function renderFileStatusGrid(results) {
         : 'Node unknown';
       const foundLabels = (r.sectionsFound || []).slice(0, 4).map(s => s.label).join(', ');
       const missingLabels = (r.sectionsMissing || []).slice(0, 3).map(s => s.label).join(', ');
+
+      // Show diagnostic detail when nothing was parsed
+      const diagHtml = (r.coverage === 0) ? (() => {
+        const keys = r.extractedKeys || [];
+        const chars = r.totalChars || 0;
+        const warns = (r.parseWarnings || []).slice(0,3).map(w => w.message || w).join('; ');
+        if (chars === 0) {
+          return `<div style="font-size:0.7rem; color:#f87171; margin-top:4px; padding:4px 8px; background:rgba(239,68,68,0.07); border-radius:4px;">
+            ⚠ No readable text was extracted from this file.<br>
+            <strong>Possible causes:</strong> encrypted zip, unsupported compression, or binary-only content.<br>
+            Try extracting the archive manually and dragging the text files here.
+          </div>`;
+        }
+        return `<div style="font-size:0.7rem; color:#fbbf24; margin-top:4px; padding:4px 8px; background:rgba(245,158,11,0.07); border-radius:4px;">
+          ℹ Extracted ${(chars/1024).toFixed(0)} KB across ${keys.length} section(s): <em style="color:#c7d2fe;">${keys.slice(0,6).join(', ')}${keys.length>6?'…':''}</em><br>
+          ${warns ? `Parse notes: ${warns}` : 'Parser could not identify ONTAP CLI output patterns in the extracted text.'}
+        </div>`;
+      })() : '';
+
       return `
         <div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.6rem 0.85rem; background:rgba(0,0,0,0.25); border:1px solid ${badge.color}33; border-radius:8px; border-left:3px solid ${badge.color};">
           <div style="font-size:1rem; flex-shrink:0; margin-top:1px;">${badge.icon}</div>
@@ -1652,6 +1706,7 @@ function renderFileStatusGrid(results) {
               ${foundLabels ? `&nbsp;·&nbsp; ✓ ${foundLabels}` : ''}
             </div>
             ${missingLabels ? `<div style="font-size:0.7rem; color:#fca5a5; margin-top:1px;">⚠ Not found: ${missingLabels}</div>` : ''}
+            ${diagHtml}
           </div>
           <div style="font-size:0.7rem; padding:2px 7px; border-radius:10px; background:${badge.bg}; color:${badge.color}; white-space:nowrap; font-weight:600; flex-shrink:0;">${badge.label}</div>
         </div>`;
@@ -1896,7 +1951,7 @@ function renderCriticalGapsPanel(state) {
   }
 
   // Build dropdown options for known fields
-  const ONTAP_OPTIONS = ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.15.1','9.16.1'];
+  const ONTAP_OPTIONS = ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.14.1P1','9.14.1P2','9.14.1P3','9.15.1','9.15.1P1','9.15.1P2','9.16.1','9.16.1P1','9.16.1P2','9.17.1','9.17.1P1','9.18.1','9.18.1P1','9.19.1'];
   const PLATFORM_OPTIONS = [
     'AFF A1K','AFF A90','AFF A70','AFF A50','AFF A30','AFF A20',
     'AFF A900','AFF A800','AFF A700','AFF A400','AFF A300','AFF A250','AFF A220',
@@ -2352,7 +2407,7 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
   
   let startingOntap = manualOntap || profile.maxOntap;
   if (isGreenfield) {
-    const compliantVersions = ["9.14.1", "9.15.1", "9.16.1"];
+    const compliantVersions = ["9.14.1", "9.15.1", "9.16.1", "9.17.1", "9.18.1", "9.19.1"];
     let bestCompliant = null;
     for (let cv of compliantVersions) {
       if (compareVersions(cv, profile.maxOntap) <= 0) {
@@ -4160,7 +4215,7 @@ function initStep3Inputs() {
   const curVer = currentState.version.ontap;
   const profile = getPlatformProfile(currentState.version.model);
   
-  const targetOptions = ["9.7", "9.8", "9.9.1", "9.10.1", "9.11.1", "9.12.1", "9.13.1", "9.14.1", "9.15.1", "9.16.1"];
+  const targetOptions = ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.14.1P1','9.14.1P2','9.14.1P3','9.15.1','9.15.1P1','9.15.1P2','9.16.1','9.16.1P1','9.16.1P2','9.17.1','9.17.1P1','9.18.1','9.18.1P1','9.19.1'];
   
   targetOptions.forEach(opt => {
     const isDowngrade = compareVersions(opt, curVer) < 0 && !curVer.startsWith(opt);

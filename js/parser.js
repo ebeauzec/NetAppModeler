@@ -1257,7 +1257,7 @@ export function inferMissingData(state, profile) {
       field: 'ontapVersion', label: 'ONTAP Version',
       reason: 'Cannot assess upgrade path, firmware requirements, or feature support without the current ONTAP version.',
       promptType: 'select',
-      promptOptions: ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.15.1','9.16.1']
+      promptOptions: ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.14.1P1','9.14.1P2','9.14.1P3','9.15.1','9.15.1P1','9.15.1P2','9.16.1','9.16.1P1','9.16.1P2','9.17.1','9.17.1P1','9.18.1','9.18.1P1','9.19.1']
     });
   }
   if (!state.dataSources.model || state.dataSources.model.source === 'default') {
