@@ -5689,7 +5689,6 @@ function runModelingCalculations() {
   checkboxes.forEach(box => {
     const licName = box.getAttribute("data-lic");
     const isChecked = box.checked;
-    
     const lic = modeledState.licenses.find(l => l.name === licName);
     if (lic) {
       lic.status = isChecked ? "active" : "disabled";
@@ -5719,17 +5718,30 @@ function runModelingCalculations() {
       diskGB = match[2].toUpperCase() === 'T' ? val * 1000 : val;
     }
 
-    const shelfCount = Math.ceil(diskCount / spec.maxCount);
+    // Read the number of shelves the user explicitly requested
+    const shelfCountInput = parseInt((document.getElementById("shelf-count-input") || {}).value) || 1;
+    // Fallback: if disk-count was entered manually and is > maxCount, split across multiple shelves
+    const shelfCountFromDisks = diskCount > 0 ? Math.ceil(diskCount / spec.maxCount) : 1;
+    // Use whichever is larger (user's explicit count takes priority; disk-count-derived count is a safety net)
+    const shelfCount = Math.max(shelfCountInput, shelfCountFromDisks);
+
     const isMetroCluster = modeledState.metrocluster && modeledState.metrocluster !== "none";
     const allocation = document.getElementById("disk-allocation").value;
 
     if (isMetroCluster) {
       // Symmetrical Shelf Addition (Site A and Site B)
+      // Snapshot the current shelf count BEFORE pushing so IDs are stable
+      const baseShelfCount = modeledState.shelves.filter(s => !s.id.toString().endsWith('B')).length;
       let diskSerialIndex = 0;
       for (let s = 0; s < shelfCount; s++) {
-        const disksInThisShelf = Math.min(spec.maxCount, diskCount - s * spec.maxCount);
-        const shelfId = (modeledState.shelves.length / 2 + 1).toString();
-        
+        const disksInThisShelf = diskCount > 0
+          ? Math.min(spec.maxCount, diskCount - s * spec.maxCount)
+          : spec.maxCount;
+        // Stable ID: base + offset, not dependent on array length inside the loop
+        const shelfNum = baseShelfCount + s + 1;
+        const shelfId = shelfNum.toString();
+
+        // Site A shelf
         modeledState.shelves.push({
           id: shelfId,
           model: shelfType.toUpperCase(),
@@ -5737,6 +5749,7 @@ function runModelingCalculations() {
           firmware: "Latest baseline",
           latestFirmware: "Latest baseline",
           cabling: "Multipath HA",
+          site: 'A',
           disks: Array.from({ length: disksInThisShelf }, (_, idx) => ({
             slot: idx,
             model: "Expansion Model",
@@ -5745,6 +5758,29 @@ function runModelingCalculations() {
             type: spec.mediaType,
             firmware: "NA01",
             serial: `EXP-${diskSerialIndex}-A`
+          }))
+        });
+
+        // Site B mirror shelf (identical spec, MCC symmetry requirement)
+        modeledState.shelves.push({
+          id: shelfId + "B",
+          model: shelfType.toUpperCase(),
+          serial: `SHFL-NEW-${shelfId}-B`,
+          firmware: "Latest baseline",
+          latestFirmware: "Latest baseline",
+          cabling: "Multipath HA",
+          site: 'B',
+          disks: Array.from({ length: disksInThisShelf }, (_, idx) => ({
+            slot: idx,
+            model: "Expansion Model",
+            sizeStr: diskSizeStr,
+            sizeGB: diskGB,
+            type: spec.mediaType,
+            firmware: "NA01",
+            serial: `EXP-${diskSerialIndex++}-B`
+          }))
+        });
+      }
           }))
         });
 
