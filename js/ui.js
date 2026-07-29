@@ -4168,42 +4168,73 @@ function renderPortAuditTable(state, tableBodyId) {
   state.nodes.forEach(node => {
     if (!node.ports) return;
     node.ports.forEach(port => {
-      let role = "Data (NFS/CIFS)";
-      let speed = port.speed || "";
-      let statusClass = port.status === "up" ? "compliant" : "critical";
+      // Determine role using parsed type first, then profile port groups, then name patterns
+      const pDef = profile.ports || {};
+      const clusterPorts = new Set(pDef.cluster || []);
+      const dataPorts = new Set(pDef.data || []);
+      const sanPorts = new Set(pDef.san || []);
+      const storagePorts = new Set(pDef.storage || []);
+
+      // Also add expansion card ports to their sets based on type
+      (state.expansionCards || []).forEach(c => {
+        const k = typeof c === 'string' ? c : c.cardKey;
+        const cSpec = EXP_CARDS_CATALOG[k];
+        if (!cSpec) return;
+        (cSpec.ports || []).forEach(p => {
+          if (cSpec.type === 'san') sanPorts.add(p);
+          else if (cSpec.type === 'storage') storagePorts.add(p);
+          else dataPorts.add(p); // nic type -> data
+        });
+      });
+
+      // Role detection per port
+      const portName = port.name || '';
+      const portNameLower = portName.toLowerCase();
+      const typeLower = (port.type || '').toLowerCase();
+      let role = 'Data (NFS/CIFS/iSCSI)';
+      let recommendation = 'Port healthy and online.';
+      let statusClass = port.status === 'up' ? 'compliant' : 'critical';
       let statusText = (port.status || 'unknown').toUpperCase();
-      let recommendation = "Port healthy and online.";
 
-      const portNameLower = (port.name || "").toLowerCase();
-      const speedLower = speed.toLowerCase();
-      const typeLower = port.type ? port.type.toLowerCase() : "";
-
-      if (typeLower.includes("cluster") || portNameLower === "e0a" || portNameLower === "e0b") {
-        role = "Cluster Interconnect";
-        recommendation = "Dedicated cluster port. Keep isolated for heartbeat traffic.";
-      } else if (typeLower.includes("fc") || portNameLower === "0e" || portNameLower === "0f" || portNameLower === "0g" || portNameLower === "0h" || portNameLower === "0i" || portNameLower === "0j") {
-        role = "Fibre Channel (FCP SAN)";
+      if (typeLower.includes('cluster') || clusterPorts.has(portName) || clusterPorts.has(portNameLower)) {
+        role = 'Cluster Interconnect';
+        recommendation = 'Dedicated cluster port. Keep isolated for HA heartbeat traffic.';
+      } else if (typeLower.includes('fibre') || typeLower === 'fc' || sanPorts.has(portName) || sanPorts.has(portNameLower)) {
+        role = 'Fibre Channel (FCP SAN)';
         if (!isSANLicensed) {
-          recommendation = "FC port present, but FCP protocol unlicensed. SAN target is idle.";
-          statusClass = "warning";
-          statusText = "IDLE";
+          recommendation = 'FC port present but FCP license inactive. SAN target is idle.';
+          statusClass = 'warning';
+          statusText = 'IDLE';
         } else {
-          recommendation = "Active SAN target. Sized for blocks datastore traffic.";
+          recommendation = 'Active SAN block target. Sized for block storage traffic.';
         }
-      } else if (typeLower.includes("storage") || portNameLower === "0a" || portNameLower === "0b" || portNameLower === "0c" || portNameLower === "0d" || portNameLower === "e0g" || portNameLower === "e0h") {
-        role = "Back-End Disk Storage";
-        recommendation = "Drives storage shelf loops. Maintain multipath connections.";
+      } else if (typeLower.includes('storage') || typeLower.includes('nvme') || storagePorts.has(portName) || storagePorts.has(portNameLower)) {
+        role = 'Back-End Storage (SAS/NVMe)';
+        recommendation = 'Drives storage shelf loops. Maintain multipath cabling.';
+      } else if (typeLower.includes('management') || portNameLower === 'e0m' || portNameLower === 'e0p') {
+        role = 'Node Management (e0M)';
+        recommendation = 'Out-of-band management port. Connect to management network only.';
+      } else if (portNameLower.startsWith('e') && dataPorts.has(portName)) {
+        role = 'Data (NFS/CIFS/iSCSI)';
+        recommendation = 'Data port serving NAS/block traffic.';
       }
 
-      if (port.status === "down") {
-        recommendation = "🛑 Port link offline. Verify switch fiber link or SFP parameters.";
+      if (port.status === 'down') {
+        recommendation = '🛑 Port link offline. Verify switch fiber/copper link or SFP parameters.';
       }
+      const speed = port.speed || '';
+
+      const roleBadgeStyle = role.includes('Cluster') ? 'background:rgba(16,185,129,0.15);border:1px solid #10b981;color:#34d399;' :
+        role.includes('Storage') ? 'background:rgba(245,158,11,0.15);border:1px solid #f59e0b;color:#fbbf24;' :
+        role.includes('Fibre') ? 'background:rgba(236,72,153,0.15);border:1px solid rgba(236,72,153,0.5);color:#f9a8d4;' :
+        role.includes('Management') ? 'background:rgba(156,163,175,0.12);border:1px solid rgba(156,163,175,0.3);color:#9ca3af;' :
+        'background:rgba(6,182,212,0.15);border:1px solid var(--color-info);color:#8ec5fc;';
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td style="font-weight:600;">${(node.name || "").toUpperCase()}</td>
         <td style="font-family:var(--font-mono); font-weight:700; color:var(--color-info);">${port.name}</td>
-        <td>${role}</td>
+        <td><span style="padding:2px 6px;border-radius:4px;font-size:0.7rem;font-weight:600;${roleBadgeStyle}">${role}</span></td>
         <td>${speed}</td>
         <td><span class="status-badge ${statusClass}" style="padding: 2px 6px; font-size:0.7rem;">${statusText}</span></td>
         <td style="font-size:0.78rem; color:var(--color-muted);">${recommendation}</td>
@@ -4217,36 +4248,67 @@ function renderPortAuditTable(state, tableBodyId) {
 function generateReportPortsHtml() {
   if (!currentState) return "";
   const isSANLicensed = modeledState.licenses.some(l => l.name === "FCP" && l.status === "active");
+  const profile = getPlatformProfile(modeledState.version.model);
   
   let html = "";
   modeledState.nodes.forEach(node => {
     if (!node.ports) return;
     node.ports.forEach(port => {
-      let role = "Data (NFS/CIFS)";
-      let speed = port.speed || "";
-      let statusClass = port.status === "up" ? "compliant" : "critical";
+      // Determine role using parsed type first, then profile port groups, then name patterns
+      const pDef = profile.ports || {};
+      const clusterPorts = new Set(pDef.cluster || []);
+      const dataPorts = new Set(pDef.data || []);
+      const sanPorts = new Set(pDef.san || []);
+      const storagePorts = new Set(pDef.storage || []);
+
+      // Also add expansion card ports to their sets based on type
+      (modeledState.expansionCards || []).forEach(c => {
+        const k = typeof c === 'string' ? c : c.cardKey;
+        const cSpec = EXP_CARDS_CATALOG[k];
+        if (!cSpec) return;
+        (cSpec.ports || []).forEach(p => {
+          if (cSpec.type === 'san') sanPorts.add(p);
+          else if (cSpec.type === 'storage') storagePorts.add(p);
+          else dataPorts.add(p); // nic type -> data
+        });
+      });
+
+      // Role detection per port
+      const portName = port.name || '';
+      const portNameLower = portName.toLowerCase();
+      const typeLower = (port.type || '').toLowerCase();
+      let role = 'Data (NFS/CIFS/iSCSI)';
+      let recommendation = 'Port healthy and online.';
+      let statusClass = port.status === 'up' ? 'compliant' : 'critical';
       let statusText = (port.status || 'unknown').toUpperCase();
-      let recommendation = "Port healthy and online.";
 
-      const portNameLower = (port.name || "").toLowerCase();
-      const typeLower = port.type ? port.type.toLowerCase() : "";
-
-      if (typeLower.includes("cluster") || portNameLower === "e0a" || portNameLower === "e0b") {
-        role = "Cluster Interconnect";
-        recommendation = "Cluster interconnect link.";
-      } else if (typeLower.includes("fc") || portNameLower === "0e" || portNameLower === "0f" || portNameLower === "0g" || portNameLower === "0h" || portNameLower === "0i" || portNameLower === "0j") {
-        role = "Fibre Channel (FCP SAN)";
+      if (typeLower.includes('cluster') || clusterPorts.has(portName) || clusterPorts.has(portNameLower)) {
+        role = 'Cluster Interconnect';
+        recommendation = 'Dedicated cluster port. Keep isolated for HA heartbeat traffic.';
+      } else if (typeLower.includes('fibre') || typeLower === 'fc' || sanPorts.has(portName) || sanPorts.has(portNameLower)) {
+        role = 'Fibre Channel (FCP SAN)';
         if (!isSANLicensed) {
-          recommendation = "SAN target port idle.";
-          statusClass = "warning";
-          statusText = "IDLE";
+          recommendation = 'FC port present but FCP license inactive. SAN target is idle.';
+          statusClass = 'warning';
+          statusText = 'IDLE';
         } else {
-          recommendation = "SAN block target active.";
+          recommendation = 'Active SAN block target. Sized for block storage traffic.';
         }
-      } else if (typeLower.includes("storage") || portNameLower === "0a" || portNameLower === "0b" || portNameLower === "0c" || portNameLower === "0d" || portNameLower === "e0g" || portNameLower === "e0h") {
-        role = "Back-End Disk Storage";
-        recommendation = "SAS/RoCE disk storage loops.";
+      } else if (typeLower.includes('storage') || typeLower.includes('nvme') || storagePorts.has(portName) || storagePorts.has(portNameLower)) {
+        role = 'Back-End Storage (SAS/NVMe)';
+        recommendation = 'Drives storage shelf loops. Maintain multipath cabling.';
+      } else if (typeLower.includes('management') || portNameLower === 'e0m' || portNameLower === 'e0p') {
+        role = 'Node Management (e0M)';
+        recommendation = 'Out-of-band management port. Connect to management network only.';
+      } else if (portNameLower.startsWith('e') && dataPorts.has(portName)) {
+        role = 'Data (NFS/CIFS/iSCSI)';
+        recommendation = 'Data port serving NAS/block traffic.';
       }
+
+      if (port.status === 'down') {
+        recommendation = '🛑 Port link offline. Verify switch fiber/copper link or SFP parameters.';
+      }
+      const speed = port.speed || '';
 
       html += `
         <tr>
@@ -6763,6 +6825,63 @@ function generateReport() {
     ${topFinding ? `<div style="margin-top:1rem; padding:0.75rem 1rem; background:rgba(239,68,68,0.08); border-left:3px solid #ef4444; border-radius:0 6px 6px 0; font-size:0.83rem; color:var(--color-text);">${riskStatement}</div>` : ''}
   </div>`;
 
+  const _rProfile = getPlatformProfile(model);
+  const _rPDef = _rProfile.ports || {};
+  const _onboardPortsStr = [
+    ...(_rPDef.cluster || []).map(p => `<span style="background:rgba(16,185,129,0.15);border:1px solid #10b981;color:#34d399;padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:0.72rem;margin:1px;display:inline-block;">${p} Cluster</span>`),
+    ...(_rPDef.data || []).map(p => `<span style="background:rgba(6,182,212,0.15);border:1px solid var(--color-info);color:#8ec5fc;padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:0.72rem;margin:1px;display:inline-block;">${p} Data</span>`),
+    ...(_rPDef.san || []).map(p => `<span style="background:rgba(236,72,153,0.15);border:1px solid rgba(236,72,153,0.4);color:#f9a8d4;padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:0.72rem;margin:1px;display:inline-block;">${p} FC/SAN</span>`),
+    ...(_rPDef.storage || []).map(p => `<span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#fcd34d;padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:0.72rem;margin:1px;display:inline-block;">${p} Storage</span>`)
+  ].join(' ');
+
+  const _supportedCardRows = (_rProfile.supportedCards || []).map(ck => {
+    const cs = EXP_CARDS_CATALOG[ck];
+    if (!cs) return '';
+    const typeColor = cs.type === 'storage' ? '#fcd34d' : cs.type === 'san' ? '#f9a8d4' : '#8ec5fc';
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:3px 10px 3px 0;font-family:var(--font-mono);font-size:0.75rem;color:var(--color-muted);">${ck}</td>
+      <td style="padding:3px 10px 3px 0;font-size:0.78rem;color:#fff;">${cs.name}</td>
+      <td style="padding:3px 10px 3px 0;"><span style="font-size:0.7rem;background:rgba(255,255,255,0.06);border-radius:3px;padding:1px 5px;color:${typeColor};">${cs.type.toUpperCase()}</span></td>
+      <td style="padding:3px 10px 3px 0;font-family:var(--font-mono);font-size:0.72rem;color:var(--color-muted);">${(cs.ports||[]).join(', ')}</td>
+      <td style="padding:3px 0;font-size:0.75rem;color:var(--color-muted);">${cs.speed} · ${cs.power}W</td>
+    </tr>`;
+  }).join('');
+
+  const secAhw = `
+  <div class="report-section" style="margin-bottom:1.5rem;">
+    <h3 style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:0.75rem;">🔧 Platform Hardware Profile — ${model}</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div style="background:rgba(0,0,0,0.2);border:1px solid var(--border-color);border-radius:8px;padding:1rem;">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.6rem;">Onboard Ports</div>
+        <div style="line-height:2;">${_onboardPortsStr || '<span style="color:var(--color-muted);font-size:0.8rem;">No port data — model unrecognised</span>'}</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.2);border:1px solid var(--border-color);border-radius:8px;padding:1rem;">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.6rem;">Platform Limits</div>
+        <table style="width:100%;font-size:0.8rem;border-collapse:collapse;">
+          <tr><td style="color:var(--color-muted);padding:2px 10px 2px 0;">Max ONTAP</td><td style="color:#fff;font-weight:600;">${_rProfile.maxOntap || 'N/A'}</td></tr>
+          <tr><td style="color:var(--color-muted);padding:2px 10px 2px 0;">Max RAM</td><td style="color:#fff;">${_rProfile.maxRamGB ? _rProfile.maxRamGB + ' GB' : 'N/A'}</td></tr>
+          <tr><td style="color:var(--color-muted);padding:2px 10px 2px 0;">PCIe Slots</td><td style="color:#fff;">${_rProfile.maxPcieSlots || 'N/A'}</td></tr>
+          <tr><td style="color:var(--color-muted);padding:2px 10px 2px 0;">Max Disk FW</td><td style="color:#fff;">${_rProfile.maxFirmware || 'N/A'}</td></tr>
+          <tr><td style="color:var(--color-muted);padding:2px 10px 2px 0;">Description</td><td style="color:var(--color-muted);font-size:0.75rem;">${_rProfile.description || ''}</td></tr>
+        </table>
+      </div>
+    </div>
+    ${_supportedCardRows ? `
+    <div style="margin-top:0.75rem;background:rgba(0,0,0,0.2);border:1px solid var(--border-color);border-radius:8px;padding:1rem;">
+      <div style="font-size:0.78rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.6rem;">Supported PCIe Expansion Cards</div>
+      <table style="width:100%;font-size:0.8rem;border-collapse:collapse;">
+        <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+          <th style="text-align:left;padding:3px 10px 6px 0;color:var(--color-muted);font-weight:600;font-size:0.72rem;">Part Key</th>
+          <th style="text-align:left;padding:3px 10px 6px 0;color:var(--color-muted);font-weight:600;font-size:0.72rem;">Card Name</th>
+          <th style="text-align:left;padding:3px 10px 6px 0;color:var(--color-muted);font-weight:600;font-size:0.72rem;">Type</th>
+          <th style="text-align:left;padding:3px 10px 6px 0;color:var(--color-muted);font-weight:600;font-size:0.72rem;">Ports</th>
+          <th style="text-align:left;padding:3px 0 6px 0;color:var(--color-muted);font-weight:600;font-size:0.72rem;">Speed · Power</th>
+        </tr></thead>
+        <tbody>${_supportedCardRows}</tbody>
+      </table>
+    </div>` : ''}
+  </div>`;
+
   // ─── SECTION B: Findings Table ────────────────────────────────────────────
   const sevOrder = { critical: 0, warning: 1, compliant: 2 };
   const sortedReports = [...curReports].sort((a, b) => (sevOrder[a.status] ?? 3) - (sevOrder[b.status] ?? 3));
@@ -7472,6 +7591,7 @@ function generateReport() {
     <div style="max-width:100%; padding:0.5rem 0;">
       <h2 style="font-size:1.1rem; font-weight:800; color:#fff; margin:0 0 1.25rem 0; padding-bottom:0.5rem; border-bottom:1px solid rgba(255,255,255,0.1);">📄 System Remediation Report — ${model}</h2>
       ${secA}
+      ${secAhw}
       ${secB}
       ${secC}
       ${secD}
