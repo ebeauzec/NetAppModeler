@@ -1351,16 +1351,40 @@ async function processZipFile(file) {
   }
   const zip = await window.JSZip.loadAsync(file);
   const promises = [];
-  
+
   zip.forEach((relativePath, zipEntry) => {
     if (zipEntry.dir) return;
-    const baseName = relativePath.split('/').pop();
-    const promise = zipEntry.async("text").then(text => {
-      mapASUPFile(baseName, text);
+    // Use basename without the .gz extension for section detection
+    const rawName = relativePath.split('/').pop();
+    const effectiveName = rawName.replace(/\.gz$/i, '');
+
+    const promise = zipEntry.async('arraybuffer').then(async (buffer) => {
+      const bytes = new Uint8Array(buffer);
+      // Detect gzip magic bytes (0x1F 0x8B) — NetApp ASUP zips contain per-command .gz files
+      const isGzip = bytes.length >= 2 && bytes[0] === 0x1F && bytes[1] === 0x8B;
+
+      let text = '';
+      if (isGzip && typeof DecompressionStream !== 'undefined') {
+        try {
+          const ds = new DecompressionStream('gzip');
+          const inStream = new Blob([buffer]).stream().pipeThrough(ds);
+          text = await new Response(inStream).text();
+        } catch (e) {
+          // Gzip decode failed — fall back to raw text (might be readable)
+          text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+        }
+      } else {
+        // Not gzip, or no DecompressionStream — read as text directly
+        text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+      }
+
+      if (text && text.trim().length > 10) {
+        mapASUPFile(effectiveName, text);
+      }
     });
     promises.push(promise);
   });
-  
+
   await Promise.all(promises);
 }
 
@@ -1871,38 +1895,73 @@ function renderCriticalGapsPanel(state) {
     return;
   }
 
+  // Build dropdown options for known fields
+  const ONTAP_OPTIONS = ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.15.1','9.16.1'];
+  const PLATFORM_OPTIONS = [
+    'AFF A1K','AFF A90','AFF A70','AFF A50','AFF A30','AFF A20',
+    'AFF A900','AFF A800','AFF A700','AFF A400','AFF A300','AFF A250','AFF A220',
+    'AFF C800','AFF C400','AFF C250','AFF C80','AFF C60','AFF C30','AFF C190',
+    'ASA A1K','ASA A90','ASA A70','ASA A50','ASA A30','ASA A900','ASA A800','ASA A400','ASA A250',
+    'ASA C800','ASA C400','ASA C250',
+    'FAS9500','FAS8700','FAS8300','FAS8200','FAS2750','FAS2720','FAS90','FAS70','FAS50'
+  ];
+  const SWITCH_OPTIONS = [
+    'BES-53248 (EFOS 3.10.0.3)', 'BES-53248 (EFOS 3.9.0.2)', 'BES-53248 (EFOS 3.8.0.2)',
+    'Nexus 9336C-FX2 (NX-OS 10.4)', 'Nexus 9336C-FX2 (NX-OS 10.3)', 'Nexus 9336C-FX2 (NX-OS 9.3)',
+    'Nexus 92300YC (NX-OS 9.3)', 'Nexus 3132Q-V (NX-OS 9.3)', 'None / Switchless Cluster'
+  ];
+  const SP_OPTIONS = [
+    '24.05','11.12','11.9','11.7','11.5','10.2','10.0','3.0','2.2','1.9'
+  ];
+
+  const getOptions = (field) => {
+    if (field === 'ontapVersion') return ONTAP_OPTIONS;
+    if (field === 'model') return PLATFORM_OPTIONS;
+    if (field === 'switchFirmware') return SWITCH_OPTIONS;
+    if (field === 'spFirmware') return SP_OPTIONS;
+    return null;
+  };
+
   const renderInput = (gap, isCritical) => {
     const savedVal = localStorage.getItem('gap_' + gap.field) || '';
-    if (gap.promptType === 'select') {
-      return `<select id="gap-input-${gap.field}" onchange="applyGapValue('${gap.field}', this.value)"
-        style="flex:1; background:rgba(0,0,0,0.4); color:#fff; border:1px solid ${isCritical?'#ef4444':'#f59e0b'}40; padding:6px 10px; border-radius:6px; font-size:0.78rem;">
-        <option value="">-- Select --</option>
-        ${(gap.promptOptions || []).map(o => `<option value="${o}" ${savedVal===o?'selected':''}>${o}</option>`).join('')}
+    const color = isCritical ? '#ef4444' : '#f59e0b';
+    const inputStyle = `flex:1; background:rgba(0,0,0,0.4); color:#fff; border:1px solid ${color}40; padding:6px 10px; border-radius:6px; font-size:0.78rem; min-width:0;`;
+
+    // Use select dropdown if promptType=select or we have a known option list
+    const options = getOptions(gap.field) || gap.promptOptions || null;
+    if (gap.promptType === 'select' || options) {
+      return `<select id="gap-input-${gap.field}" style="${inputStyle}">
+        <option value="">-- Select ${gap.label} --</option>
+        ${(options || []).map(o => `<option value="${o}" ${savedVal===o?'selected':''}>${o}</option>`).join('')}
       </select>`;
     }
     return `<input type="text" id="gap-input-${gap.field}" value="${savedVal}"
-      placeholder="${gap.placeholder || ''}"
-      onchange="applyGapValue('${gap.field}', this.value)"
-      style="flex:1; background:rgba(0,0,0,0.4); color:#fff; border:1px solid ${isCritical?'#ef4444':'#f59e0b'}40; padding:6px 10px; border-radius:6px; font-size:0.78rem;" />`;
+      placeholder="${gap.placeholder || 'Enter value...'}"
+      style="${inputStyle}" />`;
   };
 
-  const gapHtml = (gaps, isCritical) => gaps.map(gap => `
-    <div style="padding:0.6rem 0.75rem; background:rgba(0,0,0,0.15); border-radius:6px; border-left:3px solid ${isCritical?'#ef4444':'#f59e0b'};">
+  const gapHtml = (gaps, isCritical) => gaps.map(gap => {
+    const color = isCritical ? '#ef4444' : '#f59e0b';
+    const bgColor = isCritical ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.06)';
+    const badgeColor = isCritical ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.12)';
+    const badgeText = isCritical ? 'Required' : 'Recommended';
+    return `
+    <div style="padding:0.65rem 0.75rem; background:${bgColor}; border-radius:6px; border-left:3px solid ${color};">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
-        <span style="font-size:0.78rem; font-weight:600; color:${isCritical?'#fca5a5':'#fde68a'};">${isCritical?'🔴':'🟡'} ${gap.label}</span>
-        ${isCritical ? '<span style="font-size:0.65rem; background:rgba(239,68,68,0.15); color:#fca5a5; padding:1px 6px; border-radius:4px;">Required</span>' : '<span style="font-size:0.65rem; background:rgba(245,158,11,0.12); color:#fde68a; padding:1px 6px; border-radius:4px;">Recommended</span>'}
+        <span style="font-size:0.78rem; font-weight:600; color:${isCritical?'#fca5a5':'#fde68a'};">● ${gap.label}</span>
+        <span style="font-size:0.65rem; background:${badgeColor}; color:${isCritical?'#fca5a5':'#fde68a'}; padding:1px 6px; border-radius:4px;">${badgeText}</span>
       </div>
-      <div style="font-size:0.72rem; color:#94a3b8; margin-bottom:0.4rem; line-height:1.4;">${gap.reason}</div>
-      <div style="display:flex; gap:0.5rem; align-items:center;">
+      <div style="font-size:0.72rem; color:#94a3b8; margin-bottom:0.45rem; line-height:1.4;">${gap.reason}</div>
+      <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
         ${renderInput(gap, isCritical)}
         <button onclick="applyGapValue('${gap.field}', document.getElementById('gap-input-${gap.field}').value)"
-          style="padding:6px 12px; background:${isCritical?'rgba(239,68,68,0.2)':'rgba(245,158,11,0.15)'}; color:${isCritical?'#fca5a5':'#fde68a'}; border:1px solid ${isCritical?'#ef4444':'#f59e0b'}40; border-radius:6px; font-size:0.72rem; cursor:pointer; white-space:nowrap;">
+          style="padding:6px 14px; background:${isCritical?'rgba(239,68,68,0.2)':'rgba(245,158,11,0.15)'}; color:${isCritical?'#fca5a5':'#fde68a'}; border:1px solid ${color}40; border-radius:6px; font-size:0.72rem; cursor:pointer; white-space:nowrap; flex-shrink:0;">
           Apply
         </button>
-        ${!isCritical ? `<button onclick="skipGap('${gap.field}')" style="padding:6px 10px; background:transparent; color:#64748b; border:1px solid rgba(255,255,255,0.08); border-radius:6px; font-size:0.72rem; cursor:pointer; white-space:nowrap;">I don't know</button>` : ''}
+        ${!isCritical ? `<button onclick="skipGap('${gap.field}')" style="padding:6px 10px; background:transparent; color:#64748b; border:1px solid rgba(255,255,255,0.08); border-radius:6px; font-size:0.72rem; cursor:pointer; white-space:nowrap; flex-shrink:0;">I don't know</button>` : ''}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   panel.innerHTML = `
     <div style="font-size:0.82rem; font-weight:700; color:#f59e0b; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.5rem;">
