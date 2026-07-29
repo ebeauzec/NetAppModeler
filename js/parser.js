@@ -442,37 +442,43 @@ export function parseASUP(files) {
   }
 
   // Pass 5: SES (SCSI Enclosure Services) format — sasadmin enclosure / storage enclosure show
-  // Format from debug panel:
-  //   SES Configuration, shelf 0:
-  //     product identification=DS2246
-  //     product revision level=0191
-  //     Product Serial Number: SHFHU1511001144
-  // Run regardless of prior passes — SES gives us real serials for shelves found via keyword
+  // Format: SES Configuration, shelf N: ... product identification=DS2246 ... Product Serial Number: SHFHUxxx
+  // Deduplicates by SERIAL first (not shelf ID) to avoid MCC double-counting
+  // (both sites have shelf IDs starting at 0; serial is the unique identifier)
   {
     const sesBlocks = combinedText.split(/SES Configuration,\s+shelf\s+(\d+):/i);
     for (let i = 1; i < sesBlocks.length; i += 2) {
       const shelfId = sesBlocks[i].trim();
       const block = sesBlocks[i + 1] ? sesBlocks[i + 1].slice(0, 600) : '';
 
-      const modelMatch = block.match(/product\s+identification\s*[=:]\s*(\S+)/i);
-      const fwMatch    = block.match(/product\s+revision\s+level\s*[=:]\s*(\S+)/i);
+      const modelMatch  = block.match(/product\s+identification\s*[=:]\s*(\S+)/i);
+      const fwMatch     = block.match(/product\s+revision\s+level\s*[=:]\s*(\S+)/i);
       const serialMatch = block.match(/Product\s+Serial\s+Number\s*[=:]\s*(\S+)/i);
 
       if (!modelMatch) continue;
-      const model   = modelMatch[1].toUpperCase();
+      const model    = modelMatch[1].toUpperCase();
       const firmware = fwMatch ? fwMatch[1] : 'unknown';
-      const serial   = serialMatch ? serialMatch[1].trim() : `AUTO-DISC-SES-${shelfId}`;
+      const serial   = serialMatch ? serialMatch[1].trim() : null;
 
-      const existing = data.shelves.find(s => s.id === shelfId);
-      if (existing) {
-        // Upgrade an AUTO-DISC entry with the real serial and firmware
-        if (existing.serial.startsWith('AUTO-')) existing.serial = serial;
-        if (existing.firmware === 'unknown') existing.firmware = firmware;
-        if (existing.latestFirmware === 'unknown') existing.latestFirmware = firmware;
-        existing.model = model; // SES gives authoritative model string
-      } else {
+      // Skip if non-NetApp product (SES can enumerate other enclosures)
+      const knownModels = ['DS2246','DS4246','DS4486','DS224C','DS460C','DS212C','NS224','NS212'];
+      if (!knownModels.includes(model)) continue;
+
+      // Skip if we already have this exact serial (IOM-A and IOM-B of same shelf have same SES data)
+      if (serial && data.shelves.some(s => s.serial === serial)) continue;
+
+      // Try to upgrade an existing AUTO-DISC entry for this shelf ID
+      const existingById = data.shelves.find(s => s.id === shelfId && s.serial.startsWith('AUTO-'));
+      if (existingById) {
+        if (serial) existingById.serial = serial;
+        existingById.firmware = firmware;
+        existingById.latestFirmware = firmware;
+        existingById.model = model;
+      } else if (!data.shelves.some(s => s.id === shelfId && !s.serial.startsWith('AUTO-'))) {
+        // Only add new shelf if we don't already have a real-serial shelf with this ID
+        const finalSerial = serial || `AUTO-DISC-SES-${shelfId}`;
         const shelfObj = {
-          id: shelfId, model, serial, firmware,
+          id: shelfId, model, serial: finalSerial, firmware,
           latestFirmware: firmware, cabling: 'Multipath HA', disks: []
         };
         data.shelves.push(shelfObj);

@@ -3455,147 +3455,151 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
     }
 
     for (let sIdx = 0; sIdx < stacks.length; sIdx++) {
-      const stack = stacks[sIdx];
+      const originalStack = stacks[sIdx];
       const isPortExhausted = (sIdx * 2 + 1) >= allStoragePortsA.length;
       
-      for (let j = 0; j < stack.length; j++) {
-        const shelfItem = stack[j];
-        const i = shelfItem.index;
-        const shelfObj = shelfItem.obj;
-        const y = shelfYPositions[i];
-        const shelfHeight = getShelfHeight(shelfObj.model);
-        const cy = y + Math.floor(shelfHeight / 2);
-        
-        const isSinglePath = false; // MetroCluster storage loops always require multipath SAS/NVMe cabling
-        
-        // Site A Shelf
-        svgStr += getShelfVisualSVG(shelfObj, 15, y, 260, shelfHeight, shelfItem.isProposed);
-        svgStr += `
-          <!-- Site A Cable Ports (IN/OUT for IOM-A & IOM-B) -->
-          <rect x="20" y="${cy - 12}" width="40" height="24" fill="rgba(6,182,212,0.15)" stroke="var(--color-info)" stroke-width="1" rx="2"/>
-          <circle cx="30" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
-          <text x="30" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
-          <circle cx="50" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
-          <text x="50" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
+      const subStacks = [
+        originalStack.filter(item => item.index < Math.ceil(totalShelvesCount / 2)),
+        originalStack.filter(item => item.index >= Math.ceil(totalShelvesCount / 2))
+      ];
+
+      for (let sub = 0; sub < 2; sub++) {
+        const stack = subStacks[sub];
+        if (stack.length === 0) continue;
+        const isSiteA = sub === 0;
+
+        for (let j = 0; j < stack.length; j++) {
+          const shelfItem = stack[j];
+          const i = shelfItem.index;
+          const shelfObj = shelfItem.obj;
+          const y = shelfYPositions[i];
+          const shelfHeight = getShelfHeight(shelfObj.model);
+          const cy = y + Math.floor(shelfHeight / 2);
           
-          <rect x="230" y="${cy - 12}" width="40" height="24" fill="rgba(236,72,153,0.15)" stroke="var(--color-warning)" stroke-width="1" rx="2"/>
-          <circle cx="240" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
-          <text x="240" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
-          <circle cx="260" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
-          <text x="260" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
-        `;
-
-        // Site B Shelf
-        svgStr += getShelfVisualSVG(shelfObj, 475, y, 260, shelfHeight, shelfItem.isProposed);
-        svgStr += `
-          <!-- Site B Cable Ports (IN/OUT for IOM-A & IOM-B) -->
-          <rect x="480" y="${cy - 12}" width="40" height="24" fill="rgba(6,182,212,0.15)" stroke="var(--color-info)" stroke-width="1" rx="2"/>
-          <circle cx="490" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
-          <text x="490" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
-          <circle cx="510" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
-          <text x="510" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
+          const isSinglePath = false; // MetroCluster storage loops always require multipath SAS/NVMe cabling
           
-          <rect x="690" y="${cy - 12}" width="40" height="24" fill="rgba(236,72,153,0.15)" stroke="var(--color-warning)" stroke-width="1" rx="2"/>
-          <circle cx="700" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
-          <text x="700" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
-          <circle cx="720" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
-          <text x="720" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
-        `;
-
-        // Daisy chains within the stack
-        if (j > 0) {
-          const prevIndex = stack[j-1].index;
-          const prevY = shelfYPositions[prevIndex];
-          const prevHeight = getShelfHeight(stack[j-1].obj.model);
-          const prevCy = prevY + Math.floor(prevHeight / 2);
-          
-          // Site A Daisy Chains (OUT to IN)
-          svgStr += `<path d="M 50,${prevCy} L 30,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-          svgStr += `<path d="M 260,${prevCy} L 240,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-          // Site B Daisy Chains (OUT to IN)
-          svgStr += `<path d="M 510,${prevCy} L 490,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-          svgStr += `<path d="M 720,${prevCy} L 700,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-        }
-
-        // Local & Sync Mirror replication connections from/to controllers
-        const numPortsA = allStoragePortsA.length;
-        const spacingA = numPortsA > 4 ? Math.floor(100 / numPortsA) : 24;
-        const portWA = numPortsA > 4 ? Math.max(8, spacingA - 2) : 20;
-        const startXA = 150 + 5 + Math.floor((100 - (numPortsA * spacingA)) / 2);
-
-        const numPortsB = allStoragePortsB.length;
-        const spacingB = numPortsB > 4 ? Math.floor(100 / numPortsB) : 24;
-        const portWB = numPortsB > 4 ? Math.max(8, spacingB - 2) : 20;
-        const startXB = 485 + 5 + Math.floor((100 - (numPortsB * spacingB)) / 2);
-
-        // 1. Outbound loops from first shelf in stack
-        if (j === 0 && !isPortExhausted) {
-          const k = sIdx % nodesPerSite;
-          const yNode = 10 + k * 90;
-          const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
-          const portY = yNode + 50;
-
-          const pAIdx = Math.min(localPortPairIdx, allStoragePortsA.length - 2);
-          const repAIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
-          const pBIdx = Math.min(localPortPairIdx, allStoragePortsB.length - 2);
-          const repBIdx = Math.min(localPortPairIdx + 1, allStoragePortsB.length - 1);
-
-          const pAX = startXA + pAIdx * spacingA + portWA / 2;
-          const pBX = startXB + pBIdx * spacingB + portWB / 2;
-          const repAX = startXA + repAIdx * spacingA + portWA / 2;
-          const repBX = startXB + repBIdx * spacingB + portWB / 2;
-          
-          const replicationClass = isSinglePath ? "visual-cable singlepath" : "visual-cable multipath";
-          const repColor = isSinglePath ? "var(--color-danger)" : "var(--color-success)";
-
-          // Dynamic S-curve horizontal offsets to separate stacks
-          const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12;
-
-          // Site A local loop outbound: Node A e0a/e1a -> Site A Shelf IOM-A IN
-          svgStr += `<path d="M ${pAX},${portY} C ${pAX},${ctrlY} 30,${ctrlY} 30,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-          
-          // Site B local loop outbound: Node B e0a/e1a -> Site B Shelf IOM-A IN
-          svgStr += `<path d="M ${pBX},${portY} C ${pBX},${ctrlY} 490,${ctrlY} 490,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-
-          // Site A SyncMirror DR loop outbound: Node A e0b/e1b -> Site B Shelf IOM-B IN
-          svgStr += `<path d="M ${repAX},${portY} C ${repAX},${ctrlY} 700,${ctrlY} 700,${cy}" class="${replicationClass}" stroke-dasharray="4 3" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
-
-          // Site B SyncMirror DR loop outbound: Node B e0b/e1b -> Site A Shelf IOM-B IN
-          if (!isSinglePath) {
-            svgStr += `<path d="M ${repBX},${portY} C ${repBX},${ctrlY} 240,${ctrlY} 240,${cy}" class="${replicationClass}" stroke-dasharray="4 3" stroke="${repColor}" fill="none" stroke-width="1.5"/>`;
+          if (isSiteA) {
+            // Site A Shelf
+            svgStr += getShelfVisualSVG(shelfObj, 15, y, 260, shelfHeight, shelfItem.isProposed);
+            svgStr += `
+              <!-- Site A Cable Ports (IN/OUT for IOM-A & IOM-B) -->
+              <rect x="20" y="${cy - 12}" width="40" height="24" fill="rgba(6,182,212,0.15)" stroke="var(--color-info)" stroke-width="1" rx="2"/>
+              <circle cx="30" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+              <text x="30" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
+              <circle cx="50" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+              <text x="50" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
+              
+              <rect x="230" y="${cy - 12}" width="40" height="24" fill="rgba(236,72,153,0.15)" stroke="var(--color-warning)" stroke-width="1" rx="2"/>
+              <circle cx="240" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+              <text x="240" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
+              <circle cx="260" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+              <text x="260" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
+            `;
           } else {
-            svgStr += `<path d="M ${repBX},${portY} C ${repBX},${yNode + 110} 380,105 380,120" class="${replicationClass}" stroke="var(--color-danger)" fill="none" stroke-dasharray="3 3" stroke-width="1.5"/>`;
-            svgStr += `<circle cx="380" cy="120" r="4" fill="var(--color-danger)" />`;
-            svgStr += `<text x="380" y="115" fill="var(--color-danger)" font-size="7" text-anchor="middle" font-weight="700">Sync Dead</text>`;
+            // Site B Shelf
+            svgStr += getShelfVisualSVG(shelfObj, 475, y, 260, shelfHeight, shelfItem.isProposed);
+            svgStr += `
+              <!-- Site B Cable Ports (IN/OUT for IOM-A & IOM-B) -->
+              <rect x="480" y="${cy - 12}" width="40" height="24" fill="rgba(6,182,212,0.15)" stroke="var(--color-info)" stroke-width="1" rx="2"/>
+              <circle cx="490" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+              <text x="490" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
+              <circle cx="510" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+              <text x="510" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
+              
+              <rect x="690" y="${cy - 12}" width="40" height="24" fill="rgba(236,72,153,0.15)" stroke="var(--color-warning)" stroke-width="1" rx="2"/>
+              <circle cx="700" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+              <text x="700" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">IN</text>
+              <circle cx="720" cy="${cy}" r="3.5" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="0.8"/>
+              <text x="720" y="${cy + 8}" fill="var(--color-muted)" font-size="5" text-anchor="middle">OUT</text>
+            `;
           }
-        }
 
-        // 2. Return loops from last shelf in stack
-        if (j === stack.length - 1 && !isPortExhausted && !isSinglePath) {
-          const k = sIdx % nodesPerSite;
-          const yNode = 10 + k * 90;
-          const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
-          const portY = yNode + 50;
+          // Daisy chains within the stack
+          if (j > 0) {
+            const prevIndex = stack[j-1].index;
+            const prevY = shelfYPositions[prevIndex];
+            const prevHeight = getShelfHeight(stack[j-1].obj.model);
+            const prevCy = prevY + Math.floor(prevHeight / 2);
+            
+            if (isSiteA) {
+              svgStr += `<path d="M 50,${prevCy} L 30,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+              svgStr += `<path d="M 260,${prevCy} L 240,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+            } else {
+              svgStr += `<path d="M 510,${prevCy} L 490,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+              svgStr += `<path d="M 720,${prevCy} L 700,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+            }
+          }
 
-          const rAIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
-          const rBIdx = Math.min(localPortPairIdx + 1, allStoragePortsB.length - 1);
+          // Local & Sync Mirror replication connections from/to controllers
+          const numPortsA = allStoragePortsA.length;
+          const spacingA = numPortsA > 4 ? Math.floor(100 / numPortsA) : 24;
+          const portWA = numPortsA > 4 ? Math.max(8, spacingA - 2) : 20;
+          const startXA = 150 + 5 + Math.floor((100 - (numPortsA * spacingA)) / 2);
 
-          const rAX = startXA + rAIdx * spacingA + portWA / 2;
-          const rBX = startXB + rBIdx * spacingB + portWB / 2;
+          const numPortsB = allStoragePortsB.length;
+          const spacingB = numPortsB > 4 ? Math.floor(100 / numPortsB) : 24;
+          const portWB = numPortsB > 4 ? Math.max(8, spacingB - 2) : 20;
+          const startXB = 485 + 5 + Math.floor((100 - (numPortsB * spacingB)) / 2);
 
-          const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12 + 6;
+          // 1. Outbound loops from first shelf in stack
+          if (j === 0 && !isPortExhausted) {
+            const k = sIdx % nodesPerSite;
+            const yNode = 10 + k * 90;
+            const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
+            const portY = yNode + 50;
 
-          // Site A local loop return: Site A Shelf IOM-A OUT -> Node A e0b/e1b
-          svgStr += `<path d="M 50,${cy} C 50,${ctrlY} ${rAX},${ctrlY} ${rAX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
-          
-          // Site B local loop return: Site B Shelf IOM-A OUT -> Node B e0b/e1b
-          svgStr += `<path d="M 510,${cy} C 510,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
+            const pAIdx = Math.min(localPortPairIdx, allStoragePortsA.length - 2);
+            const pBIdx = Math.min(localPortPairIdx, allStoragePortsB.length - 2);
+            const repAIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
+            const repBIdx = Math.min(localPortPairIdx + 1, allStoragePortsB.length - 1);
 
-          // Site A SyncMirror DR loop return: Site B Shelf IOM-B OUT -> Node A replication return
-          svgStr += `<path d="M 720,${cy} C 720,${ctrlY} ${rAX},${ctrlY} ${rAX},${portY}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
-          
-          // Site B SyncMirror DR loop return: Site A Shelf IOM-B OUT -> Node B replication return
-          svgStr += `<path d="M 260,${cy} C 260,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+            const pAX = startXA + pAIdx * spacingA + portWA / 2;
+            const pBX = startXB + pBIdx * spacingB + portWB / 2;
+            const repAX = startXA + repAIdx * spacingA + portWA / 2;
+            const repBX = startXB + repBIdx * spacingB + portWB / 2;
+            
+            const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12;
+
+            if (isSiteA) {
+              // Site A local loop outbound: Node A e0a/e1a -> Site A Shelf IOM-A IN
+              svgStr += `<path d="M ${pAX},${portY} C ${pAX},${ctrlY} 30,${ctrlY} 30,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+              // Site A redundancy loop outbound: Node A e0b/e1b -> Site A Shelf IOM-B IN
+              svgStr += `<path d="M ${repAX},${portY} C ${repAX},${ctrlY} 240,${ctrlY} 240,${cy}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+            } else {
+              // Site B local loop outbound: Node B e0a/e1a -> Site B Shelf IOM-A IN
+              svgStr += `<path d="M ${pBX},${portY} C ${pBX},${ctrlY} 490,${ctrlY} 490,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+              // Site B redundancy loop outbound: Node B e0b/e1b -> Site B Shelf IOM-B IN
+              svgStr += `<path d="M ${repBX},${portY} C ${repBX},${ctrlY} 700,${ctrlY} 700,${cy}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+            }
+          }
+
+          // 2. Return loops from last shelf in stack
+          if (j === stack.length - 1 && !isPortExhausted && !isSinglePath) {
+            const k = sIdx % nodesPerSite;
+            const yNode = 10 + k * 90;
+            const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
+            const portY = yNode + 50;
+
+            const rAIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
+            const rBIdx = Math.min(localPortPairIdx + 1, allStoragePortsB.length - 1);
+
+            const rAX = startXA + rAIdx * spacingA + portWA / 2;
+            const rBX = startXB + rBIdx * spacingB + portWB / 2;
+
+            const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12 + 6;
+
+            if (isSiteA) {
+              // Site A local loop return: Site A Shelf IOM-A OUT -> Node A e0b/e1b
+              svgStr += `<path d="M 50,${cy} C 50,${ctrlY} ${rAX},${ctrlY} ${rAX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
+              // Site A redundancy loop return: Site A Shelf IOM-B OUT -> Node A replication return
+              svgStr += `<path d="M 260,${cy} C 260,${ctrlY} ${rAX},${ctrlY} ${rAX},${portY}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+            } else {
+              // Site B local loop return: Site B Shelf IOM-A OUT -> Node B e0b/e1b
+              svgStr += `<path d="M 510,${cy} C 510,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
+              // Site B redundancy loop return: Site B Shelf IOM-B OUT -> Node B replication return
+              svgStr += `<path d="M 720,${cy} C 720,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+            }
+          }
         }
       }
     }
