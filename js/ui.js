@@ -6602,7 +6602,7 @@ function generateReport() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = \`NetApp_Runbook_\${model.replace(/\\s+/g,'_')}_\${new Date().toISOString().split('T')[0]}.txt\`;
+      a.download = 'NetApp_Runbook_' + model.replace(/\s+/g, '_') + '_' + new Date().toISOString().split('T')[0] + '.txt';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -6616,7 +6616,7 @@ function generateReport() {
     smHTML += '<table class="compare-table" style="width:100%;font-size:0.85rem;"><thead><tr><th>Source</th><th>Destination</th><th>Status</th><th>Lag</th><th>Healthy</th></tr></thead><tbody>';
     currentState.snapmirrorRelationships.forEach(rel => {
       const healthIcon = rel.healthy ? '✅' : '❌';
-      smHTML += \`<tr><td>\${rel.source}</td><td>\${rel.destination}</td><td>\${rel.status}</td><td>\${rel.lag}</td><td>\${healthIcon}</td></tr>\`;
+      smHTML += '<tr><td>' + rel.source + '</td><td>' + rel.destination + '</td><td>' + rel.status + '</td><td>' + rel.lag + '</td><td>' + healthIcon + '</td></tr>';
     });
     smHTML += '</tbody></table>';
     const smSection = document.getElementById("snapmirror-section");
