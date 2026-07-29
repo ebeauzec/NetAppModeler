@@ -1100,9 +1100,10 @@ svg.cabling-graph {
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <p>Drag and drop ASUP zip or files here</p>
-            <span>or click to browse from your computer</span>
-            <input type="file" id="file-input" multiple class="hidden">
+            <p>Drag and drop ASUP files here</p>
+            <span>Accepted: <strong>.zip</strong>, <strong>.tar.gz</strong>, <strong>.gz</strong>, or plain <strong>text files</strong> — upload multiple nodes at once</span>
+            <span style="font-size:0.72rem; color:#f87171; margin-top:4px; display:block;">⚠️ .7z archives must be extracted first — right-click → Extract Here, then upload the text files</span>
+            <input type="file" id="file-input" multiple class="hidden" accept=".zip,.tar.gz,.tgz,.gz,.txt,.log,.xml,*">
           </div>
 
           <div class="demo-selector">
@@ -8283,6 +8284,38 @@ async function processTarFile(file) {
   });
 }
 
+// Single-file .gz decompression (e.g. manual_asup.txt.gz)
+async function processGzFile(file) {
+  if (typeof DecompressionStream === 'undefined') {
+    throw new Error('Your browser does not support native gzip decompression. Please extract the .gz file manually and upload the text file.');
+  }
+  try {
+    const ds = new DecompressionStream('gzip');
+    const decompressedStream = file.stream().pipeThrough(ds);
+    const response = new Response(decompressedStream);
+    const text = await response.text();
+    mapASUPFile(file.name.replace(/\.gz$/i, ''), text);
+  } catch (e) {
+    throw new Error(`Failed to decompress ${file.name}: ${e.message}. Try extracting it manually and uploading the text file.`);
+  }
+}
+
+// 7z is a proprietary compression format that cannot be decoded in a browser
+// without a WebAssembly library. Show a clear, actionable error.
+async function process7zFile(file) {
+  throw new {
+    is7zError: true,
+    message: `Cannot open "${file.name}" — 7z archives require extraction before uploading.
+
+What to do:
+1. Right-click the .7z file → "Extract Here" (using 7-Zip, WinRAR, or similar)
+2. Look inside the extracted folder for text files (e.g. sysconfig, version, aggr status)
+3. Drag and drop those text files directly onto this upload zone
+
+Alternatively: upload a .zip, .tar.gz, or plain text ASUP file.`
+  };
+}
+
 // Per-file ingestion state: tracks each uploaded file independently
 let _perFileResults = [];
 
@@ -8306,12 +8339,36 @@ async function handleFiles(fileList) {
       const origUploadedFiles = uploadedFiles;
       uploadedFiles = fileUploadedFiles;
 
-      if (name.endsWith(".zip")) {
+      if (name.endsWith(".7z")) {
+        // 7z cannot be decoded in-browser — show a user-friendly actionable error
+        uploadedFiles = origUploadedFiles;
+        const msg = `Cannot open "${file.name}" — 7z archives cannot be decoded in the browser.
+
+✅ What to do:
+  1. Right-click the .7z file → Extract Here (7-Zip, WinRAR, etc.)
+  2. Inside the extracted folder, find the ASUP text files (sysconfig, version, disk show, etc.)
+  3. Drag and drop those text files directly onto this upload area
+
+Accepted formats: plain text, .zip, .tar.gz / .tgz`;
+        // Show in UI without throwing — let other files continue
+        _perFileResults.push({
+          filename: file.name,
+          state: { nodes: [], version: {}, shelves: [], aggregates: [], licenses: [], metrocluster: 'none' },
+          coverage: 0,
+          sectionsFound: [],
+          sectionsMissing: ['ALL'],
+          nodeNames: [],
+          error: msg
+        });
+        continue;
+      } else if (name.endsWith(".zip")) {
         await processZipFile(file);
       } else if (name.endsWith(".tar.gz") || name.endsWith(".tgz")) {
         await processTarGzFile(file);
       } else if (name.endsWith(".tar")) {
         await processTarFile(file);
+      } else if (name.endsWith(".gz")) {
+        await processGzFile(file);
       } else {
         await processRawFile(file);
       }
@@ -8401,6 +8458,17 @@ function renderFileStatusGrid(results) {
       Files Loaded (${results.length})
     </div>
     ${results.map(r => {
+      // Special 7z error card
+      if (r.error) {
+        return `
+          <div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.75rem 0.85rem; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.4); border-radius:8px; border-left:3px solid #ef4444;">
+            <div style="font-size:1.2rem; flex-shrink:0; margin-top:1px;">🗜️</div>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:0.8rem; font-weight:600; color:#fca5a5; margin-bottom:0.4rem;">${r.filename} — Cannot Extract Automatically</div>
+              <div style="font-size:0.75rem; color:#fcd5d5; line-height:1.6; background:rgba(0,0,0,0.2); padding:0.5rem 0.75rem; border-radius:6px; white-space:pre-line;">${r.error}</div>
+            </div>
+          </div>`;
+      }
       const badge = sourceBadge(r);
       const nodeLabel = r.nodeNames && r.nodeNames.length > 0
         ? r.nodeNames.slice(0, 2).join(', ') + (r.nodeNames.length > 2 ? ` +${r.nodeNames.length - 2}` : '')
