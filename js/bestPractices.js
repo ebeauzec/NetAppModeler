@@ -1044,8 +1044,12 @@ export function runAudit(systemState) {
         "Firmware",
         "warning",
         `Service Processor firmware on ${outdatedNodes.length} node(s) [${outdatedNodes.map(n => n.node).join(', ')}] is at version ${outdatedNodes[0].version}, which is behind the current recommended version ${latestSP} for the ${model} platform.`,
-        `Update SP/BMC firmware to ${latestSP} on all nodes using the system service-processor image update command before performing the ONTAP upgrade. Current SP firmware may contain security patches and stability fixes.`,
-        `system service-processor image update -node ${outdatedNodes.map(n => n.node).join(',')}`
+        `Update SP/BMC firmware to ${latestSP} on all nodes before performing any ONTAP upgrade. Run one command per node. Current SP firmware may contain critical security patches and stability fixes.`,
+        outdatedNodes.length === systemState.spFirmware.length
+          // All nodes outdated — use wildcard
+          ? `system service-processor image update -node *`
+          // Only some nodes — one command per node (comma-separated is NOT valid ONTAP syntax)
+          : outdatedNodes.map(n => `system service-processor image update -node ${n.node}`).join('\n')
       );
     } else if (latestSP) {
       addReport(
