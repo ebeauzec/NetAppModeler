@@ -395,11 +395,7 @@ export function parseASUP(files) {
     }
   }
 
-  if (data.shelves.length > 0) {
-    setSource('shelves', 'parsed', 1.0, `${data.shelves.length} disk shelf(ves) parsed from SYSCONFIG output`);
-  } else {
-    setSource('shelves', 'default', 0.2, 'No shelf inventory found in ASUP text; shelf data is estimated');
-  }
+  // setSource for shelves is set AFTER all discovery paths complete (see below)
 
   // Parse cabling loops
   const cablingRegex = /cabling:\s*loop\s*(\w+)\s*cabled\s*to\s*Shelf\s*(\d+)\s*\([^)]+\)\s*([^\r\n\[]+)/ig;
@@ -537,7 +533,20 @@ export function parseASUP(files) {
     }
   }
 
-  // --- 4. Parse Aggregates ---
+  // Set shelf data source quality AFTER all discovery paths have run
+  {
+    const hasRealShelfSerial = data.shelves.some(s => s.serial && !s.serial.startsWith('MOCK') && !s.serial.startsWith('AUTO-'));
+    const hasDiscoveredShelf = data.shelves.some(s => s.serial && s.serial.startsWith('AUTO-DISC'));
+    const hasLooseDisks = data.shelves.some(s => s.serial === 'AUTO-DISCOVERED');
+    if (hasRealShelfSerial) {
+      setSource('shelves', 'parsed', 1.0, `${data.shelves.length} disk shelf(ves) parsed from SYSCONFIG output`);
+    } else if (hasDiscoveredShelf || hasLooseDisks) {
+      setSource('shelves', 'inferred', 0.5, `Shelf model detected from storage show output; serial/firmware unavailable`);
+    } else {
+      setSource('shelves', 'default', 0.2, 'No shelf inventory found in ASUP text; shelf data is estimated from platform type');
+    }
+  }
+
   const aggrBlocks = combinedText.split(/Aggregate\s+/i);
   
   if (aggrBlocks.length > 1) {
@@ -821,13 +830,25 @@ export function parseASUP(files) {
     });
   }
 
-  const licParsed = data.licenses.some(l => l.status === 'active' && !['Cluster','NFS','CIFS','FCP','iSCSI','SnapMirror','FlexClone'].every(n => data.licenses.find(x=>x.name===n)));
-  if (data.licenses.length > 0 && !isDemoMode) {
-    const hasRealLicenses = data.licenses.some(l => l.name.match(/SnapMirror|FlexClone|FabricPool|MetroCluster|NVMe|S3|SnapCenter|SnapRestore|SnapVault/i));
-    setSource('licenses', hasRealLicenses ? 'parsed' : 'default', hasRealLicenses ? 0.9 : 0.2,
-      hasRealLicenses ? `${data.licenses.length} license(s) parsed from LICENSE section` : 'License section not found; using default active entitlement set');
-  } else if (data.licenses.length > 0) {
-    setSource('licenses', 'parsed', 0.9, `${data.licenses.length} license(s) parsed`);
+  // Determine license data source quality
+  {
+    const defaultSet = new Set(["Cluster","NFS","CIFS","FCP","iSCSI","SnapMirror","FlexClone"]);
+    const parsedCount = data.licenses.filter(l => !defaultSet.has(l.name)).length;
+    const totalCount = data.licenses.length;
+    if (totalCount === 0) {
+      setSource('licenses', 'missing', 0, 'No licenses found');
+    } else if (parsedCount > 0 || totalCount > defaultSet.size) {
+      // Has licenses beyond the bare minimum default set — definitely parsed
+      setSource('licenses', 'parsed', 1.0, `${totalCount} license(s) parsed from LICENSE section`);
+    } else if (isDemoMode) {
+      setSource('licenses', 'parsed', 1.0, `${totalCount} license(s) from demo data`);
+    } else if (data.licenses.some(l => l.status === 'expired')) {
+      // Found expired licenses — must have been parsed (default set is all active)
+      setSource('licenses', 'parsed', 0.9, `${totalCount} license(s) parsed including expired entries`);
+    } else {
+      // Only the default 7 active licenses — probably fallback
+      setSource('licenses', 'default', 0.2, 'License section not parsed; using default active entitlement set');
+    }
   }
 
   // --- 7. Parse Ports ---
