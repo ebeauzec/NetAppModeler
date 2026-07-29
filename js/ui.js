@@ -3904,7 +3904,8 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             const prevY = shelfYPositionsInPair[prevShelfIdx];
             const prevHeight = getShelfHeight(stack[j-1].obj.model);
             const prevCy = prevY + Math.floor((prevHeight - 30) / 2) + 15;
-            svgStr += `<path d="M 105,${prevCy} C 120,${prevCy + 20} 60,${iomY} 80,${iomCy}" class="${cableClassA}" stroke="var(--color-info)" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
+            // IOM-A daisy: OUT of shelf above (x=105) → IN of this shelf (x=80) — stays LEFT side
+            svgStr += `<path d="M 105,${prevCy} C 70,${(prevCy + iomCy) / 2} 70,${(prevCy + iomCy) / 2} 80,${iomCy}" class="${cableClassA}" stroke="var(--color-info)" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
           }
           
           // 2. Primary path B
@@ -3931,7 +3932,8 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             const prevHeight = getShelfHeight(stack[j-1].obj.model);
             const prevCy = prevY + Math.floor((prevHeight - 30) / 2) + 15;
             if (!isSinglePath || shelfItem.isProposed) {
-              svgStr += `<path d="M 570,${prevCy} C 590,${prevCy + 20} 520,${iomY} 545,${iomCy}" class="${cableClassB}" stroke="var(--color-warning)" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
+              // IOM-B daisy: OUT of shelf above (x=570) → IN of this shelf (x=545) — stays RIGHT side
+              svgStr += `<path d="M 570,${prevCy} C 610,${(prevCy + iomCy) / 2} 610,${(prevCy + iomCy) / 2} 545,${iomCy}" class="${cableClassB}" stroke="var(--color-warning)" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
             }
           }
           
