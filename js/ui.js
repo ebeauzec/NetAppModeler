@@ -3165,11 +3165,10 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
   container.innerHTML = "";
 
   const _mccCbTopo = document.getElementById('deploy-metrocluster');
-  // For comparison view (targetFrameId !== 'cabling-svg-frame'), respect the parsed state directly.
-  // For greenfield modeler view, require the deploy-metrocluster checkbox to be checked.
-  const _isGreenfieldView = targetFrameId === 'cabling-svg-frame';
+  // In ASUP mode: use parsed state.metrocluster directly (checkbox irrelevant).
+  // In greenfield modeler mode: require the deploy-metrocluster checkbox to be checked.
   const isMetroCluster = !!(state.metrocluster && state.metrocluster !== 'none'
-    && (_isGreenfieldView ? (_mccCbTopo && _mccCbTopo.checked) : true));
+    && (isGreenfieldMode ? (_mccCbTopo && _mccCbTopo.checked) : true));
   const proposedShelvesArray = proposedShelf ? (Array.isArray(proposedShelf) ? proposedShelf : [proposedShelf]) : [];
   const totalShelvesCount = state.shelves.length + proposedShelvesArray.length;
   
@@ -3249,8 +3248,10 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
     // Draw the nodes for each site
     for (let k = 0; k < nodesPerSite; k++) {
       const yNode = 10 + k * 90;
-      const nodeA = state.nodes[2 * k] || { name: `node-${String.fromCharCode(97 + 2 * k)}`, serial: state.version.serial + (k > 0 ? String.fromCharCode(65 + 2 * k) : "") };
-      const nodeB = state.nodes[2 * k + 1] || { name: `node-${String.fromCharCode(97 + 2 * k + 1)}`, serial: state.version.serial + String.fromCharCode(65 + 2 * k + 1) };
+      // CORRECT site ordering: first half of nodes array = Site A, second half = Site B.
+      // For 4-node MCC [node-a1, node-a2, node-b1, node-b2]: k=0 → a1(SiteA) vs b1(SiteB), k=1 → a2(SiteA) vs b2(SiteB)
+      const nodeA = state.nodes[k] || { name: `site-a-node${k + 1}`, serial: '' };
+      const nodeB = state.nodes[k + nodesPerSite] || { name: `site-b-node${k + 1}`, serial: '' };
       
       const nodeAName = nodeA.name;
       const nodeBName = nodeB.name;
@@ -5312,11 +5313,11 @@ function updateCapacityImpactDetails() {
   });
 
   // Calculate target (After)
-  // isMetroCluster: true only if BOTH the state says MCC AND the UI checkbox is checked
-  // This prevents stale demo state from triggering MCC rules on a non-MCC session
+  // In ASUP mode: use parsed state metrocluster value (checkbox not used by user)
+  // In greenfield mode: require explicit deploy-metrocluster checkbox
   const mccCheckbox = document.getElementById('deploy-metrocluster');
   const isMetroCluster = !!(currentState.metrocluster && currentState.metrocluster !== 'none'
-    && mccCheckbox && mccCheckbox.checked);
+    && (!isGreenfieldMode || (mccCheckbox && mccCheckbox.checked)));
   const mult = isMetroCluster ? 2 : 1;
   
   let shelfCount = 0;
@@ -5888,8 +5889,13 @@ function runModelingCalculations() {
       }
 
       if (allocation === "spare") {
+        // Use actual node names from state; for MCC use site-A primary and site-B primary
+        const siteANodes = modeledState.nodes.filter(n => n.site === 'A' || (!n.site && modeledState.nodes.indexOf(n) < Math.ceil(modeledState.nodes.length / 2)));
+        const siteBNodes = modeledState.nodes.filter(n => n.site === 'B' || (!n.site && modeledState.nodes.indexOf(n) >= Math.ceil(modeledState.nodes.length / 2)));
+        const spareNodeA = siteANodes[0] ? siteANodes[0].name : "node-a";
+        const spareNodeB = siteBNodes[0] ? siteBNodes[0].name : "node-b";
         modeledState.spares.push({
-          node: "node-a",
+          node: spareNodeA,
           model: "Expansion Model",
           sizeStr: diskSizeStr,
           sizeGB: diskGB,
@@ -5897,7 +5903,7 @@ function runModelingCalculations() {
           count: diskCount
         });
         modeledState.spares.push({
-          node: "node-b",
+          node: spareNodeB,
           model: "Expansion Model",
           sizeStr: diskSizeStr,
           sizeGB: diskGB,
@@ -5914,9 +5920,26 @@ function runModelingCalculations() {
             const aggrA = modeledState.aggregates.find(a => a.name === aggrName);
             if (aggrA) {
               // Symmetrically find partner aggregate on Node B
-              const partnerAggrName = aggrName.replace("_a", "_b").replace("nodea", "nodeb").replace("node-a", "node-b");
-              const aggrB = modeledState.aggregates.find(a => a.name === partnerAggrName) || 
-                            modeledState.aggregates.find(a => a.node === "node-b" && !a.name.startsWith("aggr0") && a.name.substring(0, aggrName.length - 2) === aggrName.substring(0, aggrName.length - 2));
+              // Build partner aggr name: try several common MCC naming conventions
+              const siteANodeNamesSet = new Set(
+                modeledState.nodes.filter(n => n.site === 'A' || (!n.site && modeledState.nodes.indexOf(n) < Math.ceil(modeledState.nodes.length / 2)))
+                  .map(n => n.name.toLowerCase())
+              );
+              const aggrOwnerNode = aggrA ? aggrA.node : '';
+              const isAggrOnSiteA = !aggrOwnerNode || siteANodeNamesSet.has(aggrOwnerNode.toLowerCase());
+              const siteBNodeNames = modeledState.nodes.filter(n => n.site === 'B' || (!n.site && modeledState.nodes.indexOf(n) >= Math.ceil(modeledState.nodes.length / 2))).map(n => n.name);
+              
+              // Find partner aggregate: same name structure but on a Site B node
+              const aggrB = isAggrOnSiteA
+                ? modeledState.aggregates.find(a =>
+                    !a.name.startsWith('aggr0') &&
+                    siteBNodeNames.includes(a.node) &&
+                    (
+                      a.name === aggrName.replace(/_a(\d*)$/, '_b$1').replace(/_a1(\b)/, '_b1$1').replace('site_a', 'site_b').replace('_local_a', '_local_b').replace('_sync_a', '_sync_b') ||
+                      (a.name.replace(/_[ab]\d*$/, '') === aggrName.replace(/_[ab]\d*$/, ''))
+                    )
+                  )
+                : null;
 
               totalAllocatedSiteA += D;
               const addedUsableGB = Math.round(D * diskGB * 0.80);
@@ -5959,14 +5982,19 @@ function runModelingCalculations() {
           });
         }
       } else if (allocation === "new") {
+        // For MCC: create one aggregate per local-site node and one per remote-site node
+        const siteANodes = modeledState.nodes.filter(n => n.site === 'A' || (!n.site && modeledState.nodes.indexOf(n) < Math.ceil(modeledState.nodes.length / 2)));
+        const siteBNodes = modeledState.nodes.filter(n => n.site === 'B' || (!n.site && modeledState.nodes.indexOf(n) >= Math.ceil(modeledState.nodes.length / 2)));
+        const primaryA = siteANodes[0] ? siteANodes[0].name : "node-a";
+        const primaryB = siteBNodes[0] ? siteBNodes[0].name : "node-b";
         const dataCount = diskCount - 4;
         const usableGB = Math.max(0, Math.round(dataCount * diskGB * 0.82));
         const totalGB = diskCount * diskGB;
+        const aggrIdxStr = modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length > 0 ? '_' + (modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length + 1) : '';
 
-        // Create new aggregate on node-a
         modeledState.aggregates.push({
-          name: `aggr_expansion_a`,
-          node: "node-a",
+          name: `aggr_expansion_a${aggrIdxStr}`,
+          node: primaryA,
           sizeGB: totalGB,
           usableGB: usableGB,
           usedGB: 0,
@@ -5977,20 +6005,17 @@ function runModelingCalculations() {
           diskType: spec.mediaType,
           diskSizeGB: diskGB
         });
-
         modeledState.spares.push({
-          node: "node-a",
+          node: primaryA,
           model: "Expansion Model",
           sizeStr: diskSizeStr,
           sizeGB: diskGB,
           type: spec.mediaType,
           count: 2
         });
-
-        // Create new symmetrical aggregate on node-b
         modeledState.aggregates.push({
-          name: `aggr_expansion_b`,
-          node: "node-b",
+          name: `aggr_expansion_b${aggrIdxStr}`,
+          node: primaryB,
           sizeGB: totalGB,
           usableGB: usableGB,
           usedGB: 0,
@@ -6001,9 +6026,8 @@ function runModelingCalculations() {
           diskType: spec.mediaType,
           diskSizeGB: diskGB
         });
-
         modeledState.spares.push({
-          node: "node-b",
+          node: primaryB,
           model: "Expansion Model",
           sizeStr: diskSizeStr,
           sizeGB: diskGB,
@@ -6092,14 +6116,16 @@ function runModelingCalculations() {
           });
         }
       } else if (allocation === "new") {
-        const newAggrName = `aggr_expansion_a`;
         const dataCount = diskCount - 4;
         const usableGB = Math.max(0, Math.round(dataCount * diskGB * 0.82));
         const totalGB = diskCount * diskGB;
+        const aggrIdxStr = modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length > 0 ? '_' + (modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length + 1) : '';
+        const nodeA = modeledState.nodes[0] ? modeledState.nodes[0].name : "node-a";
+        const nodeB = modeledState.nodes[1] ? modeledState.nodes[1].name : "node-b";
 
         modeledState.aggregates.push({
-          name: newAggrName,
-          node: "node-a",
+          name: `aggr_expansion_a${aggrIdxStr}`,
+          node: nodeA,
           sizeGB: totalGB,
           usableGB: usableGB,
           usedGB: 0,
@@ -6110,9 +6136,29 @@ function runModelingCalculations() {
           diskType: spec.mediaType,
           diskSizeGB: diskGB
         });
-
         modeledState.spares.push({
-          node: "node-a",
+          node: nodeA,
+          model: "Expansion Model",
+          sizeStr: diskSizeStr,
+          sizeGB: diskGB,
+          type: spec.mediaType,
+          count: 2
+        });
+        modeledState.aggregates.push({
+          name: `aggr_expansion_b${aggrIdxStr}`,
+          node: nodeB,
+          sizeGB: totalGB,
+          usableGB: usableGB,
+          usedGB: 0,
+          freeGB: usableGB,
+          raidType: "raid_dp",
+          rgSize: Math.min(24, diskCount - 2),
+          disksCount: diskCount - 2,
+          diskType: spec.mediaType,
+          diskSizeGB: diskGB
+        });
+        modeledState.spares.push({
+          node: nodeB,
           model: "Expansion Model",
           sizeStr: diskSizeStr,
           sizeGB: diskGB,

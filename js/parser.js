@@ -168,14 +168,35 @@ export function parseASUP(files) {
   }
 
   // --- 1.5. Parse MetroCluster ---
+  // Detect MetroCluster configuration type from ASUP content
   let metrocluster = "none";
-  if (lowerText.includes("metrocluster show") || lowerText.includes("metrocluster node show") || 
-      lowerText.includes("metrocluster interconnect show") || lowerText.includes("metrocluster configurations")) {
-    if (lowerText.includes("metrocluster ip") || lowerText.includes("mcc-ip") || lowerText.includes("mcc_ip") || lowerText.includes("ip-fabric")) {
+  const mccKeywords = [
+    "metrocluster show", "metrocluster node show", "metrocluster interconnect show",
+    "metrocluster configurations", "metrocluster ip configuration", "metrocluster check",
+    "dr group id", "dr partner node", "local-site", "remote-site",
+    "metrocluster active", // from LICENSE section
+    "mcc-ip", "mcc_ip", "ip-fabric"
+  ];
+  const hasMccOutput = mccKeywords.some(k => lowerText.includes(k));
+  if (hasMccOutput) {
+    if (lowerText.includes("metrocluster ip") || lowerText.includes("mcc-ip") || lowerText.includes("mcc_ip") ||
+        lowerText.includes("ip-fabric") || lowerText.includes("metrocluster ip configuration")) {
       metrocluster = "ip";
-    } else {
-      metrocluster = "fc"; // default to fc if no ip keyword is found
+    } else if (lowerText.includes("stretch") && (lowerText.includes("metrocluster") || lowerText.includes("mcc"))) {
+      metrocluster = "stretch";
+    } else if (hasMccOutput) {
+      metrocluster = "fc";
     }
+  }
+
+  // Detect MCC node count: look for DR group entries to determine 2-node vs 4-node
+  let mccNodeCount = 0;
+  if (metrocluster !== "none") {
+    // Count unique local-site DR group node entries
+    const drGroupMatches = [...combinedText.matchAll(/local-site\s+(\S+)/gi)];
+    mccNodeCount = drGroupMatches.length > 0 ? drGroupMatches.length : 2; // default to 2 if not found
+    data.mccNodeCount = mccNodeCount; // nodes per site
+    data.mccTotalNodes = mccNodeCount * 2; // total across both sites
   }
   data.metrocluster = metrocluster;
 
@@ -199,15 +220,72 @@ export function parseASUP(files) {
 
   // Fallback nodes if not found
   if (data.nodes.length === 0) {
-    if (!isDemoMode) {
-      data.parseWarnings.push({
-        section: "Node Topology",
-        message: "Controller System IDs and hostname mappings could not be parsed; using default HA pair topology (node-a, node-b)."
+    if (metrocluster !== "none") {
+      // MCC: default to 4-node (2 per site) unless detected as 2-node
+      const nodesPerSite = data.mccNodeCount || 2;
+      const isTwoNodeMCC = nodesPerSite === 1;
+      if (!isDemoMode) {
+        data.parseWarnings.push({
+          section: "Node Topology",
+          message: `MetroCluster detected but node IDs not parsed; using default ${isTwoNodeMCC ? '2-node (1 per site)' : '4-node (2 per site)'} MCC topology.`
+        });
+      }
+      if (isTwoNodeMCC) {
+        data.nodes.push({ id: "536870912", name: "node-a", serial: data.version.serial, site: "A", siteRole: "primary" });
+        data.nodes.push({ id: "536870913", name: "node-b", serial: data.version.serial + "B", site: "B", siteRole: "primary" });
+        nodeNames.push("node-a", "node-b");
+      } else {
+        data.nodes.push({ id: "536870912", name: "node-a1", serial: data.version.serial, site: "A", siteRole: "primary" });
+        data.nodes.push({ id: "536870913", name: "node-a2", serial: data.version.serial + "A2", site: "A", siteRole: "secondary" });
+        data.nodes.push({ id: "536870914", name: "node-b1", serial: data.version.serial + "B1", site: "B", siteRole: "primary" });
+        data.nodes.push({ id: "536870915", name: "node-b2", serial: data.version.serial + "B2", site: "B", siteRole: "secondary" });
+        nodeNames.push("node-a1", "node-a2", "node-b1", "node-b2");
+      }
+    } else {
+      if (!isDemoMode) {
+        data.parseWarnings.push({
+          section: "Node Topology",
+          message: "Controller System IDs and hostname mappings could not be parsed; using default HA pair topology (node-a, node-b)."
+        });
+      }
+      data.nodes.push({ id: "536870912", name: "node-a", serial: data.version.serial });
+      data.nodes.push({ id: "536870913", name: "node-b", serial: data.version.serial + "B" });
+      nodeNames.push("node-a", "node-b");
+    }
+  }
+
+  // Assign site A/B to parsed nodes based on MCC DR group output
+  if (metrocluster !== "none" && data.nodes.length > 0) {
+    // Try to parse site assignment from metrocluster node show output
+    // Pattern: local-site  node-a1   node-b1
+    const localSiteNodes = new Set();
+    const remoteSiteNodes = new Set();
+    const drGroupLines = combinedText.matchAll(/local-site\s+(\S+)/gi);
+    const drRemoteLines = combinedText.matchAll(/remote-site\s+(\S+)/gi);
+    for (const m of drGroupLines) localSiteNodes.add(m[1].toLowerCase());
+    for (const m of drRemoteLines) remoteSiteNodes.add(m[1].toLowerCase());
+  
+    if (localSiteNodes.size > 0 || remoteSiteNodes.size > 0) {
+      data.nodes.forEach(node => {
+        const nameLower = node.name.toLowerCase();
+        if (localSiteNodes.has(nameLower)) {
+          node.site = 'A'; node.siteRole = 'local';
+        } else if (remoteSiteNodes.has(nameLower)) {
+          node.site = 'B'; node.siteRole = 'remote';
+        }
+      });
+    } else {
+      // Heuristic: first half of nodes = Site A, second half = Site B
+      const half = Math.ceil(data.nodes.length / 2);
+      data.nodes.forEach((node, idx) => {
+        node.site = idx < half ? 'A' : 'B';
+        node.siteRole = idx % 2 === 0 ? 'primary' : 'secondary';
       });
     }
-    data.nodes.push({ id: "536870912", name: "node-a", serial: data.version.serial });
-    data.nodes.push({ id: "536870913", name: "node-b", serial: data.version.serial + "B" });
-    nodeNames.push("node-a", "node-b");
+  
+    // Store site groupings on data for easy consumption
+    data.siteANodes = data.nodes.filter(n => n.site === 'A').map(n => n.name);
+    data.siteBNodes = data.nodes.filter(n => n.site === 'B').map(n => n.name);
   }
 
   // Parse memory/CPU sizes per node
