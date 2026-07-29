@@ -1500,7 +1500,7 @@ export const NETAPP_PLATFORMS = {
 "FAS8060": { tier: "enterprise", minOntap: "8.2", maxOntap: "9.7", maxRamGB: 768, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 "FAS8080 EX": { tier: "enterprise", minOntap: "8.3", maxOntap: "9.7", maxRamGB: 1024, supportedShelves: ["ds2246", "ds4246", "ds460c"], defaultProtocols: ["NFS", "CIFS", "iSCSI", "FC"] },
 // === AFX (All-Flash Extreme) — New July 2026 ===
-"AFX 2K": { tier: "enterprise", minOntap: "9.19.1", maxOntap: "9.16.1", maxRamGB: 4096, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "S3", "NVMe/FC", "NVMe/TCP"] }
+"AFX 2K": { tier: "enterprise", minOntap: "9.16.1", maxOntap: "9.16.1", maxRamGB: 4096, supportedShelves: ["ns224"], defaultProtocols: ["NFS", "CIFS", "S3", "NVMe/FC", "NVMe/TCP"] }
 };
 
 // Returns compatibility profile for a parsed model
