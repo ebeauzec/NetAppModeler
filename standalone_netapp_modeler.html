@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.35</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.36</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2022,7 +2022,7 @@ svg.cabling-graph {
     </div>
   </div>
 
-  <!-- Splash Screen Modal Overlay (What's New in v2.35) -->
+  <!-- Splash Screen Modal Overlay (What's New in v2.36) -->
   <div id="splash-modal" class="modal-overlay no-print" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 11000; backdrop-filter: blur(8px);">
     <div class="modal-content" style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(15,23,42,0.95) 100%); border: 1.5px solid var(--color-primary); border-radius: var(--radius-lg); padding: 2.5rem; width: 550px; box-shadow: 0 25px 50px -12px rgba(6,182,212,0.3); position: relative; max-height: 85vh; overflow-y: auto;">
       
@@ -2033,7 +2033,7 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.35</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.36</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
@@ -2077,7 +2077,7 @@ svg.cabling-graph {
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary" 
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.35','true')}catch(e){}" 
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.36','true')}catch(e){}" 
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
@@ -4016,27 +4016,19 @@ function inferMissingData(state, profile) {
     state.parseWarnings.push({ section: 'Cluster Switches', message: 'Switch type inferred as ' + swModel + ' from platform profile. Verify actual switch model and firmware.' });
   }
 
-  // Parse cluster name from cluster show output first; fall back to node-name inference
+  // Infer cluster name from node hostnames (text-based parsing was done in parseASUP)
   if (!state.version.clusterName) {
-    const clusterShowMatch =
-      combinedText.match(/^cluster\s+show[\s\S]*?^(\S+)\s+true\s+\d+/im) ||
-      combinedText.match(/Cluster Name:\s*(\S+)/i) ||
-      combinedText.match(/^cluster\s+(\S+)\s+\d+\s+node/im);
-    if (clusterShowMatch && clusterShowMatch[1]) {
-      state.version.clusterName = clusterShowMatch[1].trim();
-      state.clusterName = state.version.clusterName;
-      setSource('clusterName', 'parsed', 1.0, `Cluster name from cluster show: ${state.version.clusterName}`);
-    } else if (!state.clusterName && state.nodes && state.nodes.length > 0) {
+    if (state.clusterName) {
+      // Mirror to version object if already inferred elsewhere
+      state.version.clusterName = state.clusterName;
+    } else if (state.nodes && state.nodes.length > 0) {
       const firstName = state.nodes[0].name || '';
       const guess = firstName.replace(/[-_](0?[12]|node[12]|[ab])$/i, '');
       if (guess && guess !== firstName) {
         state.clusterName = guess;
-        state.version.clusterName = guess; // CRITICAL: ui.js reads currentState.version.clusterName
+        state.version.clusterName = guess;
         setInferred('clusterName', 'Stripped node suffix from first node hostname: ' + firstName);
       }
-    } else if (state.clusterName) {
-      // Already set by other section — mirror to version
-      state.version.clusterName = state.clusterName;
     }
   }
 
@@ -15001,6 +14993,7 @@ function generateReport() {
 </script>
 </body>
 </html>
+
 
 
 

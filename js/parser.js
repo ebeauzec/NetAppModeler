@@ -1373,27 +1373,19 @@ export function inferMissingData(state, profile) {
     state.parseWarnings.push({ section: 'Cluster Switches', message: 'Switch type inferred as ' + swModel + ' from platform profile. Verify actual switch model and firmware.' });
   }
 
-  // Parse cluster name from cluster show output first; fall back to node-name inference
+  // Infer cluster name from node hostnames (text-based parsing was done in parseASUP)
   if (!state.version.clusterName) {
-    const clusterShowMatch =
-      combinedText.match(/^cluster\s+show[\s\S]*?^(\S+)\s+true\s+\d+/im) ||
-      combinedText.match(/Cluster Name:\s*(\S+)/i) ||
-      combinedText.match(/^cluster\s+(\S+)\s+\d+\s+node/im);
-    if (clusterShowMatch && clusterShowMatch[1]) {
-      state.version.clusterName = clusterShowMatch[1].trim();
-      state.clusterName = state.version.clusterName;
-      setSource('clusterName', 'parsed', 1.0, `Cluster name from cluster show: ${state.version.clusterName}`);
-    } else if (!state.clusterName && state.nodes && state.nodes.length > 0) {
+    if (state.clusterName) {
+      // Mirror to version object if already inferred elsewhere
+      state.version.clusterName = state.clusterName;
+    } else if (state.nodes && state.nodes.length > 0) {
       const firstName = state.nodes[0].name || '';
       const guess = firstName.replace(/[-_](0?[12]|node[12]|[ab])$/i, '');
       if (guess && guess !== firstName) {
         state.clusterName = guess;
-        state.version.clusterName = guess; // CRITICAL: ui.js reads currentState.version.clusterName
+        state.version.clusterName = guess;
         setInferred('clusterName', 'Stripped node suffix from first node hostname: ' + firstName);
       }
-    } else if (state.clusterName) {
-      // Already set by other section — mirror to version
-      state.version.clusterName = state.clusterName;
     }
   }
 
