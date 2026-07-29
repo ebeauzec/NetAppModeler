@@ -162,19 +162,19 @@ export const exportRules = [
   {
     id: 'BP_SP_FIRMWARE',
     category: 'Firmware',
-    title: 'Service Processor / BMC Firmware Currency',
+    name: 'Service Processor / BMC Firmware Currency',
     check: (state) => [] // Evaluated inline in runAudit()
   },
   {
     id: 'BP_DISK_FIRMWARE',
     category: 'Firmware',
-    title: 'Disk Drive Firmware Currency',
+    name: 'Disk Drive Firmware Currency',
     check: (state) => [] // Evaluated inline in runAudit()
   },
   {
     id: 'BP_ACP_STATUS',
     category: 'Hardware',
-    title: 'Alternate Control Path (ACP) Connectivity',
+    name: 'Alternate Control Path (ACP) Connectivity',
     check: (state) => [] // Evaluated inline in runAudit()
   }
 ];
@@ -1160,7 +1160,7 @@ export function runAudit(systemState) {
       const isCritical = findings.some(f => f.severity === 'critical');
       addReport(
         rule.id,
-        rule.name,
+        rule.name || rule.title || rule.id,
         "General",
         isCritical ? "critical" : "warning",
         findings.map(f => f.message).join("\n"),
@@ -1170,10 +1170,10 @@ export function runAudit(systemState) {
     } else {
       addReport(
         rule.id,
-        rule.name,
+        rule.name || rule.title || rule.id,
         "General",
         "compliant",
-        `${rule.name} checks passed successfully.`,
+        `${rule.name || rule.title || rule.id} checks passed successfully.`,
         "None required.",
         ""
       );
