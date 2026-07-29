@@ -10788,6 +10788,12 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
           const cableClassA = shelfItem.isProposed ? "visual-cable proposed" : "visual-cable multipath";
           const cableClassB = shelfItem.isProposed ? "visual-cable proposed" : (isSinglePath ? "visual-cable singlepath" : "visual-cable multipath");
 
+          // Port names for this stack
+          const portNameA = allStoragePortsA[pAIdx] || '—';
+          const portNameB = allStoragePortsB[pBIdx] || '—';
+          const retNameA  = allStoragePortsA[rAIdx] || '—';
+          const retNameB  = allStoragePortsB[rBIdx] || '—';
+
           // 1. Primary path A
           const srcY = currentY + 62;
           if (j === 0) {
@@ -10796,7 +10802,11 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               svgStr += `<circle cx="120" cy="${y - 35}" r="4" fill="var(--color-danger)" />`;
               svgStr += `<text x="120" y="${y - 40}" fill="var(--color-danger)" font-size="7" font-weight="700">No Storage Port</text>`;
             } else {
+              const midY1 = (srcY + iomCy) / 2;
               svgStr += `<path d="M ${pAX},${srcY} C ${pAX},${currentY + 100} 80,${currentY + 120} 80,${iomCy}" class="${cableClassA}" stroke="var(--color-info)" fill="none" stroke-width="2"/>`;
+              // Port label pill on cable
+              svgStr += `<rect x="${pAX - 10}" y="${midY1 - 7}" width="20" height="10" rx="3" fill="rgba(6,182,212,0.35)" stroke="var(--color-info)" stroke-width="0.8"/>`;
+              svgStr += `<text x="${pAX}" y="${midY1 + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${portNameA}</text>`;
             }
           } else {
             const prevShelfIdx = shelfIdxInPair - 1;
@@ -10812,7 +10822,11 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               svgStr += `<circle cx="545" cy="${iomCy}" r="6" fill="var(--color-danger)" />`;
               svgStr += `<text x="545" y="${iomCy + 3}" fill="#fff" font-size="8" font-weight="700" text-anchor="middle">!</text>`;
             } else if (!isSinglePath || shelfItem.isProposed) {
+              const midY2 = (srcY + iomCy) / 2;
               svgStr += `<path d="M ${pBX},${srcY} C ${pBX},${currentY + 100} 545,${currentY + 120} 545,${iomCy}" class="${cableClassB}" stroke="var(--color-warning)" fill="none" stroke-width="2"/>`;
+              // Port label pill on cable
+              svgStr += `<rect x="${pBX - 10}" y="${midY2 - 7}" width="20" height="10" rx="3" fill="rgba(236,72,153,0.35)" stroke="var(--color-warning)" stroke-width="0.8"/>`;
+              svgStr += `<text x="${pBX}" y="${midY2 + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${portNameB}</text>`;
             } else {
               svgStr += `<path d="M ${pBX},${srcY} C ${pBX},${currentY + 100} 470,${currentY + 110} 470,${currentY + 130}" class="${cableClassB}" stroke="var(--color-danger)" fill="none" stroke-dasharray="3 3" stroke-width="1.5"/>`;
               svgStr += `<circle cx="470" cy="${currentY + 130}" r="5" fill="var(--color-danger)" />`;
@@ -10831,10 +10845,13 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
           }
           
           // 3. Return path A & B
+          // IOM-A OUT → Node A e0b (rAX), IOM-B OUT → Node B e0b (rBX)
           if (j === stack.length - 1 && (!isSinglePath || shelfItem.isProposed)) {
             if (!isPortExhausted) {
-              svgStr += `<path d="M ${rAX},${srcY} C ${rAX},${currentY + 120} 590,${currentY + 120} 570,${iomCy}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
-              svgStr += `<path d="M ${rBX},${srcY} C ${rBX},${currentY + 120} 120,${currentY + 120} 105,${iomCy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+              // IOM-A OUT → Node A return port (same side, orange)
+              svgStr += `<path d="M 105,${iomCy} C 105,${currentY + 130} ${rAX},${currentY + 130} ${rAX},${srcY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              // IOM-B OUT → Node B return port (same side, green)
+              svgStr += `<path d="M 570,${iomCy} C 570,${currentY + 135} ${rBX},${currentY + 135} ${rBX},${srcY}" class="visual-cable multipath" stroke="var(--color-success)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
             }
           }
         }
