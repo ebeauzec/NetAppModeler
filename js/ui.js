@@ -5442,7 +5442,11 @@ function updateCapacityImpactDetails() {
 
     const hintNode = document.getElementById("disk-count-hint");
     if (hintNode) {
-      hintNode.innerHTML = `Requires <strong>${shelfCount}</strong> shelf/shelves (${spec.maxCount} drives max per shelf).`;
+      if (_mccActive) {
+        hintNode.innerHTML = `Requires <strong>${shelfCount}</strong> shelf/shelves <strong>per site</strong> &times; 2 sites = <strong>${shelfCount * 2} total shelves</strong> (${spec.maxCount} drives per shelf). Both sites must be cabled identically.`;
+      } else {
+        hintNode.innerHTML = `Requires <strong>${shelfCount}</strong> shelf/shelves (${spec.maxCount} drives max per shelf).`;
+      }
     }
   }
 
@@ -5453,6 +5457,8 @@ function updateCapacityImpactDetails() {
       tempState.shelves.push({
         id: `NEW-${s + 1}`,
         model: type,
+        // Tag site for MCC — first half go to Site A, second half to Site B
+        site: (_mccActive && s >= shelfCount) ? 'B' : 'A',
         disks: Array.from({ length: Math.min(spec.maxCount, diskCount) }, () => ({ type: spec.mediaType }))
       });
     }
@@ -5741,24 +5747,30 @@ function updateCapacityImpactDetails() {
 
   notesNode.innerHTML = `
     <strong>Physical Footprint Summary:</strong><br>
-    - Rack Space Required: <strong>${ruDiff} Rack Units</strong> (${isMetroCluster ? 'Symmetrical Site A+B' : 'Single Site'}) [${shelfCount * mult} shelf/shelves].<br>
+    - Rack Space Required: <strong>${ruDiff} Rack Units</strong> (${isMetroCluster ? `${shelfCount} shelf/shelves per site &times; 2 sites` : `${shelfCount} shelf/shelves, Single Site`}) [${shelfCount * mult} shelf/shelves total].<br>
     - Thermal Dissipation: <strong>${btuDiff} BTU/hr</strong> (Includes shelves + cards).<br>
-    - Loop Cabling: <strong>${shelfCount * 2}x ${type === 'ns224' ? 'NVMe-oF RoCE 100G' : (type === 'ds2246' ? '6Gb SAS' : '12Gb SAS')} Connections</strong> per controller stack.
+    - Loop Cabling: <strong>${shelfCount * 2}x ${type === 'ns224' ? 'NVMe-oF RoCE 100G' : (type === 'ds2246' ? '6Gb SAS' : '12Gb SAS')} Connections</strong> per controller stack${isMetroCluster ? ', per site' : ''}.
     ${mcNoticeHtml}
     ${statusHtml}
   `;
 
-  // Build array of mock shelves for step 4 visualizer
+
+  // Build array of mock shelves for step 4 visualizer.
+  // For MCC: create shelfCount Site-A shelves + shelfCount Site-B shelves (mirrored).
+  // Site tags are critical — the cabling renderer uses shelf.site to assign left/right column.
   const mockShelves = [];
+  const totalMockShelves = shelfCount * mult;  // mult=2 for MCC, 1 for HA-only
   let diskSerialIndex = 0;
-  for (let s = 0; s < shelfCount; s++) {
-    const disksInThisShelf = Math.min(spec.maxCount, diskCount - s * spec.maxCount);
+  for (let s = 0; s < totalMockShelves; s++) {
+    const siteTag = _mccActive ? (s < shelfCount ? 'A' : 'B') : 'A';
+    const disksInThisShelf = Math.min(spec.maxCount, diskCount - (s % shelfCount) * spec.maxCount);
     mockShelves.push({
       id: (currentState.shelves.length + s + 1).toString(),
       model: type.toUpperCase(),
+      site: siteTag,
       firmware: "Latest baseline",
       cabling: errorMsg ? "Invalid (Unsupported)" : "Proposed (Multipath HA)",
-      disks: Array.from({ length: disksInThisShelf }, (_, idx) => ({
+      disks: Array.from({ length: Math.max(1, disksInThisShelf) }, (_, idx) => ({
         slot: idx,
         model: "Proposed Expansion Drive",
         sizeStr: diskSizeStr,
