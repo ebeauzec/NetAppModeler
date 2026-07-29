@@ -528,7 +528,37 @@ export function parseASUP(files) {
         }
       }
 
-      let nodeName = aggrName.endsWith("_b") || aggrName.toLowerCase().includes("nodeb") ? "node-b" : "node-a";
+      // Determine aggregate node ownership: match parsed node names first (handles MCC node-a1/a2/b1/b2)
+      let nodeName = null;
+      if (data.nodes && data.nodes.length > 0) {
+        // 1. Direct node name match within aggregate name (e.g. aggr_nvme_sync_a1 → node-a1)
+        const aggrNameNorm = aggrName.toLowerCase().replace(/[-_]/g, '');
+        const matchedNode = data.nodes.find(n =>
+          aggrNameNorm.includes(n.name.toLowerCase().replace(/[-_]/g, ''))
+        );
+        if (matchedNode) {
+          nodeName = matchedNode.name;
+        } else {
+          // 2. Spare Disk line lookup: "Spare Disks (node-a1):"
+          const spareMatch = block.match(/Spare Disks?\s*\(([^)]+)\)/i);
+          if (spareMatch) {
+            const cand = spareMatch[1].trim();
+            const found = data.nodes.find(n => n.name.toLowerCase() === cand.toLowerCase());
+            if (found) nodeName = found.name;
+          }
+        }
+        if (!nodeName) {
+          // 3. Heuristic: _b suffix => Site B primary, else Site A primary
+          const isSiteB = /_b\d*$|nodeb|node.b/.test(aggrName.toLowerCase());
+          const siteANodes = data.nodes.filter(n => n.site === 'A' || (!n.site && data.nodes.indexOf(n) < Math.ceil(data.nodes.length / 2)));
+          const siteBNodes = data.nodes.filter(n => n.site === 'B' || (!n.site && data.nodes.indexOf(n) >= Math.ceil(data.nodes.length / 2)));
+          nodeName = isSiteB
+            ? (siteBNodes[0] ? siteBNodes[0].name : 'node-b')
+            : (siteANodes[0] ? siteANodes[0].name : 'node-a');
+        }
+      } else {
+        nodeName = (aggrName.endsWith('_b') || aggrName.toLowerCase().includes('nodeb')) ? 'node-b' : 'node-a';
+      }
 
       data.aggregates.push({
         name: aggrName,
