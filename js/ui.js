@@ -3458,10 +3458,18 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
       const originalStack = stacks[sIdx];
       const isPortExhausted = (sIdx * 2 + 1) >= allStoragePortsA.length;
       
-      const subStacks = [
-        originalStack.filter(item => item.index < Math.ceil(totalShelvesCount / 2)),
-        originalStack.filter(item => item.index >= Math.ceil(totalShelvesCount / 2))
-      ];
+      // MCC site split: use shelf.site property if parser set it, otherwise
+      // split evenly — Site A gets the first floor(N/2) shelves, Site B the rest.
+      // floor() guarantees Site A never gets more than Site B for even counts,
+      // and for odd totals (misconfigured) Site B gets the extra shelf (logged as warning).
+      const hasSiteTags = originalStack.some(item => item.obj.site);
+      const siteASplit = hasSiteTags
+        ? originalStack.filter(item => !item.obj.site || item.obj.site === 'A')
+        : originalStack.filter(item => item.index < Math.floor(totalShelvesCount / 2));
+      const siteBSplit = hasSiteTags
+        ? originalStack.filter(item => item.obj.site === 'B')
+        : originalStack.filter(item => item.index >= Math.floor(totalShelvesCount / 2));
+      const subStacks = [siteASplit, siteBSplit];
 
       for (let sub = 0; sub < 2; sub++) {
         const stack = subStacks[sub];
@@ -6735,7 +6743,13 @@ function populateStateTable(state, bodyId) {
   let totalSpares = 0;
   state.spares.forEach(sp => totalSpares += sp.count);
 
-  const shelfCount = state.shelves.length;
+  const isMCC = !!(state.metrocluster && state.metrocluster !== 'none');
+  const totalShelves = state.shelves.length;
+  const shelvesPerSite = isMCC ? Math.floor(totalShelves / 2) : totalShelves;
+  const shelfCount = totalShelves; // used below for label
+  const shelfCountLabel = isMCC
+    ? `${shelvesPerSite} per site × 2 sites (${totalShelves} total)`
+    : `${totalShelves}`;
 
   const diskTypes = {};
   state.shelves.forEach(s => {
@@ -6756,7 +6770,8 @@ function populateStateTable(state, bodyId) {
   const footprint = getSystemPhysicalFootprint(state);
 
   const rows = [
-    { label: "Storage Shelves", val: `${shelfCount} shelves` },
+    { label: "Storage Shelves", val: isMCC ? shelfCountLabel : `${shelfCount} shelves` },
+
     { label: "Cabling Redundancy", val: cablingStatus },
     { label: "Disk Tiers / Sizes", val: diskTypeSummary },
     { label: "Active Spare Drives", val: `${totalSpares} drives` },
