@@ -8330,7 +8330,45 @@ async function handleFiles(fileList) {
     // ── Per-file parse: each file gets its own uploadedFiles map ────────────
     _perFileResults = [];
 
-    for (let i = 0; i < fileList.length; i++) {
+    // ── Full state reset before loading new files ───────────────────────────
+  // Wipe everything so previous manual additions / parsed data don't bleed in
+  uploadedFiles   = {};
+  modeledState    = null;
+  _perFileResults = [];
+  currentState    = null;
+
+  // Clear Step 3 / Step 4 UI fields that may retain manual values
+  const _clear = (id, val = '') => { const el = document.getElementById(id); if (el) el.value = val; };
+  _clear('target-ontap');
+  _clear('shelf-type', 'none');
+  _clear('disk-count');
+  _clear('disk-size');
+  _clear('disk-allocation');
+  _clear('new-aggr-name');
+  _clear('new-aggr-raid', 'raid-dp');
+  _clear('new-aggr-rgsize');
+  _clear('add-pcie-card', 'none');
+  _clear('add-pcie-slot', 'none');
+  const shelfCountEl = document.getElementById('shelf-count-input');
+  if (shelfCountEl) shelfCountEl.value = '1';
+  // Clear shelf expansion panel
+  const sed = document.getElementById('shelf-expansion-details');
+  if (sed) sed.classList.add('hidden');
+  // Clear PCIe cards list
+  const cardsList = document.getElementById('added-cards-list');
+  if (cardsList) cardsList.innerHTML = '';
+  // Clear aggregate distribution panel
+  const aggrPanel = document.getElementById('aggregate-distribution-group');
+  if (aggrPanel) aggrPanel.classList.add('hidden');
+  // Reset MCC checkbox
+  const mcCb = document.getElementById('deploy-metrocluster');
+  if (mcCb) { mcCb.checked = false; const mcType = document.getElementById('metrocluster-type'); if (mcType) mcType.style.display = 'none'; }
+  // Clear file status grid
+  const grid = document.getElementById('file-status-grid');
+  if (grid) grid.innerHTML = '';
+  // ────────────────────────────────────────────────────────────────────────
+
+  for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
       const name = file.name.toLowerCase();
       const fileUploadedFiles = {};
@@ -8617,6 +8655,10 @@ function loadASUPData(input, isGreenfield = false) {
       activeStep = 4;
       showPanel(4);
     } else {
+      // Always reinitialise step 3 & 4 inputs so they reflect the freshly loaded state.
+      // Without this, previous manual values (ONTAP target, licences, shelf type, PCIe cards) persist.
+      initStep3Inputs();
+      initStep4Inputs();
       activeStep = 2;
       showPanel(2);
     }
