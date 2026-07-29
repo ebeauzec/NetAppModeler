@@ -113,6 +113,45 @@ export function parseASUP(files) {
     data.version.model = rawModel;
     isModelParsed = true;
     modelSource = 'parsed';
+
+    // Resolve NetApp controller part numbers (X####A format) to marketing model names
+    // Part numbers appear in sysconfig output as "System Model: X1974A R6" etc.
+    // Source: NetApp Hardware Universe / FRU compatibility matrix
+    const PART_NUMBER_TO_MODEL = {
+      // FAS2xxx series
+      'X1966A': 'FAS2620', 'X1967A': 'FAS2650',
+      'X1973A': 'FAS2720', 'X1974A': 'FAS2750',
+      'X1975A': 'FAS2820',
+      // FAS8xxx series
+      'X1291A': 'FAS8020',  'X1292A': 'FAS8040',  'X1293A': 'FAS8060',
+      'X3218A': 'FAS8200',  'X3244A': 'FAS8300',  'X3245A': 'FAS8700',
+      // FAS9xxx series
+      'X3262A': 'FAS9000',  'X3263A': 'FAS9500',
+      // FAS7xxx series (legacy)
+      'X1236A': 'FAS7080',  'X1237A': 'FAS7040',
+      // AFF A-series
+      'X1969A': 'AFF A220', 'X1972A': 'AFF A200',
+      'X3220A': 'AFF A250', 'X3270A': 'AFF A400',
+      'X3219A': 'AFF A300', 'X702A':  'AFF A700',
+      'X3246A': 'AFF A700s','X3264A': 'AFF A800',
+      'X3268A': 'AFF A900', 'X3299A': 'AFF A1K',
+      'X3281A': 'AFF A70',  'X3282A': 'AFF A90',
+      // AFF C-series
+      'X3265A': 'AFF C190', 'X3283A': 'AFF C250',
+      'X3284A': 'AFF C400', 'X3285A': 'AFF C800',
+      // ASA series (share controller hardware with AFF)
+      'X3295A': 'ASA A150', 'X3296A': 'ASA A250',
+      'X3297A': 'ASA A400', 'X3298A': 'ASA A900',
+      // E-Series (when used in ONTAP context)
+      'X4011A': 'E2824',    'X4013A': 'E2860',
+      'X4015A': 'E5724',    'X4017A': 'E5760',
+    };
+    // Strip revision suffix (e.g. "R6", "R4") and look up
+    const partBase = rawModel.replace(/\s+R\d+$/i, '').trim().toUpperCase();
+    if (PART_NUMBER_TO_MODEL[partBase]) {
+      data.version.model = PART_NUMBER_TO_MODEL[partBase];
+      data.version.partNumber = rawModel; // preserve original for reference
+    }
   } else {
     // Infer from keyword presence — marked as 'inferred', not 'parsed'
     if (lowerText.includes("asa a1k")) { data.version.model = "ASA A1K"; isModelParsed = true; modelSource = 'inferred'; }
