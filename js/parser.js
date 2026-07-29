@@ -352,7 +352,8 @@ export function parseASUP(files) {
   });
 
   // --- 3. Parse Shelves & Cabling ---
-  // Broad shelf regex: handles v-prefixed and bare firmware versions, SN: and S/N: variants
+  // Pass 1: standard format — "Shelf N: MODEL (S/N: xxx) v0212 (Latest: v0224)"
+  // Handles: v-prefixed versions, bare numeric versions, SN: and S/N: variants
   const shelfRegex = /Shelf\s+(\d+):\s+([\w\-]+)\s+\((?:S\/N|SN):\s*([^)]+)\)\s+(v?[0-9][0-9A-Z._]*)(?:\s+\(Latest:\s*(v?[0-9][0-9A-Z._]*)\))?/ig;
   let shelfMatch;
   const shelfMap = new Map();
@@ -360,26 +361,51 @@ export function parseASUP(files) {
   while ((shelfMatch = shelfRegex.exec(combinedText)) !== null) {
     const shelfId = shelfMatch[1];
     const model = shelfMatch[2].toUpperCase();
-    const serial = shelfMatch[3];
+    const serial = shelfMatch[3].trim();
     if (!data.shelves.some(s => s.serial === serial || s.id === shelfId)) {
       const shelfObj = {
-        id: shelfId,
-        model: model,
-        serial: serial,
+        id: shelfId, model, serial,
         firmware: shelfMatch[4],
         latestFirmware: shelfMatch[5] || shelfMatch[4],
-        cabling: "Multipath HA", // Default
-        disks: []
+        cabling: 'Multipath HA', disks: []
       };
       data.shelves.push(shelfObj);
       shelfMap.set(shelfId, shelfObj);
     }
   }
 
-  // Secondary shelf scan: tabular 'storage shelf show' format
-  // e.g.: "0.shelf0   DS224C   normal   ..."
+  // Pass 2: IOM6/IOM12 format — "Shelf N: DS2246 (S/N: SHU-xxx) IOM6 Firmware: 0101"
+  // DS2246 uses IOM6, DS460C/DS224C use IOM12B, DS4246 uses IOM6
+  // Also handles: "IOM6 module firmware revision: 0101", "IOM12B Firmware: IOM12B.0101"
   if (data.shelves.length === 0) {
-    const tabShelfRegex = /^\s*(\S+\.shelf\d+|shelf[\-_ ]?\d+|\d+\.\d+)\s+(DS[0-9]+C|NS224|DS212C|DS460C)\s+(normal|ok|online)/gim;
+    const iomRegex = /Shelf\s+(\d+):\s+([\w\-]+)\s+\((?:S\/N|SN):\s*([^)]+)\)\s+(IOM\w+)\s+(?:Firmware|module firmware[^:]*|fw):\s*(\S+)/ig;
+    let iomMatch;
+    while ((iomMatch = iomRegex.exec(combinedText)) !== null) {
+      const shelfId = iomMatch[1];
+      const model = iomMatch[2].toUpperCase();
+      const serial = iomMatch[3].trim();
+      const iomType = iomMatch[4];
+      const firmware = iomMatch[5];
+      if (!data.shelves.some(s => s.serial === serial || s.id === shelfId)) {
+        const shelfObj = {
+          id: shelfId, model, serial,
+          firmware, latestFirmware: firmware,
+          iomType, cabling: 'Multipath HA', disks: []
+        };
+        data.shelves.push(shelfObj);
+        shelfMap.set(shelfId, shelfObj);
+      }
+    }
+  }
+
+  // Pass 3: tabular 'storage shelf show' format — covers ALL shelf models including non-C suffix
+  // DS2246, DS4246, DS4486 do NOT have 'C' suffix — previous regex excluded them
+  if (data.shelves.length === 0) {
+    const allShelfModels = 'DS2246|DS4246|DS4486|DS224C|DS460C|DS212C|DS212|NS224|NS212';
+    const tabShelfRegex = new RegExp(
+      `^\\s*(\\S+\\.shelf\\d+|shelf[\\-_ ]?\\d+|\\d+\\.\\d+)\\s+(${allShelfModels})\\s+(normal|ok|online)`,
+      'gim'
+    );
     let tabMatch;
     while ((tabMatch = tabShelfRegex.exec(combinedText)) !== null) {
       const shelfId = tabMatch[1].replace(/\D+/g, '') || String(data.shelves.length + 1);
@@ -393,6 +419,26 @@ export function parseASUP(files) {
         shelfMap.set(shelfId, shelfObj);
       }
     }
+  }
+
+  // Pass 4: keyword scan — if shelf model name appears anywhere, create a minimal entry
+  // Handles cases where shelf appears in disk show output but not in sysconfig format
+  if (data.shelves.length === 0) {
+    const shelfKeywordRegex = /\b(DS2246|DS4246|DS4486|DS224C|DS460C|DS212C|NS224|NS212)\b/ig;
+    let kwMatch;
+    const foundModels = new Set();
+    while ((kwMatch = shelfKeywordRegex.exec(combinedText)) !== null) {
+      foundModels.add(kwMatch[1].toUpperCase());
+    }
+    foundModels.forEach((model, idx) => {
+      const shelfId = String(idx + 1);
+      const shelfObj = {
+        id: shelfId, model, serial: `AUTO-DISC-${shelfId}`,
+        firmware: 'unknown', latestFirmware: 'unknown', cabling: 'Multipath HA', disks: []
+      };
+      data.shelves.push(shelfObj);
+      shelfMap.set(shelfId, shelfObj);
+    });
   }
 
   // setSource for shelves is set AFTER all discovery paths complete (see below)
