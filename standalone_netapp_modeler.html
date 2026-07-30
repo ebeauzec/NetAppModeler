@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.53</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.54</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2038,7 +2038,7 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.53</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.54</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
@@ -2082,7 +2082,7 @@ svg.cabling-graph {
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary" 
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.53','true')}catch(e){}" 
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.54','true')}catch(e){}" 
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
@@ -2379,9 +2379,12 @@ Number of Processors: 32
 
 slot 0: M.2 NVMe Boot Device
 slot 1: Quad-port 25GbE SFP28 Adapter
-slot 2: Dual-port 100GbE NVMe-oF Shelf Adapter
-         cabling: loop 1a cabled to Shelf 1 (NS224) Multipath HA
-         cabling: loop 1b cabled to Shelf 2 (NS224) Multipath HA
+slot 2: Dual-port 100GbE NVMe-oF RoCE Adapter (X91148A)
+         cabling: e2a cabled to Shelf 1 (NS224) NSM-A port e0a Multipath HA
+         cabling: e2b cabled to Shelf 1 (NS224) NSM-B port e0a Multipath HA
+slot 3: Dual-port 100GbE NVMe-oF RoCE Adapter (X91148A)
+         cabling: e3a cabled to Shelf 2 (NS224) NSM-A port e0a Multipath HA
+         cabling: e3b cabled to Shelf 2 (NS224) NSM-B port e0a Multipath HA
 slot 3: Dual-port 32Gb FC Adapter
 
 Shelf 1: NS224 (S/N: NS224-STA0001) v0120 (Latest: v0130)
@@ -4983,7 +4986,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b", "e5a", "e5b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -5006,7 +5009,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -5031,7 +5034,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e3a", "e3b", "e7a", "e7b", "e11a", "e11b", "e15a", "e15b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 10
@@ -5056,7 +5059,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
@@ -5079,7 +5082,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
@@ -5104,7 +5107,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_10g_2port", "nic_25g_4port", "nic_100g_2port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
@@ -5127,7 +5130,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
@@ -5150,7 +5153,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
@@ -5200,7 +5203,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
@@ -5274,7 +5277,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b", "e5a", "e5b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port", "nic_200g_2port", "fc_hba_64g_2port"],
     maxPcieSlots: 6
@@ -5297,7 +5300,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e6a", "e6b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
@@ -5319,7 +5322,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_10g_2port", "nic_25g_4port", "nic_100g_2port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
@@ -5342,7 +5345,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
@@ -5366,7 +5369,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
@@ -5390,7 +5393,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
@@ -5438,7 +5441,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["0a", "0b"]
+      storage: ["0a", "0b", "0c", "0d"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 10
@@ -5461,7 +5464,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["0a", "0b"]
+      storage: ["0a", "0b", "0c", "0d"]
     },
     supportedCards: ["nic_10g_2port", "nic_25g_4port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port"],
     maxPcieSlots: 4
@@ -5688,7 +5691,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["0a", "0b", "e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -5711,7 +5714,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["0a", "0b", "e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -5758,7 +5761,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b", "e5a", "e5b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 11
@@ -5781,7 +5784,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b", "e5a", "e5b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -5804,7 +5807,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -5827,7 +5830,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -5850,7 +5853,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
@@ -5873,7 +5876,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
@@ -5896,7 +5899,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
@@ -5919,7 +5922,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e6a", "e6b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4,
@@ -5943,7 +5946,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_10g_2port", "nic_25g_4port", "nic_100g_2port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 4,
@@ -5968,7 +5971,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2,
@@ -5995,7 +5998,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4,
@@ -6022,7 +6025,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_10g_2port", "nic_25g_4port", "nic_100g_2port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 4,
@@ -6049,7 +6052,7 @@ const NETAPP_PLATFORMS = {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e0g", "e0h"]
+      storage: ["e3a", "e3b", "e7a", "e7b", "e11a", "e11b", "e15a", "e15b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 10,
@@ -6285,7 +6288,7 @@ const NETAPP_PLATFORMS = {
   shelfErrors: { "ns224": "ASA A150 does not support NVMe shelves.", "ds212c": "HDD shelves not supported.", "ds460c": "HDD shelves not supported.", "ds2246": "Legacy SAS not supported." },
   supportedLicenses: ["Cluster","FCP","iSCSI","SnapMirror","FlexClone","FabricPool"],
   maxFirmware: "v15.5", description: "Entry SAN-only All-Flash Array.",
-  ports: { cluster: ["e0a","e0b"], data: ["e0c","e0d"], san: ["0e","0f"], storage: ["0a","0b"] },
+  ports: { cluster: ["e0a","e0b"], data: ["e0c","e0d"], san: ["0e","0f"], storage: ["0a", "0b"] },
   supportedCards: ["nic_10g_2port","fc_hba_16g_2port","sas_hba_12g_4port"], maxPcieSlots: 2
 },
 // ASA A250 (entry SAN-only, NVMe)
@@ -6296,7 +6299,7 @@ const NETAPP_PLATFORMS = {
   shelfErrors: { "ds224c": "ASA A250 is NVMe-only.", "ds212c": "HDD shelves not supported.", "ds460c": "HDD shelves not supported.", "ds2246": "Legacy SAS not supported." },
   supportedLicenses: ["Cluster","FCP","iSCSI","SnapMirror","FlexClone","FabricPool","MetroCluster"],
   maxFirmware: "v16.1", description: "Entry SAN-only NVMe All-Flash Array.",
-  ports: { cluster: ["e0a","e0b"], data: ["e0c","e0d"], san: ["0e","0f"], storage: ["e0g","e0h"] },
+  ports: { cluster: ["e0a","e0b"], data: ["e0c","e0d"], san: ["0e","0f"], storage: ["e2a", "e2b", "e3a", "e3b"] },
   supportedCards: ["nic_25g_4port","fc_hba_32g_2port","roce_hba_100g_2port"], maxPcieSlots: 2
 },
 // FAS8020 / FAS8040 — full definitions are already in the detailed section above (lines ~1283, 1263).
