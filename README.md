@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.53)
+# NetApp AutoSupport Analyzer & Modeler (v2.54)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,7 +6,7 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.53)
+## 🆕 New in this Version (v2.54)
 - **NS224 MCC Cabling Fix**: Draws 2 independent point-to-point RoCE cables per shelf and removes invalid outbound/return loop links.
 - **A400 MCC Demo Layout**: Symmetric 4-shelf 2-node MetroCluster IP demo.
 * **Hardware & Firmware Database Refresh:** Accurate ONTAP 9.x lifecycle support status, ASA R2 models added, AFF C Gen2 series added, FAS Gen latest, firmware version updates for all SP/BMC and shelves.

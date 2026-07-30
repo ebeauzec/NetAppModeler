@@ -257,9 +257,12 @@ Number of Processors: 32
 
 slot 0: M.2 NVMe Boot Device
 slot 1: Quad-port 25GbE SFP28 Adapter
-slot 2: Dual-port 100GbE NVMe-oF Shelf Adapter
-         cabling: loop 1a cabled to Shelf 1 (NS224) Multipath HA
-         cabling: loop 1b cabled to Shelf 2 (NS224) Multipath HA
+slot 2: Dual-port 100GbE NVMe-oF RoCE Adapter (X91148A)
+         cabling: e2a cabled to Shelf 1 (NS224) NSM-A port e0a Multipath HA
+         cabling: e2b cabled to Shelf 1 (NS224) NSM-B port e0a Multipath HA
+slot 3: Dual-port 100GbE NVMe-oF RoCE Adapter (X91148A)
+         cabling: e3a cabled to Shelf 2 (NS224) NSM-A port e0a Multipath HA
+         cabling: e3b cabled to Shelf 2 (NS224) NSM-B port e0a Multipath HA
 slot 3: Dual-port 32Gb FC Adapter
 
 Shelf 1: NS224 (S/N: NS224-STA0001) v0120 (Latest: v0130)
