@@ -1737,7 +1737,9 @@ function loadASUPData(input, isGreenfield = false) {
   try {
     isGreenfieldMode = isGreenfield;
     if (input && input.version) {
-      currentState = input;
+      currentState  = input;
+      modeledState  = null;   // always clear stale compare state when loading new data
+
       // --- State Normalizer: ensure all fields that runAudit/UI expect exist ---
       // This guards against both partial ASUP parses and greenfield-generated states
       currentState.shelves            = currentState.shelves            || [];
