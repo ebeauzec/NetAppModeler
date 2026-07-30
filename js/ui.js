@@ -3560,11 +3560,13 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
           const portWB = numPortsB > 4 ? Math.max(8, spacingB - 2) : 20;
           const startXB = 485 + 5 + Math.floor((100 - (numPortsB * spacingB)) / 2);
 
-          // 1. Outbound loops from first shelf in stack
-          if (j === 0 && !isPortExhausted) {
+          // 1. Outbound cables / loops
+          const isNS224Shelf = (shelfObj.model || '').toLowerCase().includes('ns224');
+          if (isNS224Shelf) {
+            // NS224: every shelf gets its own dedicated pair of RoCE cables (no daisy-chain, no return loop)
             const k = sIdx % nodesPerSite;
             const yNode = 10 + k * 90;
-            const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
+            const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2 + j * 2; // j matters: each shelf pair uses different port
             const portY = yNode + 50;
 
             const pAIdx = Math.min(localPortPairIdx, allStoragePortsA.length - 2);
@@ -3580,43 +3582,75 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12;
 
             if (isSiteA) {
-              // Site A local loop outbound: Node A e0a/e1a -> Site A Shelf IOM-A IN
+              // Cable from controller port pAX → shelf NSM-A (left side at x=30)
               svgStr += `<path d="M ${pAX},${portY} C ${pAX},${ctrlY} 30,${ctrlY} 30,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-              // Site A redundancy loop outbound: Node A e0b/e1b -> Site A Shelf IOM-B IN
+              // Cable from controller port repAX → shelf NSM-B (right side at x=240)
               svgStr += `<path d="M ${repAX},${portY} C ${repAX},${ctrlY} 240,${ctrlY} 240,${cy}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
             } else {
-              // Site B local loop outbound: Node B e0a/e1a -> Site B Shelf IOM-A IN
+              // Cable from controller port pBX → shelf NSM-A (left side at x=490)
               svgStr += `<path d="M ${pBX},${portY} C ${pBX},${ctrlY} 490,${ctrlY} 490,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-              // Site B redundancy loop outbound: Node B e0b/e1b -> Site B Shelf IOM-B IN
+              // Cable from controller port repBX → shelf NSM-B (right side at x=700)
               svgStr += `<path d="M ${repBX},${portY} C ${repBX},${ctrlY} 700,${ctrlY} 700,${cy}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
             }
-          }
+          } else {
+            // SAS: existing outbound (j===0) and return (j===last) loop pattern
+            if (j === 0 && !isPortExhausted) {
+              const k = sIdx % nodesPerSite;
+              const yNode = 10 + k * 90;
+              const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
+              const portY = yNode + 50;
 
-          // 2. Return loops from last shelf in stack
-          if (j === stack.length - 1 && !isPortExhausted && !isSinglePath) {
-            const k = sIdx % nodesPerSite;
-            const yNode = 10 + k * 90;
-            const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
-            const portY = yNode + 50;
+              const pAIdx = Math.min(localPortPairIdx, allStoragePortsA.length - 2);
+              const pBIdx = Math.min(localPortPairIdx, allStoragePortsB.length - 2);
+              const repAIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
+              const repBIdx = Math.min(localPortPairIdx + 1, allStoragePortsB.length - 1);
 
-            const rAIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
-            const rBIdx = Math.min(localPortPairIdx + 1, allStoragePortsB.length - 1);
+              const pAX = startXA + pAIdx * spacingA + portWA / 2;
+              const pBX = startXB + pBIdx * spacingB + portWB / 2;
+              const repAX = startXA + repAIdx * spacingA + portWA / 2;
+              const repBX = startXB + repBIdx * spacingB + portWB / 2;
+              
+              const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12;
 
-            const rAX = startXA + rAIdx * spacingA + portWA / 2;
-            const rBX = startXB + rBIdx * spacingB + portWB / 2;
+              if (isSiteA) {
+                // Site A local loop outbound: Node A e0a/e1a -> Site A Shelf IOM-A IN
+                svgStr += `<path d="M ${pAX},${portY} C ${pAX},${ctrlY} 30,${ctrlY} 30,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+                // Site A redundancy loop outbound: Node A e0b/e1b -> Site A Shelf IOM-B IN
+                svgStr += `<path d="M ${repAX},${portY} C ${repAX},${ctrlY} 240,${ctrlY} 240,${cy}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+              } else {
+                // Site B local loop outbound: Node B e0a/e1a -> Site B Shelf IOM-A IN
+                svgStr += `<path d="M ${pBX},${portY} C ${pBX},${ctrlY} 490,${ctrlY} 490,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+                // Site B redundancy loop outbound: Node B e0b/e1b -> Site B Shelf IOM-B IN
+                svgStr += `<path d="M ${repBX},${portY} C ${repBX},${ctrlY} 700,${ctrlY} 700,${cy}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+              }
+            }
 
-            const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12 + 6;
+            // 2. Return loops from last shelf in stack
+            if (j === stack.length - 1 && !isPortExhausted && !isSinglePath) {
+              const k = sIdx % nodesPerSite;
+              const yNode = 10 + k * 90;
+              const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
+              const portY = yNode + 50;
 
-            if (isSiteA) {
-              // Site A local loop return: Site A Shelf IOM-A OUT -> Node A e0b/e1b
-              svgStr += `<path d="M 50,${cy} C 50,${ctrlY} ${rAX},${ctrlY} ${rAX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
-              // Site A redundancy loop return: Site A Shelf IOM-B OUT -> Node A replication return
-              svgStr += `<path d="M 260,${cy} C 260,${ctrlY} ${rAX},${ctrlY} ${rAX},${portY}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
-            } else {
-              // Site B local loop return: Site B Shelf IOM-A OUT -> Node B e0b/e1b
-              svgStr += `<path d="M 510,${cy} C 510,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
-              // Site B redundancy loop return: Site B Shelf IOM-B OUT -> Node B replication return
-              svgStr += `<path d="M 720,${cy} C 720,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+              const rAIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
+              const rBIdx = Math.min(localPortPairIdx + 1, allStoragePortsB.length - 1);
+
+              const rAX = startXA + rAIdx * spacingA + portWA / 2;
+              const rBX = startXB + rBIdx * spacingB + portWB / 2;
+
+              const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12 + 6;
+
+              if (isSiteA) {
+                // Site A local loop return: Site A Shelf IOM-A OUT -> Node A e0b/e1b
+                svgStr += `<path d="M 50,${cy} C 50,${ctrlY} ${rAX},${ctrlY} ${rAX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
+                // Site A redundancy loop return: Site A Shelf IOM-B OUT -> Node A replication return
+                svgStr += `<path d="M 260,${cy} C 260,${ctrlY} ${rAX},${ctrlY} ${rAX},${portY}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+              } else {
+                // Site B local loop return: Site B Shelf IOM-A OUT -> Node B e0b/e1b
+                svgStr += `<path d="M 510,${cy} C 510,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
+                // Site B redundancy loop return: Site B Shelf IOM-B OUT -> Node B replication return
+                svgStr += `<path d="M 720,${cy} C 720,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+              }
             }
           }
         }
