@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.56)
+# NetApp AutoSupport Analyzer & Modeler (v2.57)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,7 +6,10 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.56)
+## 🆕 New in this Version (v2.57)
+- **"Check for Updates" Button:** A new header button re-runs the sourced-data drift check on demand from inside the app. See [Checking for Updates](#-checking-for-updates) below — it talks only to a local helper script you start yourself; the app never reaches the internet on its own.
+
+## Previously (v2.56)
 - **Sourced Cabling Reference Data:** New `js/rackLayouts.js` encodes exact NS224-to-controller cable endpoints sourced directly from NetApp's official public install/cabling guides (`docs.netapp.com`, no login required) for AFF A400/C400/A800/C800/A900/A1K — see `DATA_SOURCES.md`'s new Physical/Cabling Reference Sources section. `tools/harvest_reference_data.py` (re)fetches these pages; `tools/apply_reference_data.py` cross-checks them against `compatibility.js`'s port catalog.
 - **Port-Catalog Corrections:** That cross-check caught real, previously-unnoticed errors — AFF A1K's storage ports didn't match any published cabling step (`e2a-e5b` vs. the real `e8a-e11b`), AFF A900's cluster ports were listed as onboard `e0a/e0b` when NetApp's guide places them on PCIe slots `e4a/e8a`, and A400/C400/A800/C800 were missing their PCIe-slot NS224 storage ports entirely.
 - **Automated Regression Suite:** `tests/run_tests.py` rebuilds the bundle and exercises it headless, pinning the v2.55 correctness fixes (capacity math, audit-rule duplication/matching, escapeHtml, parser windowing) as automated assertions — this is the check that was missing when several of those bugs were introduced and found reactively.
@@ -92,6 +95,23 @@ The easiest and recommended way to run this application is by using the compiled
 1. Locate the file **`standalone_netapp_modeler.html`** in this directory.
 2. **Double-click** the file (or drag and drop it into any modern web browser: Chrome, Edge, Firefox, Safari).
 3. The application will load and execute 100% locally from your system (using the `file://` protocol) with full functionality. No data is sent to external servers, and it does not require an internet connection, making it ideal for restricted corporate dark sites and secure workstations.
+
+---
+
+## 🔄 Checking for Updates
+
+The app itself never reaches the internet on its own — that's the whole point of the dark-site guarantee above. The header's **"Check for Updates"** button instead talks to a small local helper script that *you* start explicitly:
+
+1. Open a terminal in this directory and run:
+   ```bash
+   python tools/update_server.py
+   ```
+   This starts a local server on `http://127.0.0.1:8765` — it fetches NetApp's public cabling docs itself (same technique as `tools/harvest_reference_data.py`) and only ever talks back to the app over localhost.
+2. Click **Check for Updates** in the app. It reports any drift found between NetApp's published cabling guides and `js/compatibility.js`'s port catalog — it does **not** silently rewrite any source file.
+3. If drift is reported, review it and apply the fix by hand (or re-run `python tools/apply_reference_data.py` for the full report), then `python build_standalone.py` to rebuild.
+4. Close the terminal running `update_server.py` when you're done — the app goes back to being fully offline.
+
+Why a local helper at all, instead of the app fetching directly? `docs.netapp.com` sends no `Access-Control-Allow-Origin` header, so a browser blocks the app's JS from reading the response even though the request itself would go through — this is a real, verified constraint, not a design choice. The helper has a normal Python network stack and serves its result back over localhost with CORS headers it controls.
 
 ---
 
