@@ -100,7 +100,16 @@ The easiest and recommended way to run this application is by using the compiled
 
 ## 🔄 Checking for Updates
 
-The app itself never reaches the internet on its own — that's the whole point of the dark-site guarantee above. The header's **"Check for Updates"** button instead talks to a small local helper script that *you* start explicitly:
+The app itself never reaches the internet on its own — that's the whole point of the dark-site guarantee above. The header's **"Check for Updates"** button instead talks to a small local helper script.
+
+**Easiest: start the app via the launcher instead of opening the HTML file directly.**
+
+- Windows: double-click **`launch.bat`**
+- Any OS: `python launch.py`
+
+This starts the local helper (`tools/update_server.py`) in the background and opens `standalone_netapp_modeler.html` for you — "Check for Updates" just works, no manual terminal step. Close the helper's console window whenever you want the app back to fully offline.
+
+**Manual alternative**, if you'd rather keep opening the HTML file directly (or aren't on a platform the launcher supports):
 
 1. Open a terminal in this directory and run:
    ```bash

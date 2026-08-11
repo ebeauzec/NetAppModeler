@@ -165,6 +165,82 @@ window.addEventListener('DOMContentLoaded', function() {
       !!nodeTwo && nodeTwo.ports && nodeTwo.ports.length === 2,
       nodeTwo ? nodeTwo.ports.map(function(p){return p.name;}) : null);
 
+    // --- parser.js: model detection prefers the system-board field over a sub-component's
+    // (confirmed against a real customer ASUP: a Flash Cache module's own "Model name:"
+    // line was matched before the real system board's, resolving to the wrong platform) ---
+    var subComponentFirstAsup = [
+      'FMM ID: Flash Cache in slot 4, Model name: X1974A-R6, Serial number: 1234',
+      filler('unrelated-diagnostic-section', 500),
+      'System Configuration:',
+      'Model Name: FAS8040',
+      'BIOS version: 9.6'
+    ].join('\n');
+    var subComponentParsed = parseASUP(subComponentFirstAsup);
+    check('parseASUP: model detection prefers system-board "Model Name" (near BIOS version) over an earlier sub-component match',
+      subComponentParsed.version.model === 'FAS8040', subComponentParsed.version.model);
+
+    // --- parser.js: Pass 4 keyword-scan shelf ids must be clean small integers, not
+    // "<model><index>" string concatenations (confirmed against a real customer ASUP: Set#forEach
+    // has no index — its 2nd callback param is the value again — so using it as an array index
+    // produced ids like "DS22461" ("DS2246" + 1 via JS string coercion), which could never match
+    // any real shelf id discovered elsewhere and left permanent zero-disk ghost shelves) ---
+    var keywordOnlyAsup = 'Random text mentioning DS2246 once and DS4246 once, no Shelf N: or SES blocks anywhere.';
+    var keywordParsed = parseASUP(keywordOnlyAsup);
+    var badGhostIds = keywordParsed.shelves.filter(function(s) { return /[A-Za-z]/.test(s.id); });
+    check('parseASUP: keyword-scan shelf ids are clean integers, no "<model><n>" ghost ids',
+      keywordParsed.shelves.length === 2 && badGhostIds.length === 0,
+      keywordParsed.shelves.map(function(s){ return s.id; }));
+
+    // --- parser.js: "storage disk show -v" key/value disk blocks are recognized (confirmed
+    // against two real customer ASUPs where this was the ONLY disk-inventory format present —
+    // the "Shelf N:" text these disks nest under carries only SES enclosure telemetry, never a
+    // disk manifest, so this parses as one global pass keyed off each block's own "Shelf:" field).
+    // Shelf 1 here has no matching Disk: block and its SES header repeats (as real multi-file
+    // ASUP bundles do) to pin the duplicate-parseWarnings fix: a shelf with genuinely
+    // unparseable disks should warn ONCE despite "Shelf 1:" appearing twice in the text. ---
+    var diskBlockAsup = [
+      'SES Configuration, shelf 0:',
+      ' product identification=DS2246',
+      'Vendor-specific information:',
+      ' Product Serial Number: SHFHU1511001144',
+      'SES Configuration, shelf 1:',
+      ' product identification=DS2246',
+      'Vendor-specific information:',
+      ' Product Serial Number: SHFHU1511001143',
+      // Real bundles repeat the same SES header across multiple report files/sections.
+      'SES Configuration, shelf 1:',
+      ' product identification=DS2246',
+      'Vendor-specific information:',
+      ' Product Serial Number: SHFHU1511001143',
+      'Disk: 0a.00.0',
+      'Shelf: 0',
+      'Bay: 0',
+      'Serial: S3L1B3A0',
+      'Vendor: NETAPP',
+      'Model: X425_SIRMN1T2A10',
+      'Rev: NA01',
+      'RPM: 10000',
+      'Disk: 0a.00.1',
+      'Shelf: 0',
+      'Bay: 1',
+      'Serial: S3L1B2WC',
+      'Vendor: NETAPP',
+      'Model: X425_SIRMN1T2A10',
+      'Rev: NA01',
+      'RPM: 10000'
+    ].join('\n');
+    var diskBlockParsed = parseASUP(diskBlockAsup);
+    var diskBlockShelf = diskBlockParsed.shelves.find(function(s) { return s.id === '0'; });
+    check('parseASUP: "storage disk show -v" key/value disk blocks populate real disk counts',
+      !!diskBlockShelf && diskBlockShelf.disks.length === 2 && diskBlockShelf.disks[0].sizeGB === 1200,
+      diskBlockShelf);
+
+    var shelf1Warnings = (diskBlockParsed.parseWarnings || []).filter(function(w) {
+      return /Shelf 1/.test(w.message);
+    });
+    check('parseASUP: a repeated "Shelf N:" header does not duplicate the same parse warning',
+      shelf1Warnings.length === 1, shelf1Warnings);
+
     var resDiv = document.createElement('div');
     resDiv.id = 'test-results';
     resDiv.textContent = JSON.stringify(results);
