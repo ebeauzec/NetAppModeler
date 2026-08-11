@@ -14138,8 +14138,14 @@ function updateCapacityImpactDetails() {
   // block and the tempState shelf-site-tagging loop below both read it before
   // the validation block further down runs — declaring it there caused a
   // ReferenceError (TDZ) whenever a shelf type was selected.
-  const _mccCb = document.getElementById('deploy-metrocluster');
-  const _mccActive = !!(currentState.metrocluster && currentState.metrocluster !== 'none' && _mccCb && _mccCb.checked);
+  //
+  // This used to be its own checkbox-only check (ignoring ASUP mode entirely),
+  // inconsistent with isMetroCluster just above — meaning the Step 4 hint text
+  // and footprint preview showed "1 shelf" with no per-site doubling for a real
+  // ASUP-parsed MetroCluster system, even though runModelingCalculations()
+  // would (once fixed) actually add 2. Aliased to isMetroCluster so the preview
+  // and the real apply logic agree.
+  const _mccActive = isMetroCluster;
 
   let shelfCount = 0;
   let rawCapAddedGB = 0;
@@ -14514,9 +14520,11 @@ function populateAggregateDistributionList() {
   const targetCountNode = document.getElementById("target-disks-count");
   if (targetCountNode) targetCountNode.textContent = diskCount;
 
+  // Same ASUP-vs-greenfield distinction as runModelingCalculations() — checking
+  // the checkbox unconditionally hid this from real ASUP-parsed MCC systems.
   const _mccCbAgg = document.getElementById('deploy-metrocluster');
   const isMetroCluster = !!(currentState.metrocluster && currentState.metrocluster !== 'none'
-    && _mccCbAgg && _mccCbAgg.checked);
+    && (!isGreenfieldMode || (_mccCbAgg && _mccCbAgg.checked)));
   
   currentState.aggregates.forEach(aggr => {
     if (aggr.name.startsWith("aggr0")) return;
@@ -14659,10 +14667,16 @@ function runModelingCalculations() {
     // Use whichever is larger (user's explicit count takes priority; disk-count-derived count is a safety net)
     const shelfCount = Math.max(shelfCountInput, shelfCountFromDisks);
 
-    // Guard: only treat as MCC if the deploy-metrocluster checkbox is actually checked
+    // In ASUP mode the system's real metrocluster state is authoritative (the
+    // checkbox doesn't apply/isn't shown); in greenfield mode the user must
+    // explicitly opt in via the checkbox. This previously required the checkbox
+    // unconditionally, so adding capacity to a real ASUP-parsed MetroCluster
+    // system silently fell through to the non-MCC path — shelves got added as
+    // a flat, un-sited list instead of symmetrically to both sites, producing
+    // an odd shelf count and an invalid, asymmetric MCC configuration.
     const _mccCbRMC = document.getElementById('deploy-metrocluster');
     const isMetroCluster = !!(modeledState.metrocluster && modeledState.metrocluster !== 'none'
-      && _mccCbRMC && _mccCbRMC.checked);
+      && (!isGreenfieldMode || (_mccCbRMC && _mccCbRMC.checked)));
     const allocation = document.getElementById("disk-allocation").value;
 
     if (isMetroCluster) {
