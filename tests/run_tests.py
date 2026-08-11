@@ -250,6 +250,56 @@ window.addEventListener('DOMContentLoaded', function() {
     check('parseASUP: a repeated "Shelf N:" header does not duplicate the same parse warning',
       shelf1Warnings.length === 1, shelf1Warnings);
 
+    // --- parser.js: STORAGE-SHELF.txt "Shelf name:/Shelf id:/Shelf S/N:" format, cross-referenced
+    // against storage-shelf.xml's <product_id>/<serial_number> pair to resolve the model (this
+    // format carries no model field of its own) — confirmed against a real customer ASUP that had
+    // no "Shelf N:" or SES Configuration text at all, where every shelf previously fell through to
+    // a fully-fabricated MOCK-SHELF-001. Each physical shelf appears twice (once per IOM module),
+    // which the second fixture block below exercises for the dedupe-by-serial behavior. Also pins
+    // the "-<generation>" suffix handling: raw "DS212-12" matches the catalog's own bare "DS212",
+    // but raw "DS460-12" needs a "C" appended to match the catalog's "DS460C" (no bare "DS460"
+    // exists) — both real product_id values seen in the same bundle. ---
+    var shelfXmlAsup = [
+      '<ROW><shelf_name>1.0</shelf_name><shelf_uid>x</shelf_uid><vendor>NETAPP</vendor>',
+      '<product_id>DS212-12</product_id>',
+      '<serial_number>SHFHU2003000319</serial_number>',
+      '<disk_count>12</disk_count></ROW>',
+      '<ROW><shelf_name>1.1</shelf_name><shelf_uid>x</shelf_uid><vendor>NETAPP</vendor>',
+      '<product_id>DS460-12</product_id>',
+      '<serial_number>SHJHU2002000214</serial_number>',
+      '<disk_count>36</disk_count></ROW>',
+      'Shelf name:    0b.shelf0',
+      'Shelf id:      0',
+      'Channel:       0b',
+      'Module:        A',
+      'Shelf S/N:     SHFHU2003000319',
+      'Shelf state:   ONLINE',
+      // Same physical shelf, reported again for IOM module B — must not double-add.
+      'Shelf name:    0a.shelf0',
+      'Shelf id:      0',
+      'Channel:       0a',
+      'Module:        B',
+      'Shelf S/N:     SHFHU2003000319',
+      'Shelf state:   ONLINE',
+      'Shelf name:    0b.shelf1',
+      'Shelf id:      1',
+      'Channel:       0b',
+      'Module:        A',
+      'Shelf S/N:     SHJHU2002000214',
+      'Shelf state:   ONLINE'
+    ].join('\n');
+    var shelfXmlParsed = parseASUP(shelfXmlAsup);
+    var xmlShelf0 = shelfXmlParsed.shelves.find(function(s) { return s.serial === 'SHFHU2003000319'; });
+    var xmlShelf1 = shelfXmlParsed.shelves.find(function(s) { return s.serial === 'SHJHU2002000214'; });
+    check('parseASUP: STORAGE-SHELF.txt shelf resolves model via storage-shelf.xml (bare "DS212" match)',
+      !!xmlShelf0 && xmlShelf0.model === 'DS212', xmlShelf0);
+    check('parseASUP: STORAGE-SHELF.txt shelf resolves model via storage-shelf.xml ("DS460C", C appended)',
+      !!xmlShelf1 && xmlShelf1.model === 'DS460C', xmlShelf1);
+    check('parseASUP: STORAGE-SHELF.txt does not double-add a shelf reported once per IOM module',
+      shelfXmlParsed.shelves.length === 2, shelfXmlParsed.shelves.map(function(s){return s.serial;}));
+    check('parseASUP: STORAGE-SHELF.txt shelves are not the fabricated MOCK-SHELF-001 fallback',
+      shelfXmlParsed.shelves.every(function(s){ return s.serial !== 'MOCK-SHELF-001'; }));
+
     var resDiv = document.createElement('div');
     resDiv.id = 'test-results';
     resDiv.textContent = JSON.stringify(results);

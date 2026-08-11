@@ -633,6 +633,63 @@ export function parseASUP(files) {
     }
   }
 
+  // Pass 6: STORAGE-SHELF.txt "Shelf name:/Shelf id:/Shelf S/N:" key-value format — confirmed
+  // against a real customer ASUP where this was the ONLY shelf-listing format present (no
+  // "Shelf N:" header, no SES Configuration blocks), so passes 1-5 all found nothing and every
+  // shelf fell through to the fully-fabricated MOCK-SHELF-001 fallback below. This format has no
+  // model field of its own, but storage-shelf.xml's <product_id>/<serial_number> ROW pair
+  // (adjacent per its own DTD field order) reliably cross-references by serial number — verified
+  // directly against the real bundle (S/N SHFHU2003000319 -> product_id "DS212-12"). Each
+  // physical shelf appears twice in STORAGE-SHELF.txt (once per IOM module A/B), deduped by id.
+  if (data.shelves.length === 0) {
+    const productIdBySerial = new Map();
+    const productIdRegex = /<product_id>([^<]*)<\/product_id>\s*<serial_number>([^<]*)<\/serial_number>/ig;
+    let pidMatch;
+    while ((pidMatch = productIdRegex.exec(combinedText)) !== null) {
+      const productId = pidMatch[1].trim();
+      const serial = pidMatch[2].trim();
+      if (productId && serial) productIdBySerial.set(serial, productId);
+    }
+
+    const knownShelfModels = ['DS2246', 'DS4246', 'DS4486', 'DS224C', 'DS460C', 'DS212C', 'DS212', 'NS224', 'NS212'];
+    // Real shelf product-id self-reports drop the marketing "C" suffix for some models (raw
+    // "DS212-12", matching the catalog's own "DS212" entry) but not others (no plain "DS460" in
+    // the catalog, only "DS460C") — a trailing "-<generation>" number (SAS/PCIe gen, not bay
+    // count: a 36-disk DS460C reported "DS460-12" here, not "-60") is always noise either way.
+    const resolveShelfModelFromProductId = (productId) => {
+      if (!productId) return null;
+      const stripped = productId.replace(/-\d+$/, '').toUpperCase();
+      if (knownShelfModels.includes(stripped)) return stripped;
+      if (knownShelfModels.includes(stripped + 'C')) return stripped + 'C';
+      return stripped;
+    };
+
+    const shelfBlockRegex = /Shelf name:\s*(\S+)\s*[\r\n]+\s*Shelf id:\s*(\d+)[\s\S]{0,200}?Shelf S\/N:\s*(\S+)/ig;
+    let shelfBlockMatch;
+    let unresolvedModelWarned = false;
+    while ((shelfBlockMatch = shelfBlockRegex.exec(combinedText)) !== null) {
+      const shelfId = shelfBlockMatch[2].trim();
+      const serial = shelfBlockMatch[3].trim();
+      if (data.shelves.some(s => s.serial === serial)) continue; // already added via the other IOM module's block
+
+      const productId = productIdBySerial.get(serial);
+      const model = resolveShelfModelFromProductId(productId);
+      if (!model && !unresolvedModelWarned) {
+        unresolvedModelWarned = true;
+        data.parseWarnings.push({
+          section: "Disk Shelves",
+          message: `Shelf S/N ${serial} was detected in STORAGE-SHELF.txt but no matching <product_id> was found in storage-shelf.xml — its model is unknown.`
+        });
+      }
+      const shelfObj = {
+        id: shelfId, model: model || 'Unknown', serial,
+        firmware: 'unknown', latestFirmware: 'unknown', cabling: 'Multipath HA', disks: []
+      };
+      data.shelves.push(shelfObj);
+      shelfMap.set(shelfId, shelfObj);
+    }
+  }
+
   // setSource for shelves is set AFTER all discovery paths complete (see below)
 
   // Parse cabling loops
