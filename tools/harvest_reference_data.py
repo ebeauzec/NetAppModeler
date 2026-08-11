@@ -95,6 +95,14 @@ TARGETS = [
     ("fas50-cable", "https://docs.netapp.com/us-en/ontap-systems/fas50/install-cable.html",
      "FAS50 controller cabling"),
 
+    # NOTE: an "install-cable.html" text-variant probe was tried for ASA
+    # C250/C400/C800/A900/A800/A400, FAS8300/FAS8200/FAS9000/FAS9500, AFF A300,
+    # and AFF A700 on 2026-08-12 — all 12 returned a hard HTTP 404 (not a soft
+    # 200 "article not available" page like some other platforms give). NetApp
+    # genuinely does not publish that page for these platforms; only the
+    # image-only "-guide"/"-setup" pages above exist. Not worth re-probing
+    # unless NetApp restructures these docs — see PLATFORM_COVERAGE.md.
+
     # --- Tier 3: legacy/EOL ---
     ("a700-guide", "https://docs.netapp.com/us-en/ontap-systems/a700/install-detailed-guide.html",
      "AFF A700 controller cabling"),

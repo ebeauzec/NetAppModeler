@@ -34,8 +34,21 @@
 | AFF A20 | ✅ corrected | ✅ sourced (1 shelf) |
 | AFF C60 | ✅ corrected | ✅ sourced (1 shelf) |
 | AFF C30 | ✅ corrected | ✅ sourced (1 shelf) |
+| FAS90 | ✅ corrected | ✅ sourced (1-2 shelves) |
+| FAS70 | ✅ corrected | ✅ sourced (1-2 shelves) |
 
-All 14 pass `tools/apply_reference_data.py` with no drift.
+All 16 pass `tools/apply_reference_data.py` with no drift.
+
+**FAS50** has a real sourced `install-cable.html` too, but it's DS460C
+(SAS) shelf cabling, not NS224 — FAS50 doesn't support NS224 at all (matches
+the existing `compatibility.js` flag). The DS460C cable-endpoint data
+(`controller port 3a/3d` ↔ `shelf IOM A/B port 1/3`, mini-SAS HD, daisy-
+chainable across two shelves) is a genuinely different shape than every
+other entry in this file and isn't captured in `js/rackLayouts.js` yet —
+the SAS/DS460C rendering path in `js/ui.js`'s `drawCablingTopology` doesn't
+call `getShelfCabling()` the way the NS224 path does, so there's nowhere to
+plug it in without also extending that renderer. Tracked as a follow-up,
+not done.
 
 **Note on A70/A90/C80 vs A50/A30/A20/C60/C30:** the former three share one
 port scheme (cluster e1a+e7a, host e9a/e9b, NS224 storage on PCIe slots
@@ -63,16 +76,20 @@ install pages harvested so far (`asa400-guide.txt`, `asa800-guide.txt`,
 `asa900-guide.txt`, `asac250/400/800-guide.txt`) are all
 `install-detailed-guide.html`-style pages that reference cabling
 illustrations rather than embedding port names as text — the scraper can't
-extract port data from them. Need the `install-cable.html` variant (like
-`a70-90-cable.txt`) for each, if NetApp publishes one; if not, these may
-need the Hardware Universe fallback path instead.
+extract port data from them. **Confirmed 2026-08-12:** the `install-cable.html`
+variant that worked for every Tier 1 AFF/FAS platform returns a hard HTTP
+404 for all of these — NetApp genuinely doesn't publish that page for this
+family. Would need the Hardware Universe fallback path (different
+sourcing technique, not yet built) instead of another URL guess.
 
 ## Tier 2 — Recent/still-common in the field
 
-- [ ] AFF A300, AFF A250, AFF A220, AFF A150
+- [ ] AFF A300 (confirmed no `install-cable.html`, HTTP 404, 2026-08-12), AFF A250, AFF A220, AFF A150
 - [ ] AFF C250, AFF C190
-- [ ] ASA A900, ASA A800, ASA A400
-- [ ] FAS9500, FAS9000, FAS8700, FAS8300, FAS8200, FAS90, FAS70, FAS50
+- [ ] ASA A900, ASA A800, ASA A400 (confirmed no `install-cable.html`, HTTP 404, 2026-08-12)
+- [x] ~~FAS90, FAS70~~ — done, see above
+- [ ] FAS9500, FAS9000, FAS8700, FAS8300, FAS8200 (confirmed no `install-cable.html`, HTTP 404, 2026-08-12)
+- [x] ~~FAS50~~ — port catalog corrected N/A (FAS50 doesn't support NS224); DS460C cabling sourced but not wired into the renderer, see note above
 
 ## Tier 3 — Legacy/EOL
 

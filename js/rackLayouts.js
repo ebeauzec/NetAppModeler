@@ -536,6 +536,82 @@ export const RACK_LAYOUTS = {
       },
     },
   },
+
+  "FAS90": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/fas-70-90/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Shares one cabling doc with FAS70 — same cluster/host scheme as AFF A70/A90/A1K (e1a+e7a cluster, e9a/e9b host), but NS224 storage is on PCIe slots 10/11, not 8/11. Also documents a DS460C shelf option (mini-SAS HD, controller ports e10a/e10c/e11b/e11d to IOM A/B ports 1/3) — not modeled here yet; the SAS-shelf rendering path doesn't consume getShelfCabling() sourced data the way the NS224 path does.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e1a", b: "e1a", role: "cluster/HA interconnect" },
+        { a: "e7a", b: "e7a", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      host100gbe: ["e9a", "e9b"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b" },
+        ],
+        2: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e10b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e10b" },
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e10a", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e10a", shelfIndex2Only: true },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b", shelfIndex2Only: true },
+        ],
+      },
+    },
+  },
+
+  "FAS70": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/fas-70-90/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Shares one cabling doc with FAS90 — identical port scheme.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e1a", b: "e1a", role: "cluster/HA interconnect" },
+        { a: "e7a", b: "e7a", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      host100gbe: ["e9a", "e9b"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b" },
+        ],
+        2: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e10b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e10b" },
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e10a", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e10a", shelfIndex2Only: true },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b", shelfIndex2Only: true },
+        ],
+      },
+    },
+  },
 };
 
 // NS224 shelf: NSM module (IOM equivalent) physical position and shelf-ID
