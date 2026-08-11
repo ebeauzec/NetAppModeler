@@ -924,11 +924,15 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v20.1",
     description: "High-end Unified Hybrid Flash storage controller.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/fas70-fas90/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — same cluster/host scheme as
+    // AFF A70/A90/A1K: cluster e1a+e7a, host e9a/e9b. NS224 storage is on PCIe
+    // slots 10/11 (not 8/11 like the AFF A70/A90/C80 family).
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e1a", "e7a"],
+      data: ["e9a", "e9b"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b"]
+      storage: ["e10a", "e10b", "e11a", "e11b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -947,11 +951,14 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v20.0",
     description: "Mid-range Unified Hybrid Flash storage controller.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/fas70-fas90/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — shares FAS90's cabling doc and
+    // port scheme: cluster e1a+e7a, host e9a/e9b, NS224 storage on PCIe slots 10/11.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e1a", "e7a"],
+      data: ["e9a", "e9b"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b"]
+      storage: ["e10a", "e10b", "e11a", "e11b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -969,11 +976,15 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v17.0",
     description: "Entry-level Unified Hybrid Flash storage controller.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/fas50/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — cluster/HA is e4a/e4b (one
+    // I/O module), host is e2a-e2d (10/25GbE) or FC 2a-2d, DS460C SAS storage is
+    // ports 3a/3d (mini-SAS HD, no "e" prefix — legacy FAS SAS HBA naming).
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e4a", "e4b"],
+      data: ["e2a", "e2b", "e2c", "e2d"],
       san: ["0e", "0f"],
-      storage: ["0a", "0b"]
+      storage: ["3a", "3d"]
     },
     supportedCards: ["nic_10g_2port", "nic_25g_4port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port"],
     maxPcieSlots: 2

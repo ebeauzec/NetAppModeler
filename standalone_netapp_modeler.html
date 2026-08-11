@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.60</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.61</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2053,12 +2053,23 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.60</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.61</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+
+        <!-- Feature -3 (v2.61) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🧭</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">FAS70/FAS90/FAS50 Sourced &amp; Corrected</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              FAS70 and FAS90's port catalogs and NS224 cabling are now sourced from NetApp's official install guide (16 platforms total now verified against real docs with zero drift). FAS50's cluster/host/storage ports are corrected too — it's a SAS-only platform (DS460C shelves), and probing confirmed NetApp doesn't publish a text-cabling page for several other Tier 2 platforms (ASA A/C-series, FAS8200/8300/9000/9500, AFF A300/A700) — see PLATFORM_COVERAGE.md for what's genuinely blocked vs. what's next.
+            </span>
+          </div>
+        </div>
 
         <!-- Feature -2 (v2.60) -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
@@ -2141,7 +2152,7 @@ svg.cabling-graph {
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary"
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.60','true')}catch(e){}"
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.61','true')}catch(e){}"
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
@@ -6079,11 +6090,15 @@ const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v20.1",
     description: "High-end Unified Hybrid Flash storage controller.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/fas70-fas90/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — same cluster/host scheme as
+    // AFF A70/A90/A1K: cluster e1a+e7a, host e9a/e9b. NS224 storage is on PCIe
+    // slots 10/11 (not 8/11 like the AFF A70/A90/C80 family).
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e1a", "e7a"],
+      data: ["e9a", "e9b"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b"]
+      storage: ["e10a", "e10b", "e11a", "e11b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -6102,11 +6117,14 @@ const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v20.0",
     description: "Mid-range Unified Hybrid Flash storage controller.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/fas70-fas90/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — shares FAS90's cabling doc and
+    // port scheme: cluster e1a+e7a, host e9a/e9b, NS224 storage on PCIe slots 10/11.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e1a", "e7a"],
+      data: ["e9a", "e9b"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b"]
+      storage: ["e10a", "e10b", "e11a", "e11b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -6124,11 +6142,15 @@ const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v17.0",
     description: "Entry-level Unified Hybrid Flash storage controller.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/fas50/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — cluster/HA is e4a/e4b (one
+    // I/O module), host is e2a-e2d (10/25GbE) or FC 2a-2d, DS460C SAS storage is
+    // ports 3a/3d (mini-SAS HD, no "e" prefix — legacy FAS SAS HBA naming).
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e4a", "e4b"],
+      data: ["e2a", "e2b", "e2c", "e2d"],
       san: ["0e", "0f"],
-      storage: ["0a", "0b"]
+      storage: ["3a", "3d"]
     },
     supportedCards: ["nic_10g_2port", "nic_25g_4port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port"],
     maxPcieSlots: 2
@@ -7719,6 +7741,82 @@ const RACK_LAYOUTS = {
           { shelfIOM: "B", shelfPort: "e1b", controllerSide: "A", controllerPort: "e3b" },
           { shelfIOM: "B", shelfPort: "e1a", controllerSide: "B", controllerPort: "e3a" },
           { shelfIOM: "A", shelfPort: "e1b", controllerSide: "B", controllerPort: "e3b" },
+        ],
+      },
+    },
+  },
+
+  "FAS90": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/fas-70-90/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Shares one cabling doc with FAS70 — same cluster/host scheme as AFF A70/A90/A1K (e1a+e7a cluster, e9a/e9b host), but NS224 storage is on PCIe slots 10/11, not 8/11. Also documents a DS460C shelf option (mini-SAS HD, controller ports e10a/e10c/e11b/e11d to IOM A/B ports 1/3) — not modeled here yet; the SAS-shelf rendering path doesn't consume getShelfCabling() sourced data the way the NS224 path does.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e1a", b: "e1a", role: "cluster/HA interconnect" },
+        { a: "e7a", b: "e7a", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      host100gbe: ["e9a", "e9b"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b" },
+        ],
+        2: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e10b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e10b" },
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e10a", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e10a", shelfIndex2Only: true },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b", shelfIndex2Only: true },
+        ],
+      },
+    },
+  },
+
+  "FAS70": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/fas-70-90/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Shares one cabling doc with FAS90 — identical port scheme.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e1a", b: "e1a", role: "cluster/HA interconnect" },
+        { a: "e7a", b: "e7a", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      host100gbe: ["e9a", "e9b"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b" },
+        ],
+        2: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e10b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e10b" },
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e10a", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e10a", shelfIndex2Only: true },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b", shelfIndex2Only: true },
         ],
       },
     },
