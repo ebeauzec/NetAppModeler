@@ -37,7 +37,7 @@
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.56</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.57</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -53,9 +53,24 @@
           Load Config
         </button>
         <input type="file" id="load-config-input" accept=".json" style="display: none;">
+        <button id="check-updates-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;" title="Checks a local helper script (tools/update_server.py) for newer platform/cabling reference data. The app itself never reaches the internet — this button only ever talks to 127.0.0.1, and only if you started the helper yourself.">
+          <svg style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 24 24">
+            <path d="M12,4C14.1,4 16.1,4.8 17.6,6.3C20.7,9.4 20.7,14.5 17.6,17.6C15.8,19.5 13.3,20.2 10.9,19.9L11.4,17.9C13.1,18.1 14.9,17.6 16.2,16.2C18.5,13.9 18.5,10.1 16.2,7.7C15.1,6.6 13.5,6 12,6V10.6L7,5.6L12,0.6V4M6.3,17.6C3.7,15 3.3,11 5.1,7.9L6.6,9.4C5.5,11.6 5.9,14.4 7.8,16.2C8.3,16.7 8.9,17.1 9.6,17.4L9,19.4C8,19 7.1,18.4 6.3,17.6Z"/>
+          </svg>
+          Check for Updates
+        </button>
         <button id="reset-btn" class="btn-secondary" style="padding: 8px 16px;">Reset Tool</button>
       </div>
     </header>
+
+    <!-- Check for Updates results modal -->
+    <div id="update-results-modal" class="modal-overlay no-print" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 11000; backdrop-filter: blur(8px);">
+      <div class="modal-content" style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(15,23,42,0.95) 100%); border: 1.5px solid var(--color-primary); border-radius: var(--radius-lg); padding: 2rem; width: 550px; max-width: 90vw; max-height: 80vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(6,182,212,0.3);">
+        <h3 style="color:#fff; margin: 0 0 1rem 0;">Check for Updates</h3>
+        <div id="update-results-content" style="color: var(--color-muted); font-size: 0.85rem; line-height: 1.6;"></div>
+        <button id="close-update-results-btn" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px; margin-top: 1.5rem;">Close</button>
+      </div>
+    </div>
 
     <!-- Wizard Steps Indicator -->
     <div class="wizard-steps no-print">
@@ -1042,7 +1057,7 @@
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.56</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.57</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
@@ -1077,7 +1092,7 @@
           <div>
             <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Sourced Cabling Data & Port-Catalog Corrections</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              New js/rackLayouts.js encodes exact NS224-to-controller cable endpoints straight from NetApp's official install guides for AFF A400/C400/A800/C800/A900/A1K. Cross-checking against that data caught and fixed wrong port lists for AFF A1K and AFF A900, plus missing PCIe-slot storage ports on A400/C400/A800/C800.
+              New js/rackLayouts.js encodes exact NS224-to-controller cable endpoints straight from NetApp's official install guides for AFF A400/C400/A800/C800/A900/A1K. Cross-checking against that data caught and fixed wrong port lists for AFF A1K and AFF A900, plus missing PCIe-slot storage ports on A400/C400/A800/C800. A new "Check for Updates" button (top-right) re-runs that check on demand via a local helper script — the app itself still never reaches the internet on its own; see the README for setup.
             </span>
           </div>
         </div>
@@ -1097,7 +1112,7 @@
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary"
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.56','true')}catch(e){}"
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.57','true')}catch(e){}"
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>

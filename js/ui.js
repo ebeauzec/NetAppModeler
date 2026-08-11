@@ -35,6 +35,72 @@ function computeUsableCapacityGB(diskCount, diskGB, groupSize, isMetroCluster) {
   return Math.round(isMetroCluster ? rawUsableGB * 0.5 : rawUsableGB);
 }
 
+// "Check for Updates" talks ONLY to a local helper the user starts themselves
+// (tools/update_server.py, 127.0.0.1:8765) — never the wider internet. A page
+// loaded from file:// (or any origin) can't fetch docs.netapp.com directly
+// anyway: that domain sends no Access-Control-Allow-Origin header, so the
+// browser blocks reading the response. The local helper has a normal network
+// stack and re-uses the same harvest/drift-check tooling documented in
+// DATA_SOURCES.md, then serves the result back over localhost with CORS
+// headers it controls. If the helper isn't running, this fails fast and
+// tells the user how to start it — it never silently retries or falls back
+// to fetching anything itself.
+const UPDATE_HELPER_URL = "http://127.0.0.1:8765";
+
+async function checkForUpdates() {
+  const modal = document.getElementById("update-results-modal");
+  const content = document.getElementById("update-results-content");
+  if (!modal || !content) return;
+
+  content.innerHTML = `<div style="text-align:center; padding: 1rem 0;">Checking local update helper and re-fetching NetApp's reference pages (~15s)...</div>`;
+  modal.style.display = "flex";
+
+  let resp;
+  try {
+    // The helper re-fetches ~10 docs.netapp.com pages sequentially each call
+    // (see tools/harvest_reference_data.py) — that alone takes ~14s, so this
+    // needs real headroom, not a short "is it up" timeout.
+    const fetchOpts = (typeof AbortSignal !== "undefined" && AbortSignal.timeout) ? { signal: AbortSignal.timeout(45000) } : {};
+    resp = await fetch(`${UPDATE_HELPER_URL}/check-updates`, fetchOpts);
+  } catch (e) {
+    content.innerHTML = `
+      <p><strong style="color: var(--color-warning);">Local update helper isn't running.</strong></p>
+      <p>This app stays 100% offline by design — it never reaches the internet on its own. To check for newer platform/cabling reference data:</p>
+      <ol style="padding-left: 1.2rem;">
+        <li>Open a terminal in the project folder.</li>
+        <li>Run: <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python tools/update_server.py</code></li>
+        <li>Click "Check for Updates" again while that's running.</li>
+      </ol>
+      <p style="font-size:0.78rem; margin-top:0.75rem;">Closing that terminal stops the helper and returns the app to fully offline. This button only ever talks to 127.0.0.1 — never the wider internet.</p>
+    `;
+    return;
+  }
+
+  if (!resp.ok) {
+    let errText = "";
+    try { const j = await resp.json(); errText = j.error || ""; } catch (e) { /* ignore parse failure */ }
+    content.innerHTML = `<p style="color: var(--color-danger);">Update helper returned an error${errText ? ": " + escapeHtml(errText) : "."}</p>`;
+    return;
+  }
+
+  const data = await resp.json();
+  if (data.clean) {
+    content.innerHTML = `
+      <p style="color: var(--color-success);">✅ No drift detected across ${data.platformsChecked} sourced platform(s).</p>
+      <p style="font-size:0.78rem;">Checked against NetApp's official cabling guides (docs.netapp.com). Nothing was changed automatically.</p>
+    `;
+  } else {
+    const rows = (data.drift || []).map(d =>
+      `<li><strong>${escapeHtml(d.model)}</strong>: missing port(s) ${(d.missingPorts || []).map(p => escapeHtml(p)).join(", ")}</li>`
+    ).join("");
+    content.innerHTML = `
+      <p style="color: var(--color-warning);">⚠️ Drift detected on ${(data.drift || []).length} platform(s):</p>
+      <ul style="padding-left: 1.2rem;">${rows}</ul>
+      <p style="font-size:0.78rem; margin-top:0.75rem;">${escapeHtml(data.note || "")}</p>
+    `;
+  }
+}
+
 // --- Application State ---
 let currentState = null;
 let modeledState = null;
@@ -1000,6 +1066,18 @@ function setupWizardListeners() {
       if (confirm("Are you sure you want to reset the current modeling workspace?")) {
         resetState();
       }
+    });
+  }
+
+  const checkUpdatesBtn = document.getElementById("check-updates-btn");
+  if (checkUpdatesBtn) {
+    checkUpdatesBtn.addEventListener("click", checkForUpdates);
+  }
+  const closeUpdateResultsBtn = document.getElementById("close-update-results-btn");
+  if (closeUpdateResultsBtn) {
+    closeUpdateResultsBtn.addEventListener("click", () => {
+      const modal = document.getElementById("update-results-modal");
+      if (modal) modal.style.display = "none";
     });
   }
 
