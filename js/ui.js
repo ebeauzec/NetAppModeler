@@ -236,6 +236,18 @@ function resolveMediaType(diskSizeStr) {
   return "SSD"; // default
 }
 
+// The #disk-size <select> options (SHELF_SPEC_MAP[type].sizes) are full labels like
+// "1.9TB NVMe SSD" — the media type is baked in so resolveMediaType() above can read it.
+// Storing that whole string as a disk's own `sizeStr` as well as `type: mediaType`
+// produced a visible duplicate everywhere the two get concatenated (e.g. the Modelled
+// Configuration Transition summary showed "1.9TB NVMe SSD NVMe SSD" for newly-added
+// greenfield shelves — confirmed via a live repro). This strips the type back off,
+// leaving just the numeric+unit part; already-clean strings pass through unchanged.
+function extractSizeLabel(diskSizeStr) {
+  const match = String(diskSizeStr || "").match(/([\d.]+)\s*([GT])B?/i);
+  return match ? `${match[1]}${match[2].toUpperCase()}B` : diskSizeStr;
+}
+
 const SHELF_SPEC_MAP = {
   ns224: {
     name: "NS224 (2U NVMe SSD Shelf)",
@@ -2739,7 +2751,7 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
       disks: Array.from({ length: disksInThisShelf }, (_, slot) => ({
         slot,
         model: diskModel,
-        sizeStr: diskSizeStr,
+        sizeStr: extractSizeLabel(diskSizeStr),
         sizeGB: diskSizeGB,
         type: diskType,
         firmware: "NA01",
@@ -2781,7 +2793,7 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
     spares.push({
       node: nodeName,
       model: "Spare drive",
-      sizeStr: diskSizeStr,
+      sizeStr: extractSizeLabel(diskSizeStr),
       sizeGB: diskSizeGB,
       type: diskType,
       count: sparesPerNode
@@ -6047,7 +6059,7 @@ function updateCapacityImpactDetails() {
       disks: Array.from({ length: Math.max(1, disksInThisShelf) }, (_, idx) => ({
         slot: idx,
         model: "Proposed Expansion Drive",
-        sizeStr: diskSizeStr,
+        sizeStr: extractSizeLabel(diskSizeStr),
         sizeGB: diskGB,
         type: spec.mediaType,
         firmware: "NA01",
@@ -6229,22 +6241,29 @@ function runModelingCalculations() {
 
     if (isMetroCluster) {
       // Symmetrical Shelf Addition (Site A and Site B)
-      // Snapshot the current shelf count BEFORE pushing so IDs are stable
-      const baseShelfCount = modeledState.shelves.filter(s => !s.id.toString().endsWith('B')).length;
+      // Both new shelves get their own plain sequential id (continuing the same flat
+      // numbering generatePlatformBaseline uses for the starting shelves) instead of a
+      // "<n>"/"<n>B" pair. The old scheme assumed every existing shelf id it wasn't
+      // responsible for ended in "B" to tell site-A from site-B counts, but baseline
+      // greenfield shelves (id "1", "2", ...) never carry that suffix at all — so
+      // baseShelfCount silently summed BOTH sites' existing shelves as one count,
+      // and the new site-B shelf displayed a garbled id like "3B" right next to a
+      // clean "1"/"2" from the baseline (confirmed via a live greenfield MCC repro).
+      // Site is now carried entirely by the explicit `site` field, not by the id shape.
+      let nextShelfNum = modeledState.shelves.length + 1;
       let diskSerialIndex = 0;
       for (let s = 0; s < shelfCount; s++) {
         const disksInThisShelf = diskCount > 0
           ? Math.min(spec.maxCount, diskCount - s * spec.maxCount)
           : spec.maxCount;
-        // Stable ID: base + offset, not dependent on array length inside the loop
-        const shelfNum = baseShelfCount + s + 1;
-        const shelfId = shelfNum.toString();
+        const shelfIdA = (nextShelfNum++).toString();
+        const shelfIdB = (nextShelfNum++).toString();
 
         // Site A shelf
         modeledState.shelves.push({
-          id: shelfId,
+          id: shelfIdA,
           model: shelfType.toUpperCase(),
-          serial: `SHFL-NEW-${shelfId}-A`,
+          serial: `SHFL-NEW-${shelfIdA}-A`,
           firmware: "Latest baseline",
           latestFirmware: "Latest baseline",
           cabling: "Multipath HA",
@@ -6252,7 +6271,7 @@ function runModelingCalculations() {
           disks: Array.from({ length: disksInThisShelf }, (_, idx) => ({
             slot: idx,
             model: "Expansion Model",
-            sizeStr: diskSizeStr,
+            sizeStr: extractSizeLabel(diskSizeStr),
             sizeGB: diskGB,
             type: spec.mediaType,
             firmware: "NA01",
@@ -6262,9 +6281,9 @@ function runModelingCalculations() {
 
         // Site B mirror shelf (identical spec, MCC symmetry requirement)
         modeledState.shelves.push({
-          id: shelfId + "B",
+          id: shelfIdB,
           model: shelfType.toUpperCase(),
-          serial: `SHFL-NEW-${shelfId}-B`,
+          serial: `SHFL-NEW-${shelfIdB}-B`,
           firmware: "Latest baseline",
           latestFirmware: "Latest baseline",
           cabling: "Multipath HA",
@@ -6272,7 +6291,7 @@ function runModelingCalculations() {
           disks: Array.from({ length: disksInThisShelf }, (_, idx) => ({
             slot: idx,
             model: "Expansion Model",
-            sizeStr: diskSizeStr,
+            sizeStr: extractSizeLabel(diskSizeStr),
             sizeGB: diskGB,
             type: spec.mediaType,
             firmware: "NA01",
@@ -6290,7 +6309,7 @@ function runModelingCalculations() {
         modeledState.spares.push({
           node: spareNodeA,
           model: "Expansion Model",
-          sizeStr: diskSizeStr,
+          sizeStr: extractSizeLabel(diskSizeStr),
           sizeGB: diskGB,
           type: spec.mediaType,
           count: diskCount
@@ -6298,7 +6317,7 @@ function runModelingCalculations() {
         modeledState.spares.push({
           node: spareNodeB,
           model: "Expansion Model",
-          sizeStr: diskSizeStr,
+          sizeStr: extractSizeLabel(diskSizeStr),
           sizeGB: diskGB,
           type: spec.mediaType,
           count: diskCount
@@ -6361,7 +6380,7 @@ function runModelingCalculations() {
           modeledState.spares.push({
             node: "node-a",
             model: "Expansion Model",
-            sizeStr: diskSizeStr,
+            sizeStr: extractSizeLabel(diskSizeStr),
             sizeGB: diskGB,
             type: spec.mediaType,
             count: remainingSpares
@@ -6369,7 +6388,7 @@ function runModelingCalculations() {
           modeledState.spares.push({
             node: "node-b",
             model: "Expansion Model",
-            sizeStr: diskSizeStr,
+            sizeStr: extractSizeLabel(diskSizeStr),
             sizeGB: diskGB,
             type: spec.mediaType,
             count: remainingSpares
@@ -6402,7 +6421,7 @@ function runModelingCalculations() {
         modeledState.spares.push({
           node: primaryA,
           model: "Expansion Model",
-          sizeStr: diskSizeStr,
+          sizeStr: extractSizeLabel(diskSizeStr),
           sizeGB: diskGB,
           type: spec.mediaType,
           count: 2
@@ -6423,7 +6442,7 @@ function runModelingCalculations() {
         modeledState.spares.push({
           node: primaryB,
           model: "Expansion Model",
-          sizeStr: diskSizeStr,
+          sizeStr: extractSizeLabel(diskSizeStr),
           sizeGB: diskGB,
           type: spec.mediaType,
           count: 2
@@ -6446,7 +6465,7 @@ function runModelingCalculations() {
           disks: Array.from({ length: disksInThisShelf }, (_, idx) => ({
             slot: idx,
             model: "Expansion Model",
-            sizeStr: diskSizeStr,
+            sizeStr: extractSizeLabel(diskSizeStr),
             sizeGB: diskGB,
             type: spec.mediaType,
             firmware: "NA01",
@@ -6459,7 +6478,7 @@ function runModelingCalculations() {
         modeledState.spares.push({
           node: "node-a",
           model: "Expansion Model",
-          sizeStr: diskSizeStr,
+          sizeStr: extractSizeLabel(diskSizeStr),
           sizeGB: diskGB,
           type: spec.mediaType,
           count: Math.ceil(diskCount / 2)
@@ -6467,7 +6486,7 @@ function runModelingCalculations() {
         modeledState.spares.push({
           node: "node-b",
           model: "Expansion Model",
-          sizeStr: diskSizeStr,
+          sizeStr: extractSizeLabel(diskSizeStr),
           sizeGB: diskGB,
           type: spec.mediaType,
           count: Math.floor(diskCount / 2)
@@ -6502,7 +6521,7 @@ function runModelingCalculations() {
               modeledState.spares.push({
                 node: node.name,
                 model: "Expansion Model",
-                sizeStr: diskSizeStr,
+                sizeStr: extractSizeLabel(diskSizeStr),
                 sizeGB: diskGB,
                 type: spec.mediaType,
                 count: count
@@ -6534,7 +6553,7 @@ function runModelingCalculations() {
         modeledState.spares.push({
           node: nodeA,
           model: "Expansion Model",
-          sizeStr: diskSizeStr,
+          sizeStr: extractSizeLabel(diskSizeStr),
           sizeGB: diskGB,
           type: spec.mediaType,
           count: 2
@@ -6555,7 +6574,7 @@ function runModelingCalculations() {
         modeledState.spares.push({
           node: nodeB,
           model: "Expansion Model",
-          sizeStr: diskSizeStr,
+          sizeStr: extractSizeLabel(diskSizeStr),
           sizeGB: diskGB,
           type: spec.mediaType,
           count: 2

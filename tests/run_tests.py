@@ -75,6 +75,15 @@ window.addEventListener('DOMContentLoaded', function() {
       a400Layout && a400Layout.shelfCabling ? Object.keys(a400Layout.shelfCabling.ns224 || {}) : null);
     check('getRackLayout: unknown platform returns null (no fabrication)', getRackLayout('Totally Fake Platform XYZ') === null);
 
+    // --- ui.js: extractSizeLabel strips the media type back off a #disk-size option's
+    // full label (confirmed via a live greenfield MCC repro: newly-added shelf disks stored
+    // the whole "1.9TB NVMe SSD" string as both sizeStr AND type, so the Modelled
+    // Configuration Transition summary displayed "1.9TB NVMe SSD NVMe SSD") ---
+    check('extractSizeLabel: strips trailing media type off a full option label',
+      extractSizeLabel('1.9TB NVMe SSD') === '1.9TB', extractSizeLabel('1.9TB NVMe SSD'));
+    check('extractSizeLabel: already-clean size string passes through unchanged',
+      extractSizeLabel('960GB') === '960GB', extractSizeLabel('960GB'));
+
     // --- bestPractices.js: duplicate-report fix (Task 2) ---
     var stateForAudit = {
       version: { model: 'AFF A400', ontap: '9.15.1' },
