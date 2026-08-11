@@ -16,7 +16,7 @@
 > existing `ports` catalog against it and fix any drift found. Run
 > `python tests/run_tests.py` before committing.
 
-## Done (2026-08-11)
+## Done (2026-08-11 – 2026-08-12)
 
 | Platform | Port catalog | Cabling endpoints |
 |---|---|---|
@@ -26,16 +26,46 @@
 | AFF C800 | ✅ corrected | ✅ sourced (1 shelf) |
 | AFF A900 | ✅ corrected | ✅ sourced (1-4 shelves) |
 | AFF A1K | ✅ corrected | ✅ sourced (1-4 shelves) |
+| AFF A70 | ✅ corrected | ✅ sourced (1-2 shelves) |
+| AFF A90 | ✅ corrected | ✅ sourced (1-2 shelves) |
+| AFF C80 | ✅ corrected | ✅ sourced (1-2 shelves) |
+| AFF A50 | ✅ corrected | ✅ sourced (1 shelf) |
+| AFF A30 | ✅ corrected | ✅ sourced (1 shelf) |
+| AFF A20 | ✅ corrected | ✅ sourced (1 shelf) |
+| AFF C60 | ✅ corrected | ✅ sourced (1 shelf) |
+| AFF C30 | ✅ corrected | ✅ sourced (1 shelf) |
+
+All 14 pass `tools/apply_reference_data.py` with no drift.
+
+**Note on A70/A90/C80 vs A50/A30/A20/C60/C30:** the former three share one
+port scheme (cluster e1a+e7a, host e9a/e9b, NS224 storage on PCIe slots
+8/11 — the same scheme AFF A1K uses); the latter five share a different one
+(cluster e2a+e4a on the two-I/O-module SKU, host e2b/e4b, storage e3a/e3b).
+AFF A20 only ships the one-I/O-module SKU, so its cluster ports are e4a/e4b
+instead. For A50/A30/C60/C30, only a single-NS224-shelf cabling procedure
+is published — a second-shelf port assignment was not found in NetApp's
+docs for this family and is not modeled (`shelfCabling.ns224` only has a
+`1` entry, no `2`).
 
 ## Tier 1 — Current-gen lineup (recommended next)
 
 Actively sold/marketed as of this writing. Same install-guide pattern as
 the platforms above; expect the same class of drift.
 
-- [ ] AFF A90, AFF A70, AFF A50, AFF A30, AFF A20
-- [ ] AFF C80, AFF C60, AFF C30
 - [ ] ASA A1K, ASA A90, ASA A70, ASA A50, ASA A30, ASA A20
 - [ ] ASA C800, ASA C400, ASA C250, ASA C30
+
+ASA controllers are commonly the same physical chassis as their AFF
+counterpart with different licensing/software — but this has NOT been
+confirmed against a dedicated ASA cabling doc for any of these, so none are
+assumed to share AFF's port scheme without their own source. NetApp's ASA
+install pages harvested so far (`asa400-guide.txt`, `asa800-guide.txt`,
+`asa900-guide.txt`, `asac250/400/800-guide.txt`) are all
+`install-detailed-guide.html`-style pages that reference cabling
+illustrations rather than embedding port names as text — the scraper can't
+extract port data from them. Need the `install-cable.html` variant (like
+`a70-90-cable.txt`) for each, if NetApp publishes one; if not, these may
+need the Hardware Universe fallback path instead.
 
 ## Tier 2 — Recent/still-common in the field
 

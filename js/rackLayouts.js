@@ -272,6 +272,270 @@ export const RACK_LAYOUTS = {
       },
     },
   },
+
+  "AFF A70": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/a70-90/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Shares one cabling doc with AFF A90 (\"Cable your AFF A70 or AFF A90...\") — same port scheme as AFF A1K's e1a/e7a cluster, e9a/e9b host, but storage uses PCIe slots 8/11 not 9/10/11.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e1a", b: "e1a", role: "cluster/HA interconnect" },
+        { a: "e7a", b: "e7a", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      host100gbe: ["e9a", "e9b"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b" },
+        ],
+        2: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e8b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e8b" },
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e8a", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e8a", shelfIndex2Only: true },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b", shelfIndex2Only: true },
+        ],
+      },
+    },
+  },
+
+  "AFF A90": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/a70-90/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Shares one cabling doc with AFF A70 — identical port scheme.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e1a", b: "e1a", role: "cluster/HA interconnect" },
+        { a: "e7a", b: "e7a", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      host100gbe: ["e9a", "e9b"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b" },
+        ],
+        2: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e8b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e8b" },
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e8a", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e8a", shelfIndex2Only: true },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b", shelfIndex2Only: true },
+        ],
+      },
+    },
+  },
+
+  "AFF C80": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/c80/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Same cluster/host/storage port scheme as AFF A70/A90's cabling doc.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e1a", b: "e1a", role: "cluster/HA interconnect" },
+        { a: "e7a", b: "e7a", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      host100gbe: ["e9a", "e9b"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b" },
+        ],
+        2: [
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e11a" },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e8b" },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e11a" },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e8b" },
+          { shelfIOM: "A", shelfPort: "e0a", controllerSide: "A", controllerPort: "e8a", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0b", controllerSide: "A", controllerPort: "e11b", shelfIndex2Only: true },
+          { shelfIOM: "B", shelfPort: "e0a", controllerSide: "B", controllerPort: "e8a", shelfIndex2Only: true },
+          { shelfIOM: "A", shelfPort: "e0b", controllerSide: "B", controllerPort: "e11b", shelfIndex2Only: true },
+        ],
+      },
+    },
+  },
+
+  "AFF A50": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/a20-30-50/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Shares one cabling doc with AFF A30 and AFF A20. Two I/O-module SKUs exist (two 2-port 40/100GbE, or one) — cluster/host ports below are the 2-IOM variant, the doc's primary/first-listed option; the 1-IOM variant instead uses e4a/e4b for both cluster and host and is not separately modeled here.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e2a", b: "e2a", role: "cluster/HA interconnect" },
+        { a: "e4a", b: "e4a", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      hostEthernet2iom: ["e2b", "e4b"],
+      hostEthernet1iom4port: ["e2a", "e2b", "e2c", "e2d"],
+      hostFc4port: ["2a", "2b", "2c", "2d"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      // Only a single-NS224-shelf procedure is published for this platform family.
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e1a", controllerSide: "A", controllerPort: "e3a" },
+          { shelfIOM: "B", shelfPort: "e1b", controllerSide: "A", controllerPort: "e3b" },
+          { shelfIOM: "B", shelfPort: "e1a", controllerSide: "B", controllerPort: "e3a" },
+          { shelfIOM: "A", shelfPort: "e1b", controllerSide: "B", controllerPort: "e3b" },
+        ],
+      },
+    },
+  },
+
+  "AFF A30": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/a20-30-50/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Shares one cabling doc with AFF A50 and AFF A20 — identical port scheme to AFF A50.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e2a", b: "e2a", role: "cluster/HA interconnect" },
+        { a: "e4a", b: "e4a", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      hostEthernet2iom: ["e2b", "e4b"],
+      hostEthernet1iom4port: ["e2a", "e2b", "e2c", "e2d"],
+      hostFc4port: ["2a", "2b", "2c", "2d"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e1a", controllerSide: "A", controllerPort: "e3a" },
+          { shelfIOM: "B", shelfPort: "e1b", controllerSide: "A", controllerPort: "e3b" },
+          { shelfIOM: "B", shelfPort: "e1a", controllerSide: "B", controllerPort: "e3a" },
+          { shelfIOM: "A", shelfPort: "e1b", controllerSide: "B", controllerPort: "e3b" },
+        ],
+      },
+    },
+  },
+
+  "AFF A20": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/a20-30-50/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Shares one cabling doc with AFF A30 and AFF A50. AFF A20 only ships the one-I/O-module 10/25GbE SKU (no two-IOM 40/100GbE variant) — cluster is e4a/e4b, not e2a/e4a.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e4a", b: "e4a", role: "cluster/HA interconnect" },
+        { a: "e4b", b: "e4b", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      hostEthernet1iom4port: ["e2a", "e2b", "e2c", "e2d"],
+      hostFc4port: ["2a", "2b", "2c", "2d"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e1a", controllerSide: "A", controllerPort: "e3a" },
+          { shelfIOM: "B", shelfPort: "e1b", controllerSide: "A", controllerPort: "e3b" },
+          { shelfIOM: "B", shelfPort: "e1a", controllerSide: "B", controllerPort: "e3a" },
+          { shelfIOM: "A", shelfPort: "e1b", controllerSide: "B", controllerPort: "e3b" },
+        ],
+      },
+    },
+  },
+
+  "AFF C60": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/c30-60/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Shares one cabling doc with AFF C30 — identical port scheme to AFF A50/A30's 2-IOM variant.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e2a", b: "e2a", role: "cluster/HA interconnect" },
+        { a: "e4a", b: "e4a", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      hostEthernet2iom: ["e2b", "e4b"],
+      hostEthernet1iom4port: ["e2a", "e2b", "e2c", "e2d"],
+      hostFc4port: ["2a", "2b", "2c", "2d"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e1a", controllerSide: "A", controllerPort: "e3a" },
+          { shelfIOM: "B", shelfPort: "e1b", controllerSide: "A", controllerPort: "e3b" },
+          { shelfIOM: "B", shelfPort: "e1a", controllerSide: "B", controllerPort: "e3a" },
+          { shelfIOM: "A", shelfPort: "e1b", controllerSide: "B", controllerPort: "e3b" },
+        ],
+      },
+    },
+  },
+
+  "AFF C30": {
+    source: {
+      url: "https://docs.netapp.com/us-en/ontap-systems/c30-60/install-cable.html",
+      fetched: "2026-08-12",
+      note: "Shares one cabling doc with AFF C60 — identical port scheme.",
+    },
+    clusterCabling: {
+      switchless: [
+        { a: "e2a", b: "e2a", role: "cluster/HA interconnect" },
+        { a: "e4a", b: "e4a", role: "cluster/HA interconnect" },
+      ],
+    },
+    controllerPorts: {
+      hostEthernet2iom: ["e2b", "e4b"],
+      hostEthernet1iom4port: ["e2a", "e2b", "e2c", "e2d"],
+      hostFc4port: ["2a", "2b", "2c", "2d"],
+      mgmt: ["wrench"],
+    },
+    shelfCabling: {
+      ns224: {
+        1: [
+          { shelfIOM: "A", shelfPort: "e1a", controllerSide: "A", controllerPort: "e3a" },
+          { shelfIOM: "B", shelfPort: "e1b", controllerSide: "A", controllerPort: "e3b" },
+          { shelfIOM: "B", shelfPort: "e1a", controllerSide: "B", controllerPort: "e3a" },
+          { shelfIOM: "A", shelfPort: "e1b", controllerSide: "B", controllerPort: "e3b" },
+        ],
+      },
+    },
+  },
 };
 
 // NS224 shelf: NSM module (IOM equivalent) physical position and shelf-ID
