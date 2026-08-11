@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.54)
+# NetApp AutoSupport Analyzer & Modeler (v2.55)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,14 +6,12 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.54)
-- **NS224 MCC Cabling Fix**: Draws 2 independent point-to-point RoCE cables per shelf and removes invalid outbound/return loop links.
-- **A400 MCC Demo Layout**: Symmetric 4-shelf 2-node MetroCluster IP demo.
-* **Hardware & Firmware Database Refresh:** Accurate ONTAP 9.x lifecycle support status, ASA R2 models added, AFF C Gen2 series added, FAS Gen latest, firmware version updates for all SP/BMC and shelves.
-* **Data accuracy fixes:** AFF C-series minOntap, AFX 2K platform, 9.19.1 GA date, DATA_SOURCES.md
-* **MetroCluster Auto-Detection & Topologies:** Automatically detects MetroCluster IP/FC configurations from ASUP logs, rendering dual-site split cabling graphs and replication paths.
-* **Advanced Best Practice Audits:** Added 5 new rules covering cluster switch RCF versions, front-end port MTU sizing (Jumbo Frames), MetroCluster aggregate SyncMirror status, site hardware symmetry, and Flash Pool SSD cache ratios.
-* **Interactive CLI Script Generator:** Renders a copy-pasteable ONTAP CLI command block in the reporting step to dynamically guide system remediation.
+## 🆕 New in this Version (v2.55)
+- **Audit Engine Correctness Fixes:** MetroCluster site-symmetry (Rule 10) and SyncMirror (Rule 18) checks now match real parsed node/aggregate data instead of literal placeholder strings that never matched real ASUPs — both were silently reporting "compliant" regardless of actual configuration. Fixed a duplicate-report bug (SP firmware/disk firmware/ACP rules were being reported twice, inflating the compliance score) and a `ReferenceError` crash when selecting a shelf type in Step 4.
+- **Unified Capacity Math:** Consolidated 5 independently hand-written usable-capacity formulas (flat 0.70/0.80/0.82/0.85 fudge factors plus a ratio-based MCC shortcut) into one shared, RAID-DP-correct helper used everywhere — this closes the class of bug behind several past capacity miscalculations (see v2.48–v2.51 history below).
+- **Single-Sourced ONTAP Lifecycle Table:** `compatibility.js`'s `ONTAP_LIFECYCLE` is now the only hand-maintained lifecycle table; `bestPractices.js`'s copy is derived from it instead of duplicated by hand (the two had already drifted — the old copy stopped at 9.16.1 while the source went to 9.19.1).
+- **Parser Hardening:** Shelves that parse but silently end up with zero disks now get a fallback pass and a visible Data Quality warning instead of zeroing out capacity math with no explanation. Port-to-node assignment is now correlated to each node's own text block instead of blind index-chunking, which could cross-wire ports on clusters with more than 4 ports/node or more than 2 nodes.
+- **XSS Hardening:** Parsed ASUP values (node/shelf/aggregate names, serials, firmware strings) rendered into the page are now HTML-escaped at the highest-traffic report/inventory views.
 
 ---
 

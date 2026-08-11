@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.54</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.55</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2038,42 +2038,42 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.54</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.55</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
-        
+
         <!-- Feature 1 -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
-          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🗄️</span>
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🩺</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Complete Hardware Registry Refresh</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Audit Engine Correctness Fixes</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              Full platform database updated: AFF A20/A30/A50 (ONTAP 9.16.1), AFF C30/C60/C80 capacity-flash, ASA R2 architecture, FAS50/70/90. All 20+ new profiles with accurate slot counts, shelf support, and protocol lists.
+              MetroCluster site-symmetry and SyncMirror checks now match real parsed node/aggregate data instead of literal placeholder strings that never matched — they were silently reporting "compliant" on real ASUPs. Fixed a duplicate-report bug that was inflating the compliance score, and a crash when selecting a shelf type.
             </span>
           </div>
         </div>
 
         <!-- Feature 2 -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
-          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">📋</span>
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🧮</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Accurate ONTAP Lifecycle Data</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Unified Capacity Math</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              ONTAP 9.7–9.11.1 correctly flagged as End of Support. ONTAP 9.16.1 (P11) is the current recommended release. Latest patch levels for all supported versions now embedded in audit rules.
+              Five independently hand-written usable-capacity formulas across the sizing modeler now converge on one RAID-DP-correct calculation, closing the class of bug behind several past capacity miscalculations.
             </span>
           </div>
         </div>
 
         <!-- Feature 3 -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
-          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🔧</span>
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🛡️</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Switch & Firmware Intelligence</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Parser Hardening</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              Cluster switch firmware tracking: BES-53248 EFOS 3.10.0.3, Nexus 9336C-FX2 NX-OS 10.4(2)F, RCF v1.9. NS224 shelf firmware IOM 1.1.3X0. BMC v24.05 for gen-5 platforms.
+              Shelves that parse but silently end up with zero disks now get a fallback pass and a visible warning. Port-to-node assignment is now correlated to each node's own text block instead of blind chunking. Parsed values interpolated into the page are now HTML-escaped.
             </span>
           </div>
         </div>
@@ -2081,8 +2081,8 @@ svg.cabling-graph {
       </div>
 
       <!-- Action Button -->
-      <button id="close-splash-btn" class="btn-primary" 
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.54','true')}catch(e){}" 
+      <button id="close-splash-btn" class="btn-primary"
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.55','true')}catch(e){}"
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
@@ -3002,6 +3002,28 @@ vol2              backup_vol2       Snapmirrored Lagging     12:30:00`
  * Handles resilient parsing of text contents from ASUP files or consolidated dumps.
  */
 
+// Escapes regex metacharacters in a string before it's spliced into a dynamically built
+// RegExp. Several sections below build a RegExp out of an already-parsed name (aggregate
+// name, switch name) to re-scan the ASUP text for more detail on that specific entity —
+// without this, a name containing characters like ( ) . * + ? would either throw
+// (invalid regex) or silently match the wrong thing.
+function escapeRegExp(str) {
+  return String(str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Deterministic string hash (djb2), used to derive stable IDs from parsed text (e.g. alert
+// lines) instead of Math.random() — re-parsing the exact same ASUP must yield the exact same
+// alert IDs, or any UI state keyed on those IDs (dedupe, acknowledgement tracking) breaks
+// across re-parses of identical input.
+function hashString(str) {
+  let hash = 5381;
+  const s = String(str || "");
+  for (let i = 0; i < s.length; i++) {
+    hash = ((hash << 5) + hash + s.charCodeAt(i)) | 0; // hash * 33 + c
+  }
+  return Math.abs(hash);
+}
+
 // Helper to convert size string (e.g., "960GB", "1.2TB", "1.9TB") to GB (numeric)
 function parseSizeToGB(sizeStr) {
   if (!sizeStr) return 0;
@@ -3540,6 +3562,11 @@ function parseASUP(files) {
   }
 
   // Parse disks nested in shelf blocks
+  // Unlike shelf *detection* above (5 fallback passes), this only ever tried one disk-line
+  // format — a shelf could be confidently marked "parsed" while silently ending up with zero
+  // disks (and therefore zero contribution to all downstream RAID/capacity math) whenever the
+  // real ASUP used a different disk-listing format within the shelf block. Pass 2 reuses the
+  // sysconfig -a tabular pattern already used elsewhere as the no-shelf-detected fallback.
   const shelfSplit = combinedText.split(/Shelf\s+(\d+):/i);
   for (let i = 1; i < shelfSplit.length; i += 2) {
     const shelfId = shelfSplit[i].trim();
@@ -3548,6 +3575,7 @@ function parseASUP(files) {
     if (!shelf) continue;
     if (shelf.disks && shelf.disks.length > 0) continue;
 
+     // Pass 1: "Disk N: NETAPP Model (Size, Type, FW: Rev, S/N: SN)"
      const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),(?:\s*FW:\s*([^,\s)]+),)?\s*S\/N:\s*([^)]+)\)/ig;
      let diskMatch;
      while ((diskMatch = diskRegex.exec(shelfText)) !== null) {
@@ -3560,6 +3588,38 @@ function parseASUP(files) {
          type: diskMatch[4].trim(),
          firmware: diskMatch[5] ? diskMatch[5].trim() : "NA01",
          serial: diskMatch[6].trim()
+       });
+     }
+
+     // Pass 2: sysconfig -a tabular format — "0a.10   NETAPP   MODEL   FW   960.0GB   S/N: SN"
+     if (shelf.disks.length === 0) {
+       const sysconfigRegex = /(\d+[a-z]+)\.(\d+)\s+NETAPP\s+([^\s]+)\s+([^\s]+)\s+([\d.]+)(GB|TB|MB)\s+.*S\/N:\s*([^\s\r\n]+)/ig;
+       let sysMatch;
+       while ((sysMatch = sysconfigRegex.exec(shelfText)) !== null) {
+         const serial = sysMatch[7].trim();
+         if (shelf.disks.some(d => d.serial === serial)) continue;
+         const sizeVal = sysMatch[5] + sysMatch[6];
+         const sizeGB = parseSizeToGB(sizeVal);
+         const type = sysMatch[3].includes("X371") || sysMatch[3].includes("X343") || sysMatch[3].includes("NVMe") ? "NVMe SSD" : "SAS HDD";
+         shelf.disks.push({
+           slot: parseInt(sysMatch[2]),
+           model: sysMatch[3],
+           sizeStr: sizeVal,
+           sizeGB: sizeGB,
+           type: type,
+           firmware: sysMatch[4].trim(),
+           serial: serial
+         });
+       }
+     }
+
+     // Both passes failed — flag it rather than silently leaving a "parsed" shelf with 0 disks,
+     // which would otherwise zero out that shelf's contribution to capacity/RAID math with no
+     // visible warning anywhere in the Data Quality report.
+     if (shelf.disks.length === 0 && !isDemoMode) {
+       data.parseWarnings.push({
+         section: "Disk Shelves",
+         message: `Shelf ${shelfId} (${shelf.model}) was detected but its disk inventory could not be parsed — this shelf will show 0 disks and won't contribute to capacity/RAID calculations.`
        });
      }
   }
@@ -3697,6 +3757,9 @@ function parseASUP(files) {
       if (aggrStatus.includes("raid_dp")) raidType = "raid_dp";
       else if (aggrStatus.includes("raid_tec")) raidType = "raid_tec";
       else if (aggrStatus.includes("raid4")) raidType = "raid4";
+      // MetroCluster SyncMirror status is reported inline in the same parenthetical,
+      // e.g. "aggr1 (raid_dp, mirrored, normal)" — captured here since it's already parsed.
+      const isMirrored = /\bmirrored\b/i.test(aggrStatus);
       
       let sizeGB = 0, usableGB = 0, usedGB = 0, freeGB = 0;
       const sizeLine = lines.find(l => l.toLowerCase().includes("size:"));
@@ -3773,7 +3836,8 @@ function parseASUP(files) {
         rgSize,
         disksCount,
         diskType,
-        diskSizeGB
+        diskSizeGB,
+        isMirrored
       });
     }
   }
@@ -3982,29 +4046,44 @@ function parseASUP(files) {
   }
 
   // --- 7. Parse Ports ---
+  // Previously matched with one global regex across the whole document, then chopped the
+  // flat match list into groups of 4 in encounter order (portsList.slice(nodeIdx*4, ...))
+  // with no actual correlation to which node a port line belonged to — silently cross-wired
+  // ports on any cluster with >4 ports/node or >2 nodes. Now scoped per-node using the same
+  // indexOf(node.name) windowing already used for memory/CPU parsing above, bounded at the
+  // next node's position (when found) so one node's window can't swallow another's ports.
   const portRegex = /port\s+([\w\d]+)\s+(up|down)\s+([\w\d]+)\s+([a-zA-Z0-9\-]+)\s+([\w\-]+)/ig;
-  let portMatch;
-  const portsList = [];
-  while ((portMatch = portRegex.exec(combinedText)) !== null) {
-    portsList.push({
-      name: portMatch[1],
-      status: portMatch[2].toLowerCase(),
-      speed: portMatch[3],
-      duplex: portMatch[4],
-      type: portMatch[5],
-      mtu: portMatch[1].startsWith("e0a") || portMatch[1].startsWith("e0b") ? 9000 : 1500
-    });
-  }
 
-  data.nodes.forEach((node, nodeIdx) => {
-    node.ports = portsList.length > 0 ? 
-                 portsList.slice(nodeIdx * 4, (nodeIdx + 1) * 4) : 
-                 [
-                   { name: "e0a", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
-                   { name: "e0b", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
-                   { name: "e0c", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 },
-                   { name: "e0d", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 }
-                 ];
+  data.nodes.forEach(node => {
+    const nodeHeaderIdx = combinedText.indexOf(node.name);
+    let windowEnd = nodeHeaderIdx + 15000;
+    data.nodes.forEach(other => {
+      if (other === node) return;
+      const otherIdx = combinedText.indexOf(other.name);
+      if (otherIdx > nodeHeaderIdx && otherIdx < windowEnd) windowEnd = otherIdx;
+    });
+    const nodeBlock = nodeHeaderIdx !== -1 ? combinedText.substring(nodeHeaderIdx, windowEnd) : "";
+
+    const ports = [];
+    let portMatch;
+    portRegex.lastIndex = 0;
+    while ((portMatch = portRegex.exec(nodeBlock)) !== null) {
+      ports.push({
+        name: portMatch[1],
+        status: portMatch[2].toLowerCase(),
+        speed: portMatch[3],
+        duplex: portMatch[4],
+        type: portMatch[5],
+        mtu: portMatch[1].startsWith("e0a") || portMatch[1].startsWith("e0b") ? 9000 : 1500
+      });
+    }
+
+    node.ports = ports.length > 0 ? ports : [
+      { name: "e0a", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
+      { name: "e0b", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
+      { name: "e0c", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 },
+      { name: "e0d", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 }
+    ];
   });
 
   // Resilient network port show table parsing (mtu and status)
@@ -4301,7 +4380,7 @@ function parseASUP(files) {
 
   // 3f. Aggregate Space Usage
   data.aggregates.forEach(agg => {
-    const spaceMatch = combinedText.match(new RegExp(agg.name + '\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+)%', 'i'));
+    const spaceMatch = combinedText.match(new RegExp(escapeRegExp(agg.name) + '\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+)%', 'i'));
     if (spaceMatch) {
       agg.totalSpace = spaceMatch[1];
       agg.usedSpace = spaceMatch[2];
@@ -4400,9 +4479,9 @@ function parseASUP(files) {
   // Augment existing data.switches[] with RCF version if found
   if (data.switches && data.switches.length > 0) {
     data.switches.forEach(sw => {
-      const rcfMatch = combinedText.match(new RegExp(sw.name + '[\\s\\S]{0,300}RCF[\\s\\S]{0,100}v([\\d.]+)', 'i'));
+      const rcfMatch = combinedText.match(new RegExp(escapeRegExp(sw.name) + '[\\s\\S]{0,300}RCF[\\s\\S]{0,100}v([\\d.]+)', 'i'));
       if (rcfMatch) sw.rcfVersion = rcfMatch[1];
-      const efosMatch = combinedText.match(new RegExp(sw.name + '[\\s\\S]{0,300}EFOS[\\s\\S]{0,100}([\\d.]+)', 'i'));
+      const efosMatch = combinedText.match(new RegExp(escapeRegExp(sw.name) + '[\\s\\S]{0,300}EFOS[\\s\\S]{0,100}([\\d.]+)', 'i'));
       if (efosMatch) sw.fwVersion = efosMatch[1];
     });
   }
@@ -4499,7 +4578,7 @@ function extractASUPAlerts(combinedText, files) {
       if (line.trim().length < 20 || line.trim().length > 180) continue; // Skip noisy headers or giant dumps
       
       alerts.push({
-        id: `ASUP_LOG_ALERT_${Math.floor(100 + Math.random() * 900)}`,
+        id: `ASUP_LOG_ALERT_${hashString(line.trim())}`,
         component: "System Logs",
         severity: (lowerLine.includes("error") || lowerLine.includes("critical") || lowerLine.includes("fail")) ? "critical" : "warning",
         message: `${line.trim()}`,
@@ -6317,6 +6396,17 @@ const NETAPP_PLATFORMS = {
 }
 };
 
+// Platforms whose PCIe-slot RoCE HBAs support daisy-chaining 2 NS224 shelves per loop
+// (all other platforms require one dedicated direct-connect port pair per shelf).
+// Previously copy-pasted independently at 4 call sites (ui.js x3, bestPractices.js x1) —
+// consolidated here so a future platform addition only needs to change one place.
+const HIGH_END_PLATFORM_MODELS = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'];
+
+function isHighEndPlatform(model) {
+  const upper = (model || "").toUpperCase();
+  return HIGH_END_PLATFORM_MODELS.some(m => upper.includes(m));
+}
+
 // Returns compatibility profile for a parsed model string.
 // Normalizes hyphens, extra spaces, and case before matching.
 function getPlatformProfile(modelStr) {
@@ -6789,22 +6879,23 @@ const REMEDIATION_REFS = {
 
 
 
-const BP_LIFECYCLE = {
-  // === End of Support Releases — No patches or security fixes available ===
-  "9.7":    { status: "critical", label: "End of Support",  desc: "ONTAP 9.7 reached End of Support July 2023. No patches or security fixes are available. Upgrade immediately." },
-  "9.8":    { status: "critical", label: "End of Support",  desc: "ONTAP 9.8 reached End of Support January 2024. No patches or security fixes are available. Upgrade immediately." },
-  "9.9.1":  { status: "critical", label: "End of Support",  desc: "ONTAP 9.9.1 reached End of Support July 2024. No patches or security fixes are available. Upgrade immediately." },
-  "9.10.1": { status: "critical", label: "End of Support",  desc: "ONTAP 9.10.1 reached End of Support January 2025. Upgrade urgently to 9.14.1+ to restore support coverage." },
-  "9.11.1": { status: "critical", label: "End of Support",  desc: "ONTAP 9.11.1 reached End of Support July 2025. Upgrade urgently to 9.14.1+ to restore support coverage." },
-  // === Limited Support Releases — Critical fixes only, no new features ===
-  "9.12.1": { status: "warning",  label: "Limited Support", desc: "ONTAP 9.12.1 entered Limited Support January 2026. Critical security patches only. Plan upgrade to 9.14.1+ now. Latest patch: P12." },
-  "9.13.1": { status: "warning",  label: "Limited Support", desc: "ONTAP 9.13.1 enters Limited Support July 2026. Plan upgrade to 9.15.1+ now. Latest patch: P10." },
-  // === Full Support Releases ===
-  "9.14.1": { status: "compliant", label: "Full Support",    desc: "ONTAP 9.14.1 is in Full Support until January 2027. Latest patch: P16. Widely deployed LTS release." },
-  "9.15.1": { status: "compliant", label: "Full Support",    desc: "ONTAP 9.15.1 is in Full Support until July 2027. Latest patch: P19. Required for AFF A1K/A90/A70, FAS70/90." },
-  // === Recommended Current Release ===
-  "9.16.1": { status: "compliant", label: "Recommended",     desc: "ONTAP 9.16.1 is the current recommended release, Full Support until January 2028. Latest patch: P11. Required for AFF A20/A30/A50, AFF C30/C60/C80, ASA R2, FAS50." },
+// Derived from compatibility.js's ONTAP_LIFECYCLE (the single source of truth for
+// ONTAP release lifecycle dates) rather than a separately hand-typed table. This used
+// to be its own literal table that only went up to 9.16.1 while ONTAP_LIFECYCLE already
+// covered 9.19.1 — the two had already drifted out of sync with each other.
+const LIFECYCLE_STATUS_MAP = {
+  end_of_support:  { status: "critical",  label: "End of Support" },
+  limited_support: { status: "warning",   label: "Limited Support" },
+  active:          { status: "compliant", label: "Full Support" },
+  recommended:     { status: "compliant", label: "Recommended" },
 };
+
+const BP_LIFECYCLE = Object.fromEntries(
+  Object.entries(ONTAP_LIFECYCLE).map(([ver, entry]) => {
+    const mapped = LIFECYCLE_STATUS_MAP[entry.status] || { status: "warning", label: "Unknown Support Lifecycle" };
+    return [ver, { status: mapped.status, label: mapped.label, desc: entry.notes }];
+  })
+);
 
 
 function getPlatformMaxDrives(model) {
@@ -7327,9 +7418,27 @@ function runAudit(systemState) {
       mcWarnings.push("MetroCluster replication is enabled, but the MetroCluster protocol license key is missing or expired.");
     }
     
-    const dataAggrsA = systemState.aggregates.filter(a => a.node === "node-a" && !a.name.startsWith("aggr0"));
-    const dataAggrsB = systemState.aggregates.filter(a => a.node === "node-b" && !a.name.startsWith("aggr0"));
-    
+    // Resolve which real parsed node names belong to each DR site. "node-a"/"node-b" are
+    // only ever produced by the parser's last-resort mock-node fallback, so comparing
+    // against those literals here silently never matched on real ASUP data — this uses
+    // the same mccNodes-role / positional-split fallback ladder as BP_MCC_SYMMETRY (Rule 19).
+    let siteANodeNames = [];
+    let siteBNodeNames = [];
+    if (systemState.mccNodes && systemState.mccNodes.length > 0) {
+      siteANodeNames = systemState.mccNodes.filter(n => n.role === 'local').map(n => (n.name || '').toLowerCase());
+      siteBNodeNames = systemState.mccNodes.filter(n => n.role === 'remote').map(n => (n.name || '').toLowerCase());
+    } else if (systemState.nodes && systemState.nodes.length >= 4) {
+      const half = Math.floor(systemState.nodes.length / 2);
+      siteANodeNames = systemState.nodes.slice(0, half).map(n => (n.name || '').toLowerCase());
+      siteBNodeNames = systemState.nodes.slice(half).map(n => (n.name || '').toLowerCase());
+    } else if (systemState.nodes && systemState.nodes.length === 2) {
+      siteANodeNames = [(systemState.nodes[0].name || '').toLowerCase()];
+      siteBNodeNames = [(systemState.nodes[1].name || '').toLowerCase()];
+    }
+
+    const dataAggrsA = systemState.aggregates.filter(a => siteANodeNames.includes((a.node || '').toLowerCase()) && !a.name.startsWith("aggr0"));
+    const dataAggrsB = systemState.aggregates.filter(a => siteBNodeNames.includes((a.node || '').toLowerCase()) && !a.name.startsWith("aggr0"));
+
     let sumDisksA = 0;
     let sumDisksB = 0;
     dataAggrsA.forEach(a => sumDisksA += a.disksCount);
@@ -7475,7 +7584,7 @@ function runAudit(systemState) {
       else if (isSas) availableSasPorts++;
     });
 
-    const isHighEnd = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'].some(m => upperModel.includes(m));
+    const isHighEnd = isHighEndPlatform(upperModel);
     const requiredRocePorts = isHighEnd ? Math.ceil(nvmeShelvesCount / 2) * 2 : nvmeShelvesCount * 2;
     const requiredSasPorts = Math.ceil(sasShelvesCount / 4) * 2;
 
@@ -7691,8 +7800,11 @@ function runAudit(systemState) {
     let unmirroredAggregates = [];
     systemState.aggregates.forEach(aggr => {
       if (aggr.name.startsWith("aggr0")) return;
-      // If name does not end with _mirror or sync, or if we explicitly flag it
-      if (aggr.isMirrored === false || aggr.name.includes("local") || !aggr.name.includes("sync")) {
+      // isMirrored is parsed directly from the aggregate's "aggr status" RAID-status
+      // string (e.g. "raid_dp, mirrored"). Previously this checked the aggregate NAME
+      // for the substring "sync", which flagged any real customer aggregate that
+      // didn't happen to have "sync" in its name — regardless of actual mirror state.
+      if (!aggr.isMirrored) {
         unmirroredAggregates.push(aggr.name);
       }
     });
@@ -7942,7 +8054,11 @@ function runAudit(systemState) {
   }
 
   // --- Execute Dynamic Rules 21-25 ---
-  exportRules.slice(20).forEach(rule => {
+  // Bounded to indices 20-24 (BP_HA_STATUS..BP_AGGREGATE_SPACE) on purpose: indices 25-27
+  // (BP_SP_FIRMWARE/BP_DISK_FIRMWARE/BP_ACP_STATUS) are stub entries whose real logic runs
+  // inline above — their check() always returns [], so including them here appended a
+  // second, bogus "compliant" report for the same rule ID next to the real finding.
+  exportRules.slice(20, 25).forEach(rule => {
     const findings = rule.check(systemState);
     if (findings && findings.length > 0) {
       const isCritical = findings.some(f => f.severity === 'critical');
@@ -8000,6 +8116,37 @@ function calculateComplianceScore(auditReports) {
 
 
 
+
+// Escapes text pulled from parsed ASUP content (node/shelf/aggregate/license names,
+// serials, firmware strings, etc.) before it's interpolated into an innerHTML template.
+// These values originate from uploaded ASUP files, not from this app's own logic, so
+// they're untrusted input as far as the DOM is concerned.
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Canonical RAID-DP usable-capacity formula: whole RAID groups, 2 parity disks per group,
+// halved for MetroCluster synchronous mirroring. Git-verified correct in commit 44ff7e8/621068e
+// (22 data disks x 15300GB / 2 = 168300GB usable per aggregate for a 24-disk NS224 MCC group).
+// This replaces 5 independently hand-written approximations that had drifted apart (flat
+// 0.70/0.80/0.82/0.85 "fudge factors" and a ratio-times-disk-count MCC shortcut) — several of
+// which produced the capacity bugs this project's git history shows being found and fixed
+// reactively more than once. groupSize is the platform's native RAID group size (24 for NS224
+// NVMe shelves, 16 for SAS shelves).
+function computeUsableCapacityGB(diskCount, diskGB, groupSize, isMetroCluster) {
+  if (diskCount <= 0 || diskGB <= 0 || groupSize <= 0) return 0;
+  const numGroups = Math.ceil(diskCount / groupSize);
+  const parityDisks = numGroups * 2; // RAID-DP: 2 parity disks per group
+  const dataDisks = Math.max(0, diskCount - parityDisks);
+  const rawUsableGB = dataDisks * diskGB;
+  return Math.round(isMetroCluster ? rawUsableGB * 0.5 : rawUsableGB);
+}
 
 // --- Application State ---
 let currentState = null;
@@ -10248,7 +10395,7 @@ function allocateHBACardsForState(state) {
   const nvmeShelvesCount = Math.ceil(totalNvmeShelves / haPairsCount);
   const sasShelvesCount = Math.ceil(totalSasShelves / haPairsCount);
 
-  const isHighEnd = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'].some(m => state.version.model.toUpperCase().includes(m));
+  const isHighEnd = isHighEndPlatform(state.version.model);
   const requiredRocePorts = isHighEnd ? Math.ceil(nvmeShelvesCount / 2) * 2 : nvmeShelvesCount * 2;
   const requiredSasPorts = Math.ceil(sasShelvesCount / 4) * 2;
 
@@ -10408,8 +10555,8 @@ function getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield
   const usableTargetGB = capacityTB * 1000;
   const slots = getPlatformSlots(model);
   const slotsCount = slots.length;
-  const isHighEnd = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'].some(m => model.toUpperCase().includes(m));
-  
+  const isHighEnd = isHighEndPlatform(model);
+
   let bestOption = null;
   let bestPenalty = Infinity;
 
@@ -10639,11 +10786,16 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
   // Generate aggregates (symmetrical) and spares
   const aggregates = [];
   const spares = [];
+  // Read the MetroCluster checkbox now (rather than after aggregates are built, where the
+  // rest of this function reads it into mcType) so a Greenfield MCC baseline's usable-capacity
+  // figures actually apply the synchronous-mirror ÷2 factor instead of silently omitting it.
+  const isMetroClusterBaseline = !!(document.getElementById("deploy-metrocluster") && document.getElementById("deploy-metrocluster").checked);
+  const baselineGroupSize = shelfModel === "NS224" ? 24 : 16;
   for (let i = 0; i < nodesCount; i++) {
     const nodeName = nodes[i].name;
     const charCode = nodeName.substring(nodeName.lastIndexOf("-") + 1); // 'a', 'b', 'c', etc.
-    
-    const usableGB = Math.round((dataDisksPerNode - 2) * diskSizeGB * 0.85);
+
+    const usableGB = computeUsableCapacityGB(dataDisksPerNode, diskSizeGB, baselineGroupSize, isMetroClusterBaseline);
     // Greenfield defaults to 10% usage to remain compliant (Rule 6 capacity audit triggers warnings if > 85%)
     const usedFraction = isGreenfield ? 0.10 : (i % 2 === 0 ? 0.92 : 0.45);
     
@@ -10982,14 +11134,14 @@ function renderCurrentAuditDashboard() {
         siteANodes.forEach(nodeA => {
           if (nodeA) {
             const li = document.createElement("li");
-            li.innerHTML = `<strong>${nodeA.name.toUpperCase()}</strong> (S/N: ${nodeA.serial || "N/A"})`;
+            li.innerHTML = `<strong>${escapeHtml(nodeA.name.toUpperCase())}</strong> (S/N: ${escapeHtml(nodeA.serial) || "N/A"})`;
             siteANodesList.appendChild(li);
           }
         });
         siteBNodes.forEach(nodeB => {
           if (nodeB) {
             const li = document.createElement("li");
-            li.innerHTML = `<strong>${nodeB.name.toUpperCase()}</strong> (S/N: ${nodeB.serial || "N/A"})`;
+            li.innerHTML = `<strong>${escapeHtml(nodeB.name.toUpperCase())}</strong> (S/N: ${escapeHtml(nodeB.serial) || "N/A"})`;
             siteBNodesList.appendChild(li);
           }
         });
@@ -12055,11 +12207,11 @@ function renderStorageInventory(state) {
       <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-bottom: 0.75rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
           <div>
-            <strong style="color: #fff; font-size: 0.88rem;">Shelf ${shelf.id || index + 1}</strong> 
-            <span style="color: var(--color-muted); font-size: 0.8rem; margin-left: 6px;">[Model: ${shelf.model || "Unknown"}, S/N: ${shelf.serial || "N/A"}]</span>
+            <strong style="color: #fff; font-size: 0.88rem;">Shelf ${escapeHtml(shelf.id) || index + 1}</strong>
+            <span style="color: var(--color-muted); font-size: 0.8rem; margin-left: 6px;">[Model: ${escapeHtml(shelf.model) || "Unknown"}, S/N: ${escapeHtml(shelf.serial) || "N/A"}]</span>
           </div>
           <div style="display: flex; gap: 6px; align-items: center;">
-            <span style="font-size: 0.75rem; color: var(--color-muted);">Fw: ${shelf.firmware || "N/A"}</span>
+            <span style="font-size: 0.75rem; color: var(--color-muted);">Fw: ${escapeHtml(shelf.firmware) || "N/A"}</span>
             ${cablingBadge}
           </div>
         </div>
@@ -12080,9 +12232,9 @@ function renderStorageInventory(state) {
         
         html += `
           <li style="margin-bottom: 4px;">
-            <strong>${group.count}x</strong> drives of 
-            <span style="font-family: var(--font-mono); font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 1px 4px; border-radius: 2px; color: #9ca3af;">${group.model}</span> 
-            (Size: <strong>${group.sizeStr}</strong>, Type: <span style="color: ${mediaBadgeColor}; font-weight: 500;">${group.type}</span>, Fw: <strong style="color: #34d399; font-family: var(--font-mono);">${group.firmware || "NA01"}</strong>)
+            <strong>${group.count}x</strong> drives of
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 1px 4px; border-radius: 2px; color: #9ca3af;">${escapeHtml(group.model)}</span>
+            (Size: <strong>${escapeHtml(group.sizeStr)}</strong>, Type: <span style="color: ${mediaBadgeColor}; font-weight: 500;">${escapeHtml(group.type)}</span>, Fw: <strong style="color: #34d399; font-family: var(--font-mono);">${escapeHtml(group.firmware) || "NA01"}</strong>)
           </li>
         `;
       });
@@ -12159,8 +12311,8 @@ function renderAggregateInventory(state) {
       <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-bottom: 0.75rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
           <div>
-            <strong style="color: #fff; font-size: 0.88rem;">${aggr.name}</strong> 
-            <span style="color: var(--color-muted); font-size: 0.8rem; margin-left: 6px;">[Node: ${(aggr.node || 'N/A').toUpperCase()}, RAID: ${(aggr.raidType || 'N/A').toUpperCase()}]</span>
+            <strong style="color: #fff; font-size: 0.88rem;">${escapeHtml(aggr.name)}</strong>
+            <span style="color: var(--color-muted); font-size: 0.8rem; margin-left: 6px;">[Node: ${escapeHtml((aggr.node || 'N/A').toUpperCase())}, RAID: ${escapeHtml((aggr.raidType || 'N/A').toUpperCase())}]</span>
           </div>
           <div>
             <span class="status-badge ${badgeClass}" style="padding: 2px 6px; font-size: 0.7rem;">${utilPercent}% Used</span>
@@ -12224,18 +12376,18 @@ function generateReportStorageInventoryHtml(state) {
 
     let diskItems = "";
     Object.values(diskGroups).forEach(group => {
-      diskItems += `• <strong>${group.count}x</strong> ${group.sizeStr} ${group.type} (Model: ${group.model}, Fw: ${group.firmware})<br>`;
+      diskItems += `• <strong>${group.count}x</strong> ${escapeHtml(group.sizeStr)} ${escapeHtml(group.type)} (Model: ${escapeHtml(group.model)}, Fw: ${escapeHtml(group.firmware)})<br>`;
     });
 
     html += `
       <tr>
-        <td style="font-weight:700; color:#fff;">Shelf ${shelf.id || index + 1}</td>
-        <td>${shelf.model || "Unknown"}</td>
+        <td style="font-weight:700; color:#fff;">Shelf ${escapeHtml(shelf.id) || index + 1}</td>
+        <td>${escapeHtml(shelf.model) || "Unknown"}</td>
         <td>
-          S/N: ${shelf.serial || "N/A"}<br>
-          <span style="font-size:0.75rem; color:var(--color-muted);">${shelf.cabling || "N/A"}</span>
+          S/N: ${escapeHtml(shelf.serial) || "N/A"}<br>
+          <span style="font-size:0.75rem; color:var(--color-muted);">${escapeHtml(shelf.cabling) || "N/A"}</span>
         </td>
-        <td style="text-align: center;">${shelf.firmware || "N/A"}</td>
+        <td style="text-align: center;">${escapeHtml(shelf.firmware) || "N/A"}</td>
         <td style="line-height: 1.4; color: #e5e7eb;">${diskItems || "No disks installed"}</td>
       </tr>
     `;
@@ -12275,13 +12427,13 @@ function generateReportAggregateInventoryHtml(state) {
 
     html += `
       <tr>
-        <td style="font-weight:700; color:#fff;">${aggr.name}</td>
+        <td style="font-weight:700; color:#fff;">${escapeHtml(aggr.name)}</td>
         <td>
-          Node: ${(aggr.node || 'N/A').toUpperCase()}<br>
-          <span style="font-size:0.75rem; color:var(--color-muted);">${(aggr.raidType || 'N/A').toUpperCase()}</span>
+          Node: ${escapeHtml((aggr.node || 'N/A').toUpperCase())}<br>
+          <span style="font-size:0.75rem; color:var(--color-muted);">${escapeHtml((aggr.raidType || 'N/A').toUpperCase())}</span>
         </td>
         <td>
-          <strong>${aggr.disksCount}x</strong> ${formatGB(aggr.diskSizeGB)} ${aggr.diskType}
+          <strong>${aggr.disksCount}x</strong> ${formatGB(aggr.diskSizeGB)} ${escapeHtml(aggr.diskType)}
         </td>
         <td style="text-align: center; font-weight: 600; color: ${utilPercent >= 85 ? 'var(--color-critical)' : 'inherit'};">
           ${utilPercent}%
@@ -13460,7 +13612,14 @@ function updateCapacityImpactDetails() {
   const isMetroCluster = !!(currentState.metrocluster && currentState.metrocluster !== 'none'
     && (!isGreenfieldMode || (mccCheckbox && mccCheckbox.checked)));
   const mult = isMetroCluster ? 2 : 1;
-  
+
+  // Computed here (not down near its original use) because the shelf-count hint
+  // block and the tempState shelf-site-tagging loop below both read it before
+  // the validation block further down runs — declaring it there caused a
+  // ReferenceError (TDZ) whenever a shelf type was selected.
+  const _mccCb = document.getElementById('deploy-metrocluster');
+  const _mccActive = !!(currentState.metrocluster && currentState.metrocluster !== 'none' && _mccCb && _mccCb.checked);
+
   let shelfCount = 0;
   let rawCapAddedGB = 0;
   let spec = null;
@@ -13579,8 +13738,6 @@ function updateCapacityImpactDetails() {
 
   // Validate platform supports MetroCluster if MC is checked
   let mcNoticeHtml = "";
-  const _mccCb = document.getElementById('deploy-metrocluster');
-  const _mccActive = !!(currentState.metrocluster && currentState.metrocluster !== 'none' && _mccCb && _mccCb.checked);
   if (_mccActive) {
     if (!(profile.supportedLicenses || []).includes("MetroCluster")) {
       const modelDisplay = (currentState.version && currentState.version.model && isNaN(currentState.version.model))
@@ -13697,7 +13854,7 @@ function updateCapacityImpactDetails() {
       const nvmeShelvesPerHA = Math.ceil((totalNvmeShelves / siteCount) / Math.max(1, haPairsCount));
       const sasShelvesPerHA = Math.ceil((totalSasShelves / siteCount) / Math.max(1, haPairsCount));
 
-      const isHighEnd = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'].some(m => currentState.version.model.toUpperCase().includes(m));
+      const isHighEnd = isHighEndPlatform(currentState.version.model);
       const requiredRocePorts = isHighEnd ? Math.ceil(nvmeShelvesPerHA / 2) * 2 : nvmeShelvesPerHA * 2;
       const requiredSasPorts = Math.ceil(sasShelvesPerHA / 4) * 2;
 
@@ -13873,10 +14030,10 @@ function populateAggregateDistributionList() {
     
     row.innerHTML = `
       <span style="font-weight: 500;">
-        ${aggr.name} <span style="color: var(--color-muted); font-size: 0.75rem;">(Node: ${aggr.node}, Usable: ${formatGB(aggr.usableGB)})</span>
+        ${escapeHtml(aggr.name)} <span style="color: var(--color-muted); font-size: 0.75rem;">(Node: ${escapeHtml(aggr.node)}, Usable: ${formatGB(aggr.usableGB)})</span>
       </span>
       <div style="display: flex; align-items: center; gap: 6px;">
-        <input type="number" class="aggr-alloc-input form-control" data-aggr="${aggr.name}" min="0" max="${diskCount}" value="0" style="max-width: 70px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; padding: 4px 6px;">
+        <input type="number" class="aggr-alloc-input form-control" data-aggr="${escapeHtml(aggr.name)}" min="0" max="${diskCount}" value="0" style="max-width: 70px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; padding: 4px 6px;">
         <span style="color: var(--color-muted); font-size: 0.75rem;">drives</span>
       </div>
     `;
@@ -14095,12 +14252,8 @@ function runModelingCalculations() {
                 : null;
 
               totalAllocatedSiteA += D;
-              // RAID-DP efficiency per standard group (22 data + 2 parity per 24-disk NS224 group)
-              // For SAS shelves use 14/16 group. Apply MCC synchronous mirror ÷2 for effective usable.
               const rgSz = shelfType === 'ns224' ? 24 : 16;
-              const raidEff = (rgSz - 2) / rgSz;   // 22/24 ≈ 0.917 for NS224
-              const mccMirrorFactor = 0.5;           // MCC writes to both sites — effective usable per cluster is half
-              const addedUsableGB = Math.round(D * diskGB * raidEff * mccMirrorFactor);
+              const addedUsableGB = computeUsableCapacityGB(D, diskGB, rgSz, true);
 
               // Expand Site A Aggregate
               aggrA.disksCount += D;
@@ -14145,15 +14298,8 @@ function runModelingCalculations() {
         const siteBNodes = modeledState.nodes.filter(n => n.site === 'B' || (!n.site && modeledState.nodes.indexOf(n) >= Math.ceil(modeledState.nodes.length / 2)));
         const primaryA = siteANodes[0] ? siteANodes[0].name : "node-a";
         const primaryB = siteBNodes[0] ? siteBNodes[0].name : "node-b";
-        // RAID-DP: standard group size for NS224 = 24 (22 data + 2 parity), SAS = 16 (14+2)
-        // MCC synchronous mirror: all data is written to both sites — effective usable per cluster = raw_usable / 2
         const rgSzNew = shelfType === 'ns224' ? 24 : 16;
-        const raidEffNew = (rgSzNew - 2) / rgSzNew;   // 22/24 = 0.9167 for NS224; 14/16 = 0.875 for SAS
-        const numGroups = Math.ceil(diskCount / rgSzNew);
-        const parityDisks = numGroups * 2;             // 2 parity per RAID-DP group
-        const dataDisks = Math.max(0, diskCount - parityDisks);
-        const rawUsableGB = dataDisks * diskGB;        // raw usable after RAID overhead
-        const usableGB = Math.max(0, Math.round(rawUsableGB * 0.5)); // ÷2 for MCC synchronous mirror
+        const usableGB = computeUsableCapacityGB(diskCount, diskGB, rgSzNew, true);
         const totalGB = diskCount * diskGB;
         const aggrIdxStr = modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length > 0 ? '_' + (modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length + 1) : '';
 
@@ -14253,7 +14399,8 @@ function runModelingCalculations() {
             const aggr = modeledState.aggregates.find(a => a.name === aggrName);
             if (aggr) {
               totalAllocated += D;
-              const addedUsableGB = Math.round(D * diskGB * 0.80);
+              const rgSz = shelfType === 'ns224' ? 24 : 16;
+              const addedUsableGB = computeUsableCapacityGB(D, diskGB, rgSz, false);
               aggr.disksCount += D;
               aggr.sizeGB += diskGB * D;
               aggr.usableGB += addedUsableGB;
@@ -14281,8 +14428,8 @@ function runModelingCalculations() {
           });
         }
       } else if (allocation === "new") {
-        const dataCount = diskCount - 4;
-        const usableGB = Math.max(0, Math.round(dataCount * diskGB * 0.82));
+        const rgSzStandalone = shelfType === 'ns224' ? 24 : 16;
+        const usableGB = computeUsableCapacityGB(diskCount, diskGB, rgSzStandalone, false);
         const totalGB = diskCount * diskGB;
         const aggrIdxStr = modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length > 0 ? '_' + (modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length + 1) : '';
         const nodeA = modeledState.nodes[0] ? modeledState.nodes[0].name : "node-a";

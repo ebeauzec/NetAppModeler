@@ -3,24 +3,25 @@
  * Audits a parsed system state and returns compliance results.
  */
 
-import { getPlatformProfile, compareVersions, EXP_CARDS_CATALOG, PLATFORM_SLOT_DETAILS } from './compatibility.js';
+import { getPlatformProfile, compareVersions, EXP_CARDS_CATALOG, PLATFORM_SLOT_DETAILS, ONTAP_LIFECYCLE, isHighEndPlatform } from './compatibility.js';
 
-export const BP_LIFECYCLE = {
-  // === End of Support Releases — No patches or security fixes available ===
-  "9.7":    { status: "critical", label: "End of Support",  desc: "ONTAP 9.7 reached End of Support July 2023. No patches or security fixes are available. Upgrade immediately." },
-  "9.8":    { status: "critical", label: "End of Support",  desc: "ONTAP 9.8 reached End of Support January 2024. No patches or security fixes are available. Upgrade immediately." },
-  "9.9.1":  { status: "critical", label: "End of Support",  desc: "ONTAP 9.9.1 reached End of Support July 2024. No patches or security fixes are available. Upgrade immediately." },
-  "9.10.1": { status: "critical", label: "End of Support",  desc: "ONTAP 9.10.1 reached End of Support January 2025. Upgrade urgently to 9.14.1+ to restore support coverage." },
-  "9.11.1": { status: "critical", label: "End of Support",  desc: "ONTAP 9.11.1 reached End of Support July 2025. Upgrade urgently to 9.14.1+ to restore support coverage." },
-  // === Limited Support Releases — Critical fixes only, no new features ===
-  "9.12.1": { status: "warning",  label: "Limited Support", desc: "ONTAP 9.12.1 entered Limited Support January 2026. Critical security patches only. Plan upgrade to 9.14.1+ now. Latest patch: P12." },
-  "9.13.1": { status: "warning",  label: "Limited Support", desc: "ONTAP 9.13.1 enters Limited Support July 2026. Plan upgrade to 9.15.1+ now. Latest patch: P10." },
-  // === Full Support Releases ===
-  "9.14.1": { status: "compliant", label: "Full Support",    desc: "ONTAP 9.14.1 is in Full Support until January 2027. Latest patch: P16. Widely deployed LTS release." },
-  "9.15.1": { status: "compliant", label: "Full Support",    desc: "ONTAP 9.15.1 is in Full Support until July 2027. Latest patch: P19. Required for AFF A1K/A90/A70, FAS70/90." },
-  // === Recommended Current Release ===
-  "9.16.1": { status: "compliant", label: "Recommended",     desc: "ONTAP 9.16.1 is the current recommended release, Full Support until January 2028. Latest patch: P11. Required for AFF A20/A30/A50, AFF C30/C60/C80, ASA R2, FAS50." },
+// Derived from compatibility.js's ONTAP_LIFECYCLE (the single source of truth for
+// ONTAP release lifecycle dates) rather than a separately hand-typed table. This used
+// to be its own literal table that only went up to 9.16.1 while ONTAP_LIFECYCLE already
+// covered 9.19.1 — the two had already drifted out of sync with each other.
+const LIFECYCLE_STATUS_MAP = {
+  end_of_support:  { status: "critical",  label: "End of Support" },
+  limited_support: { status: "warning",   label: "Limited Support" },
+  active:          { status: "compliant", label: "Full Support" },
+  recommended:     { status: "compliant", label: "Recommended" },
 };
+
+export const BP_LIFECYCLE = Object.fromEntries(
+  Object.entries(ONTAP_LIFECYCLE).map(([ver, entry]) => {
+    const mapped = LIFECYCLE_STATUS_MAP[entry.status] || { status: "warning", label: "Unknown Support Lifecycle" };
+    return [ver, { status: mapped.status, label: mapped.label, desc: entry.notes }];
+  })
+);
 
 
 export function getPlatformMaxDrives(model) {
@@ -543,9 +544,27 @@ export function runAudit(systemState) {
       mcWarnings.push("MetroCluster replication is enabled, but the MetroCluster protocol license key is missing or expired.");
     }
     
-    const dataAggrsA = systemState.aggregates.filter(a => a.node === "node-a" && !a.name.startsWith("aggr0"));
-    const dataAggrsB = systemState.aggregates.filter(a => a.node === "node-b" && !a.name.startsWith("aggr0"));
-    
+    // Resolve which real parsed node names belong to each DR site. "node-a"/"node-b" are
+    // only ever produced by the parser's last-resort mock-node fallback, so comparing
+    // against those literals here silently never matched on real ASUP data — this uses
+    // the same mccNodes-role / positional-split fallback ladder as BP_MCC_SYMMETRY (Rule 19).
+    let siteANodeNames = [];
+    let siteBNodeNames = [];
+    if (systemState.mccNodes && systemState.mccNodes.length > 0) {
+      siteANodeNames = systemState.mccNodes.filter(n => n.role === 'local').map(n => (n.name || '').toLowerCase());
+      siteBNodeNames = systemState.mccNodes.filter(n => n.role === 'remote').map(n => (n.name || '').toLowerCase());
+    } else if (systemState.nodes && systemState.nodes.length >= 4) {
+      const half = Math.floor(systemState.nodes.length / 2);
+      siteANodeNames = systemState.nodes.slice(0, half).map(n => (n.name || '').toLowerCase());
+      siteBNodeNames = systemState.nodes.slice(half).map(n => (n.name || '').toLowerCase());
+    } else if (systemState.nodes && systemState.nodes.length === 2) {
+      siteANodeNames = [(systemState.nodes[0].name || '').toLowerCase()];
+      siteBNodeNames = [(systemState.nodes[1].name || '').toLowerCase()];
+    }
+
+    const dataAggrsA = systemState.aggregates.filter(a => siteANodeNames.includes((a.node || '').toLowerCase()) && !a.name.startsWith("aggr0"));
+    const dataAggrsB = systemState.aggregates.filter(a => siteBNodeNames.includes((a.node || '').toLowerCase()) && !a.name.startsWith("aggr0"));
+
     let sumDisksA = 0;
     let sumDisksB = 0;
     dataAggrsA.forEach(a => sumDisksA += a.disksCount);
@@ -691,7 +710,7 @@ export function runAudit(systemState) {
       else if (isSas) availableSasPorts++;
     });
 
-    const isHighEnd = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'].some(m => upperModel.includes(m));
+    const isHighEnd = isHighEndPlatform(upperModel);
     const requiredRocePorts = isHighEnd ? Math.ceil(nvmeShelvesCount / 2) * 2 : nvmeShelvesCount * 2;
     const requiredSasPorts = Math.ceil(sasShelvesCount / 4) * 2;
 
@@ -907,8 +926,11 @@ export function runAudit(systemState) {
     let unmirroredAggregates = [];
     systemState.aggregates.forEach(aggr => {
       if (aggr.name.startsWith("aggr0")) return;
-      // If name does not end with _mirror or sync, or if we explicitly flag it
-      if (aggr.isMirrored === false || aggr.name.includes("local") || !aggr.name.includes("sync")) {
+      // isMirrored is parsed directly from the aggregate's "aggr status" RAID-status
+      // string (e.g. "raid_dp, mirrored"). Previously this checked the aggregate NAME
+      // for the substring "sync", which flagged any real customer aggregate that
+      // didn't happen to have "sync" in its name — regardless of actual mirror state.
+      if (!aggr.isMirrored) {
         unmirroredAggregates.push(aggr.name);
       }
     });
@@ -1158,7 +1180,11 @@ export function runAudit(systemState) {
   }
 
   // --- Execute Dynamic Rules 21-25 ---
-  exportRules.slice(20).forEach(rule => {
+  // Bounded to indices 20-24 (BP_HA_STATUS..BP_AGGREGATE_SPACE) on purpose: indices 25-27
+  // (BP_SP_FIRMWARE/BP_DISK_FIRMWARE/BP_ACP_STATUS) are stub entries whose real logic runs
+  // inline above — their check() always returns [], so including them here appended a
+  // second, bogus "compliant" report for the same rule ID next to the real finding.
+  exportRules.slice(20, 25).forEach(rule => {
     const findings = rule.check(systemState);
     if (findings && findings.length > 0) {
       const isCritical = findings.some(f => f.severity === 'critical');
