@@ -25,6 +25,25 @@ function hashString(str) {
   return Math.abs(hash);
 }
 
+// Decodes the capacity NetApp encodes directly into a disk part number/model string, for
+// formats that carry no separate human-readable size field (confirmed against real customer
+// ASUPs — see decodeDiskBlocksFromCombinedText below). Observed conventions across real disk
+// models (X425_SIRMN1T2A10, X477_SMBPE04TA07, X364_S16433T8ATE, ...):
+//   "<d>T<d>"   -> decimal TB, e.g. "1T2" = 1.2TB, "3T8" = 3.8TB
+//   "<dd>T"     -> whole TB (2-digit, zero-padded), e.g. "04T" = 4TB
+//   "<ddd(d)>G" -> whole GB, e.g. "960G"
+// Returns null (rather than guessing) when the model doesn't match any known convention.
+function decodeDiskCapacityFromModel(model) {
+  const m = String(model || "");
+  let match = m.match(/(\d)T(\d)(?!\d)/);
+  if (match) return parseFloat(`${match[1]}.${match[2]}`) * 1000;
+  match = m.match(/(\d{2})T(?=[A-Z])/);
+  if (match) return parseInt(match[1], 10) * 1000;
+  match = m.match(/(\d{3,4})G(?=\d|[A-Z])/);
+  if (match) return parseInt(match[1], 10);
+  return null;
+}
+
 // Helper to convert size string (e.g., "960GB", "1.2TB", "1.9TB") to GB (numeric)
 export function parseSizeToGB(sizeStr) {
   if (!sizeStr) return 0;
@@ -121,9 +140,37 @@ export function parseASUP(files) {
   
   let isModelParsed = false;
   let modelSource = 'missing';
-  const modelMatch = combinedText.match(/(?:System Model|Model Name|Platform|system type)\s*:\s*([A-Za-z0-9 \-\/]+)/i) ||
-                     combinedText.match(/\bPlatform\s+Type\s*:\s*([A-Za-z0-9 \-\/]+)/i) ||
-                     combinedText.match(/Hardware Model\s*:\s*([A-Za-z0-9 \-\/]+)/i);
+  // \b before the alternation matters: without it, a bare "Platform" label
+  // matches as a substring of unrelated identifiers like a BSD sysctl name
+  // "dev.ix.b.iflib.is_vm_platform: 0" (confirmed against a real customer
+  // ASUP — a sysctl dump line, not any real model field, was being read as
+  // "Platform: 0" and setting the parsed model to the literal string "0").
+  // The trailing check that the captured value isn't purely numeric/symbols
+  // is a second line of defense against the same class of accidental match —
+  // a real NetApp model name always contains letters.
+  const isPlausibleModel = (v) => v && /[A-Za-z]/.test(v);
+
+  // "Model Name:" also appears on PCIe expansion modules (e.g. "FMM ID: Flash
+  // Cache in slot 4, Model name: X1974A-R6") — confirmed against a real
+  // customer ASUP where that flash-cache module's own part number matched
+  // BEFORE the actual system board's "Model Name: FAS8040" line later in the
+  // same file, so the FIRST match (a sub-component, not the system) won.
+  // The real system-board block is reliably followed nearby by "BIOS
+  // version:"/"Loader version:" (a controller-only field — expansion modules
+  // show "FPGA Release:"/"Serial number:" instead), so scan every candidate
+  // and prefer one with that context over just taking the first plausible hit.
+  const modelRegex = /\b(?:System Model|Model Name|Platform|system type)\s*:\s*([A-Za-z0-9 \-\/]+)/gi;
+  const modelCandidates = [...combinedText.matchAll(modelRegex)].filter(m => isPlausibleModel(m[1].trim()));
+  let modelMatch = modelCandidates.find(m => {
+    const after = combinedText.slice(m.index, m.index + 300);
+    return /BIOS version|Loader version/i.test(after);
+  }) || modelCandidates[0];
+  if (!modelMatch) {
+    modelMatch = [
+      combinedText.match(/\bPlatform\s+Type\s*:\s*([A-Za-z0-9 \-\/]+)/i),
+      combinedText.match(/\bHardware Model\s*:\s*([A-Za-z0-9 \-\/]+)/i)
+    ].find(m => m && isPlausibleModel(m[1].trim()));
+  }
   if (modelMatch) {
     // Normalize: strip hyphens, remove -HA/-2P/-HA-2P suffixes, collapse spaces
     let rawModel = modelMatch[1].trim();
@@ -229,26 +276,58 @@ export function parseASUP(files) {
   }
 
   // --- 1.5. Parse MetroCluster ---
-  // Detect MetroCluster configuration type from ASUP content
+  // Detect MetroCluster configuration type from ASUP content.
+  //
+  // Real-world ASUP bundles (especially the modern "full" collection, 400+ files)
+  // routinely include diagnostic dumps whose incidental text happens to contain
+  // MCC-sounding phrases despite the system not being MetroCluster at all:
+  //   - CLI help text: "Option '-d' is available only on C-mode Metrocluster
+  //     configurations" (a WAFL diagnostic tool's own usage text)
+  //   - Fixed table column names: "MCC_IP" as a static queue-type label in a
+  //     generic BSD network-queue stats table, value 0
+  // A bare "does this phrase appear anywhere in 2-3MB of combined text" check
+  // false-positives on exactly this kind of boilerplate — confirmed directly
+  // against a real customer ASUP whose own "System Storage Configuration:"
+  // field says "Multi-Path HA" (a standard 2-node HA pair), yet the old keyword
+  // scan still classified it as MetroCluster IP.
+  //
+  // Prefer the authoritative "System Storage Configuration:" field (present in
+  // standard sysconfig-style ASUP output) when available — it's a single,
+  // structured, deliberately-reported fact rather than incidental text, and
+  // overrides the weaker keyword scan below when both are present.
   let metrocluster = "none";
+  let mccSourceConfidence = 0;
+  const storageConfigMatch = combinedText.match(/System Storage Configuration:\s*([^\r\n]+)/i);
+  const storageConfigSaysMcc = storageConfigMatch && /metrocluster|stretch\s*mcc|fabric[\s-]attached/i.test(storageConfigMatch[1]);
+  const storageConfigSaysNonMcc = storageConfigMatch && !storageConfigSaysMcc;
+
   const mccKeywords = [
     "metrocluster show", "metrocluster node show", "metrocluster interconnect show",
-    "metrocluster configurations", "metrocluster ip configuration", "metrocluster check",
+    "metrocluster ip configuration", "metrocluster check",
     "dr group id", "dr partner node", "local-site", "remote-site",
     "metrocluster active", // from LICENSE section
     "mcc-ip", "mcc_ip", "ip-fabric"
   ];
   const hasMccOutput = mccKeywords.some(k => lowerText.includes(k));
-  if (hasMccOutput) {
+
+  if (storageConfigSaysNonMcc) {
+    // Authoritative field explicitly reports a non-MCC configuration (e.g.
+    // "Multi-Path HA") — trust it over incidental keyword hits elsewhere.
+    metrocluster = "none";
+    mccSourceConfidence = 1.0;
+  } else if (storageConfigSaysMcc || hasMccOutput) {
+    mccSourceConfidence = storageConfigSaysMcc ? 1.0 : 0.5; // keyword-only match is a weaker signal
     if (lowerText.includes("metrocluster ip") || lowerText.includes("mcc-ip") || lowerText.includes("mcc_ip") ||
         lowerText.includes("ip-fabric") || lowerText.includes("metrocluster ip configuration")) {
       metrocluster = "ip";
     } else if (lowerText.includes("stretch") && (lowerText.includes("metrocluster") || lowerText.includes("mcc"))) {
       metrocluster = "stretch";
-    } else if (hasMccOutput) {
+    } else {
       metrocluster = "fc";
     }
   }
+  setSource('metrocluster', metrocluster === 'none' ? (storageConfigSaysNonMcc ? 'parsed' : 'default') : (mccSourceConfidence >= 1.0 ? 'parsed' : 'inferred'),
+    mccSourceConfidence, storageConfigMatch ? `System Storage Configuration: ${storageConfigMatch[1].trim()}` : 'No authoritative storage-configuration field found; based on keyword scan only');
 
   // Detect MCC node count: look for DR group entries to determine 2-node vs 4-node
   let mccNodeCount = 0;
@@ -491,8 +570,14 @@ export function parseASUP(files) {
     while ((kwMatch = shelfKeywordRegex.exec(combinedText)) !== null) {
       foundModels.add(kwMatch[1].toUpperCase());
     }
-    foundModels.forEach((model, idx) => {
-      const shelfId = String(idx + 1);
+    // Set#forEach passes (value, value, set) — there is no index for a Set — so using
+    // the second param as an array-style index previously produced shelfId = model + "1"
+    // (e.g. "DS2246" + 1 = "DS22461"), a garbled id that could never match the real
+    // shelf ids the SES pass (below) discovers, leaving permanent 0-disk ghost shelves.
+    let nextShelfIdx = 0;
+    foundModels.forEach((model) => {
+      nextShelfIdx += 1;
+      const shelfId = String(nextShelfIdx);
       const shelfObj = {
         id: shelfId, model, serial: `AUTO-DISC-${shelfId}`,
         firmware: 'unknown', latestFirmware: 'unknown', cabling: 'Multipath HA', disks: []
@@ -562,6 +647,43 @@ export function parseASUP(files) {
     }
   }
 
+  // Parse the "storage disk show -v" / STORAGE-DISK.txt key-value block format — confirmed
+  // against two real customer ASUPs, where every shelf's disk inventory lived ONLY in this
+  // format (the "Shelf N:" text split below never matched any per-disk model/serial data —
+  // that text only carries SES enclosure telemetry, not a disk manifest). Each disk is its own
+  // multi-line block carrying its own "Shelf:"/"Bay:" fields, so this runs once globally
+  // instead of being scoped to a per-shelf text slice like the passes below.
+  {
+    const diskBlockRegex = /Disk:\s*(\S+)\s*[\r\n]+\s*Shelf:\s*(\d+)\s*[\r\n]+\s*Bay:\s*(\d+)\s*[\r\n]+\s*Serial:\s*(\S+)\s*[\r\n]+\s*Vendor:\s*NETAPP\s*[\r\n]+\s*Model:\s*(\S+)\s*[\r\n]+\s*Rev:\s*(\S+)(\s*[\r\n]+\s*RPM:\s*(\S+))?/ig;
+    let diskBlockMatch;
+    while ((diskBlockMatch = diskBlockRegex.exec(combinedText)) !== null) {
+      const shelfId = diskBlockMatch[2];
+      const shelf = shelfMap.get(shelfId);
+      if (!shelf) continue;
+      const serial = diskBlockMatch[4].trim();
+      if (shelf.disks.some(d => d.serial === serial)) continue;
+      const model = diskBlockMatch[5].trim();
+      const rpmField = diskBlockMatch[7];
+      const isHdd = rpmField && rpmField.trim().toUpperCase() !== 'N/A';
+      const sizeGB = decodeDiskCapacityFromModel(model);
+      shelf.disks.push({
+        slot: parseInt(diskBlockMatch[3], 10),
+        model,
+        sizeStr: sizeGB != null ? (sizeGB >= 1000 ? `${(sizeGB / 1000).toFixed(1)}TB` : `${sizeGB}GB`) : 'unknown',
+        sizeGB: sizeGB != null ? sizeGB : 0,
+        type: isHdd ? "SAS HDD" : "SAS SSD",
+        firmware: diskBlockMatch[6].trim(),
+        serial
+      });
+      if (sizeGB == null) {
+        data.parseWarnings.push({
+          section: "Disk Shelves",
+          message: `Disk model "${model}" on Shelf ${shelfId} has an unrecognized capacity encoding — its size could not be determined and it won't contribute to capacity/RAID calculations.`
+        });
+      }
+    }
+  }
+
   // Parse disks nested in shelf blocks
   // Unlike shelf *detection* above (5 fallback passes), this only ever tried one disk-line
   // format — a shelf could be confidently marked "parsed" while silently ending up with zero
@@ -569,6 +691,11 @@ export function parseASUP(files) {
   // real ASUP used a different disk-listing format within the shelf block. Pass 2 reuses the
   // sysconfig -a tabular pattern already used elsewhere as the no-shelf-detected fallback.
   const shelfSplit = combinedText.split(/Shelf\s+(\d+):/i);
+  // A real ASUP bundle repeats "Shelf N:" headers across many report sections/files for the
+  // same physical shelf — without tracking which shelf ids we've already warned about, a shelf
+  // whose disk format genuinely can't be parsed got the same warning pushed once per repeated
+  // occurrence (confirmed against a real customer ASUP: one shelf produced 6 identical warnings).
+  const diskParseWarnedShelfIds = new Set();
   for (let i = 1; i < shelfSplit.length; i += 2) {
     const shelfId = shelfSplit[i].trim();
     const shelfText = shelfSplit[i + 1] || "";
@@ -617,7 +744,8 @@ export function parseASUP(files) {
      // Both passes failed — flag it rather than silently leaving a "parsed" shelf with 0 disks,
      // which would otherwise zero out that shelf's contribution to capacity/RAID math with no
      // visible warning anywhere in the Data Quality report.
-     if (shelf.disks.length === 0 && !isDemoMode) {
+     if (shelf.disks.length === 0 && !isDemoMode && !diskParseWarnedShelfIds.has(shelfId)) {
+       diskParseWarnedShelfIds.add(shelfId);
        data.parseWarnings.push({
          section: "Disk Shelves",
          message: `Shelf ${shelfId} (${shelf.model}) was detected but its disk inventory could not be parsed — this shelf will show 0 disks and won't contribute to capacity/RAID calculations.`

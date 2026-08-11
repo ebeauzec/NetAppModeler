@@ -67,11 +67,11 @@ async function checkForUpdates() {
       <p><strong style="color: var(--color-warning);">Local update helper isn't running.</strong></p>
       <p>This app stays 100% offline by design — it never reaches the internet on its own. To check for newer platform/cabling reference data:</p>
       <ol style="padding-left: 1.2rem;">
-        <li>Open a terminal in the project folder.</li>
-        <li>Run: <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python tools/update_server.py</code></li>
-        <li>Click "Check for Updates" again while that's running.</li>
+        <li>Close this window (and the browser tab, if you opened the HTML file directly).</li>
+        <li>Next time, start the app via <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">launch.bat</code> (or <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python launch.py</code>) instead of opening the HTML file — it starts this helper for you automatically.</li>
+        <li>Or, to keep using this open tab: open a terminal in the project folder, run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python tools/update_server.py</code>, then click "Check for Updates" again.</li>
       </ol>
-      <p style="font-size:0.78rem; margin-top:0.75rem;">Closing that terminal stops the helper and returns the app to fully offline. This button only ever talks to 127.0.0.1 — never the wider internet.</p>
+      <p style="font-size:0.78rem; margin-top:0.75rem;">Closing the helper's console window stops it and returns the app to fully offline. This button only ever talks to 127.0.0.1 — never the wider internet.</p>
     `;
     return;
   }

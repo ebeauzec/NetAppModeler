@@ -68,7 +68,7 @@ Python scripts, run on demand, never from the browser app itself. This keeps
 the "100% client-side, dark-site safe" guarantee in this file's parent
 README intact.
 
-**In-app "Check for Updates" button (v2.57):** `tools/update_server.py` is a
+**In-app "Check for Updates" button (v2.57, launcher added v2.58):** `tools/update_server.py` is a
 small local HTTP server (`127.0.0.1:8765` only) that the header's "Check for
 Updates" button talks to. It exists because `docs.netapp.com` sends no
 `Access-Control-Allow-Origin` header — confirmed by inspecting the response
@@ -76,8 +76,10 @@ headers directly — so the app's own JS can't read a direct fetch to that
 domain even though the request would succeed. The helper runs the same
 harvest + drift-check as the two tools above and reports the result back
 over localhost; it never auto-applies a fix to `compatibility.js`. The user
-must start it explicitly (`python tools/update_server.py`) and it only ever
-serves 127.0.0.1 — see README.md's "Checking for Updates" section.
+starts it — either automatically via `launch.py`/`launch.bat` (recommended;
+starts the helper and opens the app in one step) or manually
+(`python tools/update_server.py`) — and it only ever serves 127.0.0.1; see
+README.md's "Checking for Updates" section.
 
 ---
 
