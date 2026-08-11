@@ -3426,9 +3426,31 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
   const profile = getPlatformProfile(state.version.model);
   const pDef = profile.ports || { cluster: ["e0a", "e0b"], data: ["e0c", "e0d"], san: ["0e", "0f"], storage: ["0a", "0b"] };
 
-  // Gather all available storage ports with breakout support
-  const allStoragePortsA = resolveStoragePorts(state, shelfType, totalShelvesCount);
+  // Gather all available storage ports with breakout support. For MetroCluster,
+  // this must be the PER-SITE shelf count, not the global total across both
+  // sites — each site's HA pair only needs enough ports for its own local
+  // shelves. Using the global total here was causing false breakout-port
+  // synthesis (e.g. "e11a.1" instead of the real "e11a") for any MCC config
+  // where the combined two-site shelf count exceeded one site's real port
+  // capacity, even though each individual site was well within it.
+  const perSiteShelvesCount = isMetroCluster ? Math.ceil(totalShelvesCount / 2) : totalShelvesCount;
+  const allStoragePortsA = resolveStoragePorts(state, shelfType, perSiteShelvesCount);
   const allStoragePortsB = [...allStoragePortsA];
+
+  // Lays out a node's storage-port box: wraps to 2 rows once there are more than
+  // 4 ports (e.g. AFF A1K's 8 storage ports) so labels stay readable instead of
+  // being crammed into one row until they visually smear into a solid block.
+  // boxStartX is where the 100px-wide storage-port box begins (150 for Site A's
+  // column, 485 for Site B's).
+  function computeStoragePortLayout(ports, boxStartX) {
+    const n = ports.length;
+    const portsPerRow = n > 4 ? Math.ceil(n / 2) : n;
+    const rowCount = n > 4 ? 2 : 1;
+    const spacing = portsPerRow > 0 ? Math.floor(100 / portsPerRow) : 24;
+    const portW = Math.max(14, spacing - 2);
+    const startX = boxStartX + 5 + Math.floor((100 - (portsPerRow * spacing)) / 2);
+    return { spacing, portW, startX, portsPerRow, rowCount };
+  }
 
   if (isMetroCluster) {
     // --- METROCLUSTER DUAL SITE DRAWING ---
@@ -3497,19 +3519,21 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         `;
       });
 
-      // Controller A Storage ports (dynamic)
+      // Controller A Storage ports (dynamic, wraps to 2 rows past 4 ports)
       const numPortsA = allStoragePortsA.length;
-      const spacingA = numPortsA > 4 ? Math.floor(100 / numPortsA) : 24;
-      const portWA = numPortsA > 4 ? Math.max(8, spacingA - 2) : 20;
-      const startXA = 150 + 5 + Math.floor((100 - (numPortsA * spacingA)) / 2);
+      const layoutA = computeStoragePortLayout(allStoragePortsA, 150);
+      const { spacing: spacingA, portW: portWA, startX: startXA, portsPerRow: rowLenA } = layoutA;
 
       svgStr += `<rect x="150" y="${yNode + 40}" width="110" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
       svgStr += `<text x="205" y="${yNode + 37}" fill="var(--color-info)" font-size="6" text-anchor="middle">Storage Loop</text>`;
       allStoragePortsA.forEach((port, idx) => {
-        const x = startXA + idx * spacingA;
+        const row = layoutA.rowCount > 1 ? Math.floor(idx / rowLenA) : 0;
+        const col = layoutA.rowCount > 1 ? idx % rowLenA : idx;
+        const x = startXA + col * spacingA;
+        const yOff = row * 12;
         svgStr += `
-          <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="${portWA}" height="12" rx="1"/>
-          <text x="${x + portWA/2}" y="${yNode + 52}" fill="#fff" font-size="${numPortsA > 6 ? 4 : 6}" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
+          <rect class="visual-port active" x="${x}" y="${yNode + 44 + yOff}" width="${portWA}" height="12" rx="1"/>
+          <text x="${x + portWA/2}" y="${yNode + 52 + yOff}" fill="#fff" font-size="6" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
         `;
       });
 
@@ -3520,19 +3544,21 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         <text x="605" y="${yNode + 29}" fill="var(--color-muted)" font-size="7" text-anchor="middle">S/N: ${serialB}</text>
       `;
 
-      // Controller B Storage ports (dynamic)
+      // Controller B Storage ports (dynamic, wraps to 2 rows past 4 ports)
       const numPortsB = allStoragePortsB.length;
-      const spacingB = numPortsB > 4 ? Math.floor(100 / numPortsB) : 24;
-      const portWB = numPortsB > 4 ? Math.max(8, spacingB - 2) : 20;
-      const startXB = 485 + 5 + Math.floor((100 - (numPortsB * spacingB)) / 2);
+      const layoutB = computeStoragePortLayout(allStoragePortsB, 485);
+      const { spacing: spacingB, portW: portWB, startX: startXB, portsPerRow: rowLenB } = layoutB;
 
       svgStr += `<rect x="485" y="${yNode + 40}" width="110" height="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" rx="2"/>`;
       svgStr += `<text x="540" y="${yNode + 37}" fill="var(--color-info)" font-size="6" text-anchor="middle">Storage Loop</text>`;
       allStoragePortsB.forEach((port, idx) => {
-        const x = startXB + idx * spacingB;
+        const row = layoutB.rowCount > 1 ? Math.floor(idx / rowLenB) : 0;
+        const col = layoutB.rowCount > 1 ? idx % rowLenB : idx;
+        const x = startXB + col * spacingB;
+        const yOff = row * 12;
         svgStr += `
-          <rect class="visual-port active" x="${x}" y="${yNode + 44}" width="${portWB}" height="12" rx="1"/>
-          <text x="${x + portWB/2}" y="${yNode + 52}" fill="#fff" font-size="${numPortsB > 6 ? 4 : 6}" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
+          <rect class="visual-port active" x="${x}" y="${yNode + 44 + yOff}" width="${portWB}" height="12" rx="1"/>
+          <text x="${x + portWB/2}" y="${yNode + 52 + yOff}" fill="#fff" font-size="6" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">${port}</text>
         `;
       });
 
@@ -3578,6 +3604,13 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
       shelfYPositions.push(accY);
       accY += getShelfHeight(shelfObj.model) + shelfGap;
     }
+
+    // Tracks "this is the Nth NS224 shelf at this site" (1-based) across sIdx
+    // iterations — needed to look up real sourced cable endpoints via
+    // getShelfCabling(), and distinct from sIdx/j which index into shelf
+    // *stacks*, not "shelf position within its site".
+    let siteAShelfCount = 0;
+    let siteBShelfCount = 0;
 
     for (let sIdx = 0; sIdx < stacks.length; sIdx++) {
       const originalStack = stacks[sIdx];
@@ -3664,47 +3697,80 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
           }
 
           // Local & Sync Mirror replication connections from/to controllers
-          const numPortsA = allStoragePortsA.length;
-          const spacingA = numPortsA > 4 ? Math.floor(100 / numPortsA) : 24;
-          const portWA = numPortsA > 4 ? Math.max(8, spacingA - 2) : 20;
-          const startXA = 150 + 5 + Math.floor((100 - (numPortsA * spacingA)) / 2);
+          const layoutA2 = computeStoragePortLayout(allStoragePortsA, 150);
+          const layoutB2 = computeStoragePortLayout(allStoragePortsB, 485);
+          const { spacing: spacingA, portW: portWA, startX: startXA } = layoutA2;
+          const { spacing: spacingB, portW: portWB, startX: startXB } = layoutB2;
 
-          const numPortsB = allStoragePortsB.length;
-          const spacingB = numPortsB > 4 ? Math.floor(100 / numPortsB) : 24;
-          const portWB = numPortsB > 4 ? Math.max(8, spacingB - 2) : 20;
-          const startXB = 485 + 5 + Math.floor((100 - (numPortsB * spacingB)) / 2);
+          // Resolves a named storage port to its rendered {x, y} anchor within
+          // a node's (possibly 2-row) storage-port box.
+          function storagePortAnchor(portName, forSiteA, yNode) {
+            const layout = forSiteA ? layoutA2 : layoutB2;
+            const ports = forSiteA ? allStoragePortsA : allStoragePortsB;
+            let idx = ports.indexOf(portName);
+            if (idx === -1) idx = 0; // sourced port not in the resolved list (e.g. platform profile gap) — anchor to first port rather than fail silently off-diagram
+            const row = layout.rowCount > 1 ? Math.floor(idx / layout.portsPerRow) : 0;
+            const col = layout.rowCount > 1 ? idx % layout.portsPerRow : idx;
+            const x = layout.startX + col * layout.spacing + layout.portW / 2;
+            const y = yNode + 44 + row * 12 + 6;
+            return { x, y };
+          }
 
           // 1. Outbound cables / loops
           const isNS224Shelf = (shelfObj.model || '').toLowerCase().includes('ns224');
           if (isNS224Shelf) {
-            // NS224: every shelf gets its own dedicated pair of RoCE cables (no daisy-chain, no return loop)
-            const k = sIdx % nodesPerSite;
-            const yNode = 10 + k * 90;
-            const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2 + j * 2; // j matters: each shelf pair uses different port
-            const portY = yNode + 50;
+            // "Which NS224 shelf is this, at this site" (1-based) — the numbering
+            // getShelfCabling()'s sourced data (js/rackLayouts.js) is keyed by.
+            const shelfIndexInSite = isSiteA ? ++siteAShelfCount : ++siteBShelfCount;
+            const sourcedCabling = getShelfCabling(state.version.model, 'ns224', shelfIndexInSite);
+            const ctrlY = cy + (isSiteA ? -1 : 1) * 4; // slight vertical offset so overlapping curves stay distinguishable
 
-            const pAIdx = Math.min(localPortPairIdx, allStoragePortsA.length - 2);
-            const pBIdx = Math.min(localPortPairIdx, allStoragePortsB.length - 2);
-            const repAIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
-            const repBIdx = Math.min(localPortPairIdx + 1, allStoragePortsB.length - 1);
-
-            const pAX = startXA + pAIdx * spacingA + portWA / 2;
-            const pBX = startXB + pBIdx * spacingB + portWB / 2;
-            const repAX = startXA + repAIdx * spacingA + portWA / 2;
-            const repBX = startXB + repBIdx * spacingB + portWB / 2;
-            
-            const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12;
-
-            if (isSiteA) {
-              // Cable from controller port pAX → shelf NSM-A (left side at x=30)
-              svgStr += `<path d="M ${pAX},${portY} C ${pAX},${ctrlY} 30,${ctrlY} 30,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-              // Cable from controller port repAX → shelf NSM-B (right side at x=240)
-              svgStr += `<path d="M ${repAX},${portY} C ${repAX},${ctrlY} 240,${ctrlY} 240,${cy}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+            if (sourcedCabling) {
+              // Real endpoints from NetApp's install guides: every shelf connects to
+              // BOTH nodes in the local HA pair (controllerSide A = this site's first
+              // node, B = its second) — not one node picked by shelf index parity.
+              sourcedCabling.forEach(endpoint => {
+                const k = endpoint.controllerSide === 'A' ? 0 : 1;
+                const yNode = 10 + k * 90;
+                const anchor = storagePortAnchor(endpoint.controllerPort, isSiteA, yNode);
+                const shelfX = endpoint.shelfIOM === 'A' ? (isSiteA ? 30 : 490) : (isSiteA ? 240 : 700);
+                const isIomA = endpoint.shelfIOM === 'A';
+                svgStr += `<path d="M ${anchor.x},${anchor.y} C ${anchor.x},${ctrlY} ${shelfX},${ctrlY} ${shelfX},${cy}" class="visual-cable multipath" ${isIomA ? '' : 'stroke-dasharray="4 3"'} stroke="${isIomA ? 'var(--color-info)' : 'var(--color-success)'}" fill="none" stroke-width="1.5"/>`;
+              });
             } else {
-              // Cable from controller port pBX → shelf NSM-A (left side at x=490)
-              svgStr += `<path d="M ${pBX},${portY} C ${pBX},${ctrlY} 490,${ctrlY} 490,${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
-              // Cable from controller port repBX → shelf NSM-B (right side at x=700)
-              svgStr += `<path d="M ${repBX},${portY} C ${repBX},${ctrlY} 700,${ctrlY} 700,${cy}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+              // No sourced data for this platform/shelf position — fall back to the
+              // port-count-based heuristic, but still connect BOTH HA-partner nodes
+              // to both shelf IOMs (the structural fix: a shelf is never "owned" by
+              // just one node in an HA pair).
+              const localPortPairIdx = (shelfIndexInSite - 1) * 2;
+              const pIdx = Math.min(localPortPairIdx, allStoragePortsA.length - 2);
+              const repIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
+              const layout = isSiteA ? layoutA2 : layoutB2;
+
+              // Same row/col resolution as storagePortAnchor(), but by raw index
+              // (this is the no-sourced-data fallback, so there's no port name to
+              // look up) — still needs to respect the 2-row wrap so the anchor
+              // point matches where the port's label is actually drawn.
+              const anchorFor = (idx) => {
+                const row = layout.rowCount > 1 ? Math.floor(idx / layout.portsPerRow) : 0;
+                const col = layout.rowCount > 1 ? idx % layout.portsPerRow : idx;
+                return {
+                  x: layout.startX + col * layout.spacing + layout.portW / 2,
+                  yOff: row * 12,
+                };
+              };
+              const pAnchor = anchorFor(pIdx);
+              const repAnchor = anchorFor(repIdx);
+
+              for (let k = 0; k < nodesPerSite; k++) {
+                const yNode = 10 + k * 90;
+                const pPortY = yNode + 44 + pAnchor.yOff + 6;
+                const repPortY = yNode + 44 + repAnchor.yOff + 6;
+                const iomAX = isSiteA ? 30 : 490;
+                const iomBX = isSiteA ? 240 : 700;
+                svgStr += `<path d="M ${pAnchor.x},${pPortY} C ${pAnchor.x},${ctrlY} ${iomAX},${ctrlY} ${iomAX},${cy}" class="visual-cable multipath" stroke="var(--color-info)" fill="none" stroke-width="1.5"/>`;
+                svgStr += `<path d="M ${repAnchor.x},${repPortY} C ${repAnchor.x},${ctrlY} ${iomBX},${ctrlY} ${iomBX},${cy}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+              }
             }
           } else {
             // SAS: existing outbound (j===0) and return (j===last) loop pattern
