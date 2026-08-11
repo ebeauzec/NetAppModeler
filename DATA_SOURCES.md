@@ -24,6 +24,52 @@ Always check these sources when updating data in the tool:
 
 ---
 
+## Physical/Cabling Reference Sources
+
+Port names and cable-endpoint data in `js/rackLayouts.js` (and the corrections
+made to `NETAPP_PLATFORMS[model].ports` in `compatibility.js`) are sourced
+from NetApp's public Installation & Setup / hot-add cabling guides on
+`docs.netapp.com` — no login required, unlike Hardware Universe. Two things
+are NOT scrapable from these pages: `hwu.netapp.com` itself (Azure B2C login
+wall) and the interactive "Animation" rear-panel diagrams embedded in the
+install guides (client-side JS component, not a flat image/SVG). See
+`js/rackLayouts.js`'s file header for what "accurate" means given that gap —
+cable endpoints are sourced and correct; visual positions are a clean
+schematic, not a pixel match to NetApp's product photos.
+
+**Harvest tooling:** `tools/harvest_reference_data.py` fetches the target
+pages (plain `urllib` + a self-identifying User-Agent + a proxy-aware opener
+— this combination reaches `docs.netapp.com`/`kb.netapp.com` fine; a bare
+`WebFetch`-style request without the UA/proxy handling gets a 403) and saves
+raw extracted text to `data/netapp_docs_raw/*.txt` with a manifest at
+`data/netapp_docs_manifest.json`. `tools/apply_reference_data.py` then
+cross-checks the sourced port names against `compatibility.js`'s catalog and
+flags drift — run it after any harvest or manual data edit.
+
+| Page | Covers |
+|------|--------|
+| `ontap-systems/{a400,a800,a900}/install-detailed-guide.html` | Controller cluster/HA/host cabling, port names |
+| `ontap-systems/a1k/install-cable.html`, `a1k/overview.html` | AFF A1K cabling + key specs |
+| `ontap-systems/ns224/ns224-shelf-overview.html` | NSM module naming, default shelf IDs |
+| `ontap-systems/ns224/hot-add-aff-cable-{a400-c400,a800-c800,a900,a1k}.html` | Exact NS224-to-controller cable endpoint pairs, per platform and shelf count |
+
+**Confirmed corrections made 2026-08-11** (compatibility.js's prior port
+lists didn't match these sourced guides): AFF A1K storage ports (was
+`e2a-e5b`, should be `e8a-e11b`), AFF A900 cluster ports (was onboard
+`e0a/e0b`, should be PCIe slot `e4a/e8a`) and storage ports (was
+`e3/e7/e11/e15`, should be `e1/e2/e10/e11`), AFF A400/C400/A800/C800 NS224
+storage ports missing their PCIe-slot pairs. Re-run
+`tools/apply_reference_data.py` after touching any of these platforms'
+`ports` field.
+
+**What this deliberately does NOT do:** the shipped `standalone_netapp_modeler.html`
+never makes a network call — both harvest tools above are local, human/AI-run
+Python scripts, run on demand, never from the browser app itself. This keeps
+the "100% client-side, dark-site safe" guarantee in this file's parent
+README intact.
+
+---
+
 ## ONTAP Version Registry (Last verified: July 28, 2026)
 
 Source: endoflife.date/netapp-ontap

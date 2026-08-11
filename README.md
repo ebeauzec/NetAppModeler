@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.55)
+# NetApp AutoSupport Analyzer & Modeler (v2.56)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,12 +6,14 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.55)
-- **Audit Engine Correctness Fixes:** MetroCluster site-symmetry (Rule 10) and SyncMirror (Rule 18) checks now match real parsed node/aggregate data instead of literal placeholder strings that never matched real ASUPs — both were silently reporting "compliant" regardless of actual configuration. Fixed a duplicate-report bug (SP firmware/disk firmware/ACP rules were being reported twice, inflating the compliance score) and a `ReferenceError` crash when selecting a shelf type in Step 4.
-- **Unified Capacity Math:** Consolidated 5 independently hand-written usable-capacity formulas (flat 0.70/0.80/0.82/0.85 fudge factors plus a ratio-based MCC shortcut) into one shared, RAID-DP-correct helper used everywhere — this closes the class of bug behind several past capacity miscalculations (see v2.48–v2.51 history below).
-- **Single-Sourced ONTAP Lifecycle Table:** `compatibility.js`'s `ONTAP_LIFECYCLE` is now the only hand-maintained lifecycle table; `bestPractices.js`'s copy is derived from it instead of duplicated by hand (the two had already drifted — the old copy stopped at 9.16.1 while the source went to 9.19.1).
-- **Parser Hardening:** Shelves that parse but silently end up with zero disks now get a fallback pass and a visible Data Quality warning instead of zeroing out capacity math with no explanation. Port-to-node assignment is now correlated to each node's own text block instead of blind index-chunking, which could cross-wire ports on clusters with more than 4 ports/node or more than 2 nodes.
-- **XSS Hardening:** Parsed ASUP values (node/shelf/aggregate names, serials, firmware strings) rendered into the page are now HTML-escaped at the highest-traffic report/inventory views.
+## 🆕 New in this Version (v2.56)
+- **Sourced Cabling Reference Data:** New `js/rackLayouts.js` encodes exact NS224-to-controller cable endpoints sourced directly from NetApp's official public install/cabling guides (`docs.netapp.com`, no login required) for AFF A400/C400/A800/C800/A900/A1K — see `DATA_SOURCES.md`'s new Physical/Cabling Reference Sources section. `tools/harvest_reference_data.py` (re)fetches these pages; `tools/apply_reference_data.py` cross-checks them against `compatibility.js`'s port catalog.
+- **Port-Catalog Corrections:** That cross-check caught real, previously-unnoticed errors — AFF A1K's storage ports didn't match any published cabling step (`e2a-e5b` vs. the real `e8a-e11b`), AFF A900's cluster ports were listed as onboard `e0a/e0b` when NetApp's guide places them on PCIe slots `e4a/e8a`, and A400/C400/A800/C800 were missing their PCIe-slot NS224 storage ports entirely.
+- **Automated Regression Suite:** `tests/run_tests.py` rebuilds the bundle and exercises it headless, pinning the v2.55 correctness fixes (capacity math, audit-rule duplication/matching, escapeHtml, parser windowing) as automated assertions — this is the check that was missing when several of those bugs were introduced and found reactively.
+- **Audit Engine Correctness Fixes (v2.55):** MetroCluster site-symmetry (Rule 10) and SyncMirror (Rule 18) checks now match real parsed node/aggregate data instead of literal placeholder strings that never matched real ASUPs — both were silently reporting "compliant" regardless of actual configuration. Fixed a duplicate-report bug (SP firmware/disk firmware/ACP rules were being reported twice, inflating the compliance score) and a `ReferenceError` crash when selecting a shelf type in Step 4.
+- **Unified Capacity Math (v2.55):** Consolidated 5 independently hand-written usable-capacity formulas (flat 0.70/0.80/0.82/0.85 fudge factors plus a ratio-based MCC shortcut) into one shared, RAID-DP-correct helper used everywhere.
+- **Parser Hardening (v2.55):** Shelves that parse but silently end up with zero disks now get a fallback pass and a visible Data Quality warning. Port-to-node assignment is now correlated to each node's own text block instead of blind index-chunking.
+- **XSS Hardening (v2.55):** Parsed ASUP values rendered into the page are now HTML-escaped at the highest-traffic report/inventory views.
 
 ---
 
@@ -59,14 +61,25 @@ NetAppModeler/
 ├── build_standalone.py         # Python build script to compile the offline bundle
 ├── standalone_netapp_modeler.html # Compiled single-file offline distribution
 ├── README.md                   # Project documentation
+├── DATA_SOURCES.md             # Data sourcing/traceability registry (ONTAP lifecycle + cabling)
 ├── .gitignore                  # Git ignore rules
 │
-└── js/                         # JavaScript application logic
-    ├── parser.js               # AutoSupport text parser engine
-    ├── bestPractices.js        # Best practice audit rules engine
-    ├── compatibility.js        # NetApp platform registry, port layouts & support boundaries
-    ├── ui.js                   # Wizard workflow controller and interactive sizing UI
-    └── jszip.min.js            # Library for compressing/decompressing configurations
+├── js/                         # JavaScript application logic
+│   ├── parser.js               # AutoSupport text parser engine
+│   ├── bestPractices.js        # Best practice audit rules engine
+│   ├── compatibility.js        # NetApp platform registry, port layouts & support boundaries
+│   ├── rackLayouts.js          # Sourced NS224-to-controller cable endpoint data
+│   ├── ui.js                   # Wizard workflow controller and interactive sizing UI
+│   └── jszip.min.js            # Library for compressing/decompressing configurations
+│
+├── tools/                      # Offline data-refresh tooling (never called by the shipped app)
+│   ├── harvest_reference_data.py   # Fetches NetApp's public cabling docs -> data/netapp_docs_raw/
+│   └── apply_reference_data.py     # Cross-checks sourced ports against compatibility.js, flags drift
+│
+├── data/                       # Harvested reference data (raw text + manifest)
+│
+└── tests/
+    └── run_tests.py            # Headless regression suite — run before every commit
 ```
 
 ---

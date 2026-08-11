@@ -143,11 +143,18 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v20.1",
     description: "High-end NVMe-oF All Flash storage controller.",
+    // Port scheme corrected against NetApp's official install/cabling guides
+    // (docs.netapp.com/us-en/ontap-systems/a1k/install-cable.html and
+    // .../ns224/hot-add-aff-cable-a1k.html, harvested 2026-08-11 — see
+    // js/rackLayouts.js and DATA_SOURCES.md). I/O slots are numbered 1-11;
+    // the previous e2a-e5b storage range didn't match any published cabling
+    // step. e9a/e9b appear in the docs as both a "typical" host-network
+    // example and as the shelf-3 RoCE pair — kept in both groups here.
     ports: {
-      cluster: ["e1a", "e1b"],          // 100GbE onboard cluster interconnect
-      data:    ["e0c", "e0d", "e0e", "e0f"],
-      san:     ["e0g", "e0h"],
-      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b", "e5a", "e5b"] // PCIe RoCE 100G for NS224
+      cluster: ["e1a", "e7a"],          // cluster/HA interconnect
+      data:    ["e9a", "e9b"],          // 100GbE host network (typical example)
+      san:     [],
+      storage: ["e8a", "e8b", "e9a", "e9b", "e10a", "e10b", "e11a", "e11b"] // NS224 shelves 1-4, PCIe RoCE 100G
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 11
@@ -214,11 +221,17 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v18.4",
     description: "Enterprise NVMe All Flash storage system.",
+    // Port scheme corrected against NetApp's official install/cabling guides
+    // (docs.netapp.com/us-en/ontap-systems/a900/install-detailed-guide.html
+    // and .../ns224/hot-add-aff-cable-a900.html, harvested 2026-08-11 — see
+    // js/rackLayouts.js and DATA_SOURCES.md). Cluster interconnect is on
+    // slots 4/8 (e4a/e8a), not onboard e0a/e0b; storage/NS224 ports are on
+    // slots 1/2/10/11, not 3/7/11/15.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
-      san: ["0e", "0f"],
-      storage: ["e3a", "e3b", "e7a", "e7b", "e11a", "e11b", "e15a", "e15b"]
+      cluster: ["e4a", "e8a"],
+      data: ["e3a", "e3c", "e9a", "e9c", "e4b", "e8b"],
+      san: ["5a", "5b", "5c", "5d", "7a", "7b", "7c", "7d"],
+      storage: ["e1a", "e1b", "e2a", "e2b", "e10a", "e10b", "e11a", "e11b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 10
@@ -239,11 +252,16 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v14.6",
     description: "Enterprise NVMe NVMe-oF All Flash array (End of Support on ONTAP 9.15.1+).",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/a800/install-detailed-guide.html
+    // and .../ns224/hot-add-aff-cable-a800-c800.html (harvested 2026-08-11, see
+    // js/rackLayouts.js). Cluster/HA use e0a/e1a + e0b/e1b; FC host ports are
+    // 2a-2d (no "e" prefix, per NetApp's own doc); NS224 storage uses PCIe
+    // slot 5 (primary) and slot 3 (second shelf), not slot 2.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
-      san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b"]
+      cluster: ["e0a", "e0b", "e1a", "e1b"],
+      data: ["e0c", "e0d", "e4a", "e4b", "e4c", "e4d"],
+      san: ["0e", "0f", "2a", "2b", "2c", "2d"],
+      storage: ["e3a", "e3b", "e5a", "e5b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
@@ -287,11 +305,14 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v15.5",
     description: "Mid-range NVMe storage platform.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/ns224/hot-add-aff-cable-a400-c400.html
+    // (harvested 2026-08-11, see js/rackLayouts.js) — first NS224 shelf cables
+    // to onboard e0c/e0d; a second shelf adds PCIe slot 5 (e5a/e5b).
     ports: {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b"]
+      storage: ["e2a", "e2b", "e3a", "e3b", "e5a", "e5b"]
     },
     supportedCards: ["nic_10g_2port", "nic_25g_4port", "nic_100g_2port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
@@ -480,11 +501,15 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v18.4",
     description: "Capacity NVMe All Flash storage array.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/ns224/hot-add-aff-cable-a800-c800.html
+    // (harvested 2026-08-11, see js/rackLayouts.js) — this doc covers A800 and
+    // C800 identically; NS224 storage uses PCIe slot 5 (primary) and slot 3
+    // (second shelf), not slots 2/6.
     ports: {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e6a", "e6b"]
+      storage: ["e3a", "e3b", "e5a", "e5b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
@@ -502,11 +527,14 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v15.5",
     description: "Capacity NVMe All Flash storage platform.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/ns224/hot-add-aff-cable-a400-c400.html
+    // (harvested 2026-08-11, see js/rackLayouts.js) — C400 NS224 storage uses
+    // PCIe slot 4 (primary) and slot 5 (second shelf), no onboard RoCE path.
     ports: {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b"]
+      storage: ["e4a", "e4b", "e5a", "e5b"]
     },
     supportedCards: ["nic_10g_2port", "nic_25g_4port", "nic_100g_2port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port", "roce_hba_100g_2port"],
     maxPcieSlots: 4

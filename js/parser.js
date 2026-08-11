@@ -1050,17 +1050,33 @@ export function parseASUP(files) {
   // Previously matched with one global regex across the whole document, then chopped the
   // flat match list into groups of 4 in encounter order (portsList.slice(nodeIdx*4, ...))
   // with no actual correlation to which node a port line belonged to — silently cross-wired
-  // ports on any cluster with >4 ports/node or >2 nodes. Now scoped per-node using the same
-  // indexOf(node.name) windowing already used for memory/CPU parsing above, bounded at the
-  // next node's position (when found) so one node's window can't swallow another's ports.
+  // ports on any cluster with >4 ports/node or >2 nodes.
+  //
+  // Real ASUP dumps typically mention every node's name together in an early header/summary
+  // block, THEN list each node's actual port data later in that node's own detail section —
+  // so naively using indexOf(node.name)'s first hit (or bounding at another node's first
+  // hit) lands on the header mention, not the detail section, and can clip the window before
+  // it ever reaches real port lines. Instead, find each node's "qualifying" occurrence — the
+  // mention of its name that's actually followed by port data close by — and bound each
+  // node's window at the next node's qualifying occurrence, not its first mention.
   const portRegex = /port\s+([\w\d]+)\s+(up|down)\s+([\w\d]+)\s+([a-zA-Z0-9\-]+)\s+([\w\-]+)/ig;
 
+  function findNodeSectionIdx(name) {
+    let searchFrom = 0;
+    while (true) {
+      const idx = combinedText.indexOf(name, searchFrom);
+      if (idx === -1) return combinedText.indexOf(name); // no qualifying hit — fall back to first (-1 if none)
+      if (/port\s+[\w\d]+\s+(up|down)/i.test(combinedText.substring(idx, idx + 300))) return idx;
+      searchFrom = idx + name.length;
+    }
+  }
+
   data.nodes.forEach(node => {
-    const nodeHeaderIdx = combinedText.indexOf(node.name);
+    const nodeHeaderIdx = findNodeSectionIdx(node.name);
     let windowEnd = nodeHeaderIdx + 15000;
     data.nodes.forEach(other => {
       if (other === node) return;
-      const otherIdx = combinedText.indexOf(other.name);
+      const otherIdx = findNodeSectionIdx(other.name);
       if (otherIdx > nodeHeaderIdx && otherIdx < windowEnd) windowEnd = otherIdx;
     });
     const nodeBlock = nodeHeaderIdx !== -1 ? combinedText.substring(nodeHeaderIdx, windowEnd) : "";

@@ -29,6 +29,7 @@ def bundle():
         "js/demoData.js",
         "js/parser.js",
         "js/compatibility.js",
+        "js/rackLayouts.js",
         "js/bestPractices.js",
         "js/ui.js",
     ]
