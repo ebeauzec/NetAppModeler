@@ -3612,21 +3612,39 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
     let siteAShelfCount = 0;
     let siteBShelfCount = 0;
 
+    // Resolve every shelf's site ONCE, globally, before drawing anything.
+    // Untagged shelves (e.g. from ASUP parsing, which doesn't currently record
+    // which physical site a shelf is at) are split evenly among THEMSELVES —
+    // NOT mixed in with shelves that already carry a real .site tag. The old
+    // per-stack fallback used floor(totalShelvesCount / 2) against the GLOBAL
+    // total, so adding 2 new, correctly site-tagged shelves to an untagged
+    // 4-shelf system shifted the split point for the *existing* shelves too
+    // (3-vs-1, then combined with the new pair, a visibly asymmetric 4-vs-2
+    // diagram) even though the underlying state was symmetric.
+    const shelfSiteMap = new Map(); // original shelf index -> 'A' | 'B'
+    {
+      const allShelfItems = [];
+      for (let idx = 0; idx < totalShelvesCount; idx++) {
+        const isProposed = idx >= state.shelves.length;
+        const shelfObj = isProposed ? proposedShelvesArray[idx - state.shelves.length] : state.shelves[idx];
+        allShelfItems.push({ index: idx, obj: shelfObj });
+      }
+      allShelfItems.forEach(item => {
+        if (item.obj.site === 'A' || item.obj.site === 'B') shelfSiteMap.set(item.index, item.obj.site);
+      });
+      const untagged = allShelfItems.filter(item => !shelfSiteMap.has(item.index));
+      const untaggedSiteASize = Math.floor(untagged.length / 2);
+      untagged.forEach((item, uIdx) => {
+        shelfSiteMap.set(item.index, uIdx < untaggedSiteASize ? 'A' : 'B');
+      });
+    }
+
     for (let sIdx = 0; sIdx < stacks.length; sIdx++) {
       const originalStack = stacks[sIdx];
       const isPortExhausted = (sIdx * 2 + 1) >= allStoragePortsA.length;
-      
-      // MCC site split: use shelf.site property if parser set it, otherwise
-      // split evenly — Site A gets the first floor(N/2) shelves, Site B the rest.
-      // floor() guarantees Site A never gets more than Site B for even counts,
-      // and for odd totals (misconfigured) Site B gets the extra shelf (logged as warning).
-      const hasSiteTags = originalStack.some(item => item.obj.site);
-      const siteASplit = hasSiteTags
-        ? originalStack.filter(item => !item.obj.site || item.obj.site === 'A')
-        : originalStack.filter(item => item.index < Math.floor(totalShelvesCount / 2));
-      const siteBSplit = hasSiteTags
-        ? originalStack.filter(item => item.obj.site === 'B')
-        : originalStack.filter(item => item.index >= Math.floor(totalShelvesCount / 2));
+
+      const siteASplit = originalStack.filter(item => shelfSiteMap.get(item.index) === 'A');
+      const siteBSplit = originalStack.filter(item => shelfSiteMap.get(item.index) === 'B');
       const subStacks = [siteASplit, siteBSplit];
 
       for (let sub = 0; sub < 2; sub++) {
