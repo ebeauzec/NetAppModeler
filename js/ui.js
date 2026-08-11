@@ -2,7 +2,38 @@ import { DEMO_DATA, demoASA_A400, demoAFF_C800 } from './demoData.js';
 import { parseASUP, formatGB, parseSizeToGB, getSectionCoverage, mergeClusterASUPs, inferMissingData, computeOverallConfidence } from './parser.js';
 
 import { runAudit, calculateComplianceScore, BP_LIFECYCLE, getPlatformMaxDrives } from './bestPractices.js';
-import { getPlatformProfile, getUpgradeHopsConsiderations, NETAPP_PLATFORMS, EXP_CARDS_CATALOG, compareVersions, getPlatformSlots } from './compatibility.js';
+import { getPlatformProfile, getUpgradeHopsConsiderations, NETAPP_PLATFORMS, EXP_CARDS_CATALOG, compareVersions, getPlatformSlots, isHighEndPlatform } from './compatibility.js';
+
+// Escapes text pulled from parsed ASUP content (node/shelf/aggregate/license names,
+// serials, firmware strings, etc.) before it's interpolated into an innerHTML template.
+// These values originate from uploaded ASUP files, not from this app's own logic, so
+// they're untrusted input as far as the DOM is concerned.
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Canonical RAID-DP usable-capacity formula: whole RAID groups, 2 parity disks per group,
+// halved for MetroCluster synchronous mirroring. Git-verified correct in commit 44ff7e8/621068e
+// (22 data disks x 15300GB / 2 = 168300GB usable per aggregate for a 24-disk NS224 MCC group).
+// This replaces 5 independently hand-written approximations that had drifted apart (flat
+// 0.70/0.80/0.82/0.85 "fudge factors" and a ratio-times-disk-count MCC shortcut) — several of
+// which produced the capacity bugs this project's git history shows being found and fixed
+// reactively more than once. groupSize is the platform's native RAID group size (24 for NS224
+// NVMe shelves, 16 for SAS shelves).
+function computeUsableCapacityGB(diskCount, diskGB, groupSize, isMetroCluster) {
+  if (diskCount <= 0 || diskGB <= 0 || groupSize <= 0) return 0;
+  const numGroups = Math.ceil(diskCount / groupSize);
+  const parityDisks = numGroups * 2; // RAID-DP: 2 parity disks per group
+  const dataDisks = Math.max(0, diskCount - parityDisks);
+  const rawUsableGB = dataDisks * diskGB;
+  return Math.round(isMetroCluster ? rawUsableGB * 0.5 : rawUsableGB);
+}
 
 // --- Application State ---
 let currentState = null;
@@ -2251,7 +2282,7 @@ function allocateHBACardsForState(state) {
   const nvmeShelvesCount = Math.ceil(totalNvmeShelves / haPairsCount);
   const sasShelvesCount = Math.ceil(totalSasShelves / haPairsCount);
 
-  const isHighEnd = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'].some(m => state.version.model.toUpperCase().includes(m));
+  const isHighEnd = isHighEndPlatform(state.version.model);
   const requiredRocePorts = isHighEnd ? Math.ceil(nvmeShelvesCount / 2) * 2 : nvmeShelvesCount * 2;
   const requiredSasPorts = Math.ceil(sasShelvesCount / 4) * 2;
 
@@ -2411,8 +2442,8 @@ function getOptimalDiskSize(model, profile, capacityTB, nodesCount, isGreenfield
   const usableTargetGB = capacityTB * 1000;
   const slots = getPlatformSlots(model);
   const slotsCount = slots.length;
-  const isHighEnd = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'].some(m => model.toUpperCase().includes(m));
-  
+  const isHighEnd = isHighEndPlatform(model);
+
   let bestOption = null;
   let bestPenalty = Infinity;
 
@@ -2642,11 +2673,16 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
   // Generate aggregates (symmetrical) and spares
   const aggregates = [];
   const spares = [];
+  // Read the MetroCluster checkbox now (rather than after aggregates are built, where the
+  // rest of this function reads it into mcType) so a Greenfield MCC baseline's usable-capacity
+  // figures actually apply the synchronous-mirror ÷2 factor instead of silently omitting it.
+  const isMetroClusterBaseline = !!(document.getElementById("deploy-metrocluster") && document.getElementById("deploy-metrocluster").checked);
+  const baselineGroupSize = shelfModel === "NS224" ? 24 : 16;
   for (let i = 0; i < nodesCount; i++) {
     const nodeName = nodes[i].name;
     const charCode = nodeName.substring(nodeName.lastIndexOf("-") + 1); // 'a', 'b', 'c', etc.
-    
-    const usableGB = Math.round((dataDisksPerNode - 2) * diskSizeGB * 0.85);
+
+    const usableGB = computeUsableCapacityGB(dataDisksPerNode, diskSizeGB, baselineGroupSize, isMetroClusterBaseline);
     // Greenfield defaults to 10% usage to remain compliant (Rule 6 capacity audit triggers warnings if > 85%)
     const usedFraction = isGreenfield ? 0.10 : (i % 2 === 0 ? 0.92 : 0.45);
     
@@ -2985,14 +3021,14 @@ function renderCurrentAuditDashboard() {
         siteANodes.forEach(nodeA => {
           if (nodeA) {
             const li = document.createElement("li");
-            li.innerHTML = `<strong>${nodeA.name.toUpperCase()}</strong> (S/N: ${nodeA.serial || "N/A"})`;
+            li.innerHTML = `<strong>${escapeHtml(nodeA.name.toUpperCase())}</strong> (S/N: ${escapeHtml(nodeA.serial) || "N/A"})`;
             siteANodesList.appendChild(li);
           }
         });
         siteBNodes.forEach(nodeB => {
           if (nodeB) {
             const li = document.createElement("li");
-            li.innerHTML = `<strong>${nodeB.name.toUpperCase()}</strong> (S/N: ${nodeB.serial || "N/A"})`;
+            li.innerHTML = `<strong>${escapeHtml(nodeB.name.toUpperCase())}</strong> (S/N: ${escapeHtml(nodeB.serial) || "N/A"})`;
             siteBNodesList.appendChild(li);
           }
         });
@@ -4058,11 +4094,11 @@ function renderStorageInventory(state) {
       <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-bottom: 0.75rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
           <div>
-            <strong style="color: #fff; font-size: 0.88rem;">Shelf ${shelf.id || index + 1}</strong> 
-            <span style="color: var(--color-muted); font-size: 0.8rem; margin-left: 6px;">[Model: ${shelf.model || "Unknown"}, S/N: ${shelf.serial || "N/A"}]</span>
+            <strong style="color: #fff; font-size: 0.88rem;">Shelf ${escapeHtml(shelf.id) || index + 1}</strong>
+            <span style="color: var(--color-muted); font-size: 0.8rem; margin-left: 6px;">[Model: ${escapeHtml(shelf.model) || "Unknown"}, S/N: ${escapeHtml(shelf.serial) || "N/A"}]</span>
           </div>
           <div style="display: flex; gap: 6px; align-items: center;">
-            <span style="font-size: 0.75rem; color: var(--color-muted);">Fw: ${shelf.firmware || "N/A"}</span>
+            <span style="font-size: 0.75rem; color: var(--color-muted);">Fw: ${escapeHtml(shelf.firmware) || "N/A"}</span>
             ${cablingBadge}
           </div>
         </div>
@@ -4083,9 +4119,9 @@ function renderStorageInventory(state) {
         
         html += `
           <li style="margin-bottom: 4px;">
-            <strong>${group.count}x</strong> drives of 
-            <span style="font-family: var(--font-mono); font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 1px 4px; border-radius: 2px; color: #9ca3af;">${group.model}</span> 
-            (Size: <strong>${group.sizeStr}</strong>, Type: <span style="color: ${mediaBadgeColor}; font-weight: 500;">${group.type}</span>, Fw: <strong style="color: #34d399; font-family: var(--font-mono);">${group.firmware || "NA01"}</strong>)
+            <strong>${group.count}x</strong> drives of
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 1px 4px; border-radius: 2px; color: #9ca3af;">${escapeHtml(group.model)}</span>
+            (Size: <strong>${escapeHtml(group.sizeStr)}</strong>, Type: <span style="color: ${mediaBadgeColor}; font-weight: 500;">${escapeHtml(group.type)}</span>, Fw: <strong style="color: #34d399; font-family: var(--font-mono);">${escapeHtml(group.firmware) || "NA01"}</strong>)
           </li>
         `;
       });
@@ -4162,8 +4198,8 @@ function renderAggregateInventory(state) {
       <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-bottom: 0.75rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
           <div>
-            <strong style="color: #fff; font-size: 0.88rem;">${aggr.name}</strong> 
-            <span style="color: var(--color-muted); font-size: 0.8rem; margin-left: 6px;">[Node: ${(aggr.node || 'N/A').toUpperCase()}, RAID: ${(aggr.raidType || 'N/A').toUpperCase()}]</span>
+            <strong style="color: #fff; font-size: 0.88rem;">${escapeHtml(aggr.name)}</strong>
+            <span style="color: var(--color-muted); font-size: 0.8rem; margin-left: 6px;">[Node: ${escapeHtml((aggr.node || 'N/A').toUpperCase())}, RAID: ${escapeHtml((aggr.raidType || 'N/A').toUpperCase())}]</span>
           </div>
           <div>
             <span class="status-badge ${badgeClass}" style="padding: 2px 6px; font-size: 0.7rem;">${utilPercent}% Used</span>
@@ -4227,18 +4263,18 @@ function generateReportStorageInventoryHtml(state) {
 
     let diskItems = "";
     Object.values(diskGroups).forEach(group => {
-      diskItems += `• <strong>${group.count}x</strong> ${group.sizeStr} ${group.type} (Model: ${group.model}, Fw: ${group.firmware})<br>`;
+      diskItems += `• <strong>${group.count}x</strong> ${escapeHtml(group.sizeStr)} ${escapeHtml(group.type)} (Model: ${escapeHtml(group.model)}, Fw: ${escapeHtml(group.firmware)})<br>`;
     });
 
     html += `
       <tr>
-        <td style="font-weight:700; color:#fff;">Shelf ${shelf.id || index + 1}</td>
-        <td>${shelf.model || "Unknown"}</td>
+        <td style="font-weight:700; color:#fff;">Shelf ${escapeHtml(shelf.id) || index + 1}</td>
+        <td>${escapeHtml(shelf.model) || "Unknown"}</td>
         <td>
-          S/N: ${shelf.serial || "N/A"}<br>
-          <span style="font-size:0.75rem; color:var(--color-muted);">${shelf.cabling || "N/A"}</span>
+          S/N: ${escapeHtml(shelf.serial) || "N/A"}<br>
+          <span style="font-size:0.75rem; color:var(--color-muted);">${escapeHtml(shelf.cabling) || "N/A"}</span>
         </td>
-        <td style="text-align: center;">${shelf.firmware || "N/A"}</td>
+        <td style="text-align: center;">${escapeHtml(shelf.firmware) || "N/A"}</td>
         <td style="line-height: 1.4; color: #e5e7eb;">${diskItems || "No disks installed"}</td>
       </tr>
     `;
@@ -4278,13 +4314,13 @@ function generateReportAggregateInventoryHtml(state) {
 
     html += `
       <tr>
-        <td style="font-weight:700; color:#fff;">${aggr.name}</td>
+        <td style="font-weight:700; color:#fff;">${escapeHtml(aggr.name)}</td>
         <td>
-          Node: ${(aggr.node || 'N/A').toUpperCase()}<br>
-          <span style="font-size:0.75rem; color:var(--color-muted);">${(aggr.raidType || 'N/A').toUpperCase()}</span>
+          Node: ${escapeHtml((aggr.node || 'N/A').toUpperCase())}<br>
+          <span style="font-size:0.75rem; color:var(--color-muted);">${escapeHtml((aggr.raidType || 'N/A').toUpperCase())}</span>
         </td>
         <td>
-          <strong>${aggr.disksCount}x</strong> ${formatGB(aggr.diskSizeGB)} ${aggr.diskType}
+          <strong>${aggr.disksCount}x</strong> ${formatGB(aggr.diskSizeGB)} ${escapeHtml(aggr.diskType)}
         </td>
         <td style="text-align: center; font-weight: 600; color: ${utilPercent >= 85 ? 'var(--color-critical)' : 'inherit'};">
           ${utilPercent}%
@@ -5463,7 +5499,14 @@ function updateCapacityImpactDetails() {
   const isMetroCluster = !!(currentState.metrocluster && currentState.metrocluster !== 'none'
     && (!isGreenfieldMode || (mccCheckbox && mccCheckbox.checked)));
   const mult = isMetroCluster ? 2 : 1;
-  
+
+  // Computed here (not down near its original use) because the shelf-count hint
+  // block and the tempState shelf-site-tagging loop below both read it before
+  // the validation block further down runs — declaring it there caused a
+  // ReferenceError (TDZ) whenever a shelf type was selected.
+  const _mccCb = document.getElementById('deploy-metrocluster');
+  const _mccActive = !!(currentState.metrocluster && currentState.metrocluster !== 'none' && _mccCb && _mccCb.checked);
+
   let shelfCount = 0;
   let rawCapAddedGB = 0;
   let spec = null;
@@ -5582,8 +5625,6 @@ function updateCapacityImpactDetails() {
 
   // Validate platform supports MetroCluster if MC is checked
   let mcNoticeHtml = "";
-  const _mccCb = document.getElementById('deploy-metrocluster');
-  const _mccActive = !!(currentState.metrocluster && currentState.metrocluster !== 'none' && _mccCb && _mccCb.checked);
   if (_mccActive) {
     if (!(profile.supportedLicenses || []).includes("MetroCluster")) {
       const modelDisplay = (currentState.version && currentState.version.model && isNaN(currentState.version.model))
@@ -5700,7 +5741,7 @@ function updateCapacityImpactDetails() {
       const nvmeShelvesPerHA = Math.ceil((totalNvmeShelves / siteCount) / Math.max(1, haPairsCount));
       const sasShelvesPerHA = Math.ceil((totalSasShelves / siteCount) / Math.max(1, haPairsCount));
 
-      const isHighEnd = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'].some(m => currentState.version.model.toUpperCase().includes(m));
+      const isHighEnd = isHighEndPlatform(currentState.version.model);
       const requiredRocePorts = isHighEnd ? Math.ceil(nvmeShelvesPerHA / 2) * 2 : nvmeShelvesPerHA * 2;
       const requiredSasPorts = Math.ceil(sasShelvesPerHA / 4) * 2;
 
@@ -5876,10 +5917,10 @@ function populateAggregateDistributionList() {
     
     row.innerHTML = `
       <span style="font-weight: 500;">
-        ${aggr.name} <span style="color: var(--color-muted); font-size: 0.75rem;">(Node: ${aggr.node}, Usable: ${formatGB(aggr.usableGB)})</span>
+        ${escapeHtml(aggr.name)} <span style="color: var(--color-muted); font-size: 0.75rem;">(Node: ${escapeHtml(aggr.node)}, Usable: ${formatGB(aggr.usableGB)})</span>
       </span>
       <div style="display: flex; align-items: center; gap: 6px;">
-        <input type="number" class="aggr-alloc-input form-control" data-aggr="${aggr.name}" min="0" max="${diskCount}" value="0" style="max-width: 70px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; padding: 4px 6px;">
+        <input type="number" class="aggr-alloc-input form-control" data-aggr="${escapeHtml(aggr.name)}" min="0" max="${diskCount}" value="0" style="max-width: 70px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; padding: 4px 6px;">
         <span style="color: var(--color-muted); font-size: 0.75rem;">drives</span>
       </div>
     `;
@@ -6098,12 +6139,8 @@ function runModelingCalculations() {
                 : null;
 
               totalAllocatedSiteA += D;
-              // RAID-DP efficiency per standard group (22 data + 2 parity per 24-disk NS224 group)
-              // For SAS shelves use 14/16 group. Apply MCC synchronous mirror ÷2 for effective usable.
               const rgSz = shelfType === 'ns224' ? 24 : 16;
-              const raidEff = (rgSz - 2) / rgSz;   // 22/24 ≈ 0.917 for NS224
-              const mccMirrorFactor = 0.5;           // MCC writes to both sites — effective usable per cluster is half
-              const addedUsableGB = Math.round(D * diskGB * raidEff * mccMirrorFactor);
+              const addedUsableGB = computeUsableCapacityGB(D, diskGB, rgSz, true);
 
               // Expand Site A Aggregate
               aggrA.disksCount += D;
@@ -6148,15 +6185,8 @@ function runModelingCalculations() {
         const siteBNodes = modeledState.nodes.filter(n => n.site === 'B' || (!n.site && modeledState.nodes.indexOf(n) >= Math.ceil(modeledState.nodes.length / 2)));
         const primaryA = siteANodes[0] ? siteANodes[0].name : "node-a";
         const primaryB = siteBNodes[0] ? siteBNodes[0].name : "node-b";
-        // RAID-DP: standard group size for NS224 = 24 (22 data + 2 parity), SAS = 16 (14+2)
-        // MCC synchronous mirror: all data is written to both sites — effective usable per cluster = raw_usable / 2
         const rgSzNew = shelfType === 'ns224' ? 24 : 16;
-        const raidEffNew = (rgSzNew - 2) / rgSzNew;   // 22/24 = 0.9167 for NS224; 14/16 = 0.875 for SAS
-        const numGroups = Math.ceil(diskCount / rgSzNew);
-        const parityDisks = numGroups * 2;             // 2 parity per RAID-DP group
-        const dataDisks = Math.max(0, diskCount - parityDisks);
-        const rawUsableGB = dataDisks * diskGB;        // raw usable after RAID overhead
-        const usableGB = Math.max(0, Math.round(rawUsableGB * 0.5)); // ÷2 for MCC synchronous mirror
+        const usableGB = computeUsableCapacityGB(diskCount, diskGB, rgSzNew, true);
         const totalGB = diskCount * diskGB;
         const aggrIdxStr = modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length > 0 ? '_' + (modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length + 1) : '';
 
@@ -6256,7 +6286,8 @@ function runModelingCalculations() {
             const aggr = modeledState.aggregates.find(a => a.name === aggrName);
             if (aggr) {
               totalAllocated += D;
-              const addedUsableGB = Math.round(D * diskGB * 0.80);
+              const rgSz = shelfType === 'ns224' ? 24 : 16;
+              const addedUsableGB = computeUsableCapacityGB(D, diskGB, rgSz, false);
               aggr.disksCount += D;
               aggr.sizeGB += diskGB * D;
               aggr.usableGB += addedUsableGB;
@@ -6284,8 +6315,8 @@ function runModelingCalculations() {
           });
         }
       } else if (allocation === "new") {
-        const dataCount = diskCount - 4;
-        const usableGB = Math.max(0, Math.round(dataCount * diskGB * 0.82));
+        const rgSzStandalone = shelfType === 'ns224' ? 24 : 16;
+        const usableGB = computeUsableCapacityGB(diskCount, diskGB, rgSzStandalone, false);
         const totalGB = diskCount * diskGB;
         const aggrIdxStr = modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length > 0 ? '_' + (modeledState.aggregates.filter(a => a.name.startsWith('aggr_expansion')).length + 1) : '';
         const nodeA = modeledState.nodes[0] ? modeledState.nodes[0].name : "node-a";

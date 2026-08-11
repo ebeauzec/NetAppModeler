@@ -1501,6 +1501,17 @@ export const NETAPP_PLATFORMS = {
 }
 };
 
+// Platforms whose PCIe-slot RoCE HBAs support daisy-chaining 2 NS224 shelves per loop
+// (all other platforms require one dedicated direct-connect port pair per shelf).
+// Previously copy-pasted independently at 4 call sites (ui.js x3, bestPractices.js x1) —
+// consolidated here so a future platform addition only needs to change one place.
+export const HIGH_END_PLATFORM_MODELS = ['AFF A1K', 'AFF A90', 'AFF A70', 'AFF A900', 'FAS9500'];
+
+export function isHighEndPlatform(model) {
+  const upper = (model || "").toUpperCase();
+  return HIGH_END_PLATFORM_MODELS.some(m => upper.includes(m));
+}
+
 // Returns compatibility profile for a parsed model string.
 // Normalizes hyphens, extra spaces, and case before matching.
 export function getPlatformProfile(modelStr) {

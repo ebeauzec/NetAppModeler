@@ -3,6 +3,28 @@
  * Handles resilient parsing of text contents from ASUP files or consolidated dumps.
  */
 
+// Escapes regex metacharacters in a string before it's spliced into a dynamically built
+// RegExp. Several sections below build a RegExp out of an already-parsed name (aggregate
+// name, switch name) to re-scan the ASUP text for more detail on that specific entity —
+// without this, a name containing characters like ( ) . * + ? would either throw
+// (invalid regex) or silently match the wrong thing.
+function escapeRegExp(str) {
+  return String(str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Deterministic string hash (djb2), used to derive stable IDs from parsed text (e.g. alert
+// lines) instead of Math.random() — re-parsing the exact same ASUP must yield the exact same
+// alert IDs, or any UI state keyed on those IDs (dedupe, acknowledgement tracking) breaks
+// across re-parses of identical input.
+function hashString(str) {
+  let hash = 5381;
+  const s = String(str || "");
+  for (let i = 0; i < s.length; i++) {
+    hash = ((hash << 5) + hash + s.charCodeAt(i)) | 0; // hash * 33 + c
+  }
+  return Math.abs(hash);
+}
+
 // Helper to convert size string (e.g., "960GB", "1.2TB", "1.9TB") to GB (numeric)
 export function parseSizeToGB(sizeStr) {
   if (!sizeStr) return 0;
@@ -541,6 +563,11 @@ export function parseASUP(files) {
   }
 
   // Parse disks nested in shelf blocks
+  // Unlike shelf *detection* above (5 fallback passes), this only ever tried one disk-line
+  // format — a shelf could be confidently marked "parsed" while silently ending up with zero
+  // disks (and therefore zero contribution to all downstream RAID/capacity math) whenever the
+  // real ASUP used a different disk-listing format within the shelf block. Pass 2 reuses the
+  // sysconfig -a tabular pattern already used elsewhere as the no-shelf-detected fallback.
   const shelfSplit = combinedText.split(/Shelf\s+(\d+):/i);
   for (let i = 1; i < shelfSplit.length; i += 2) {
     const shelfId = shelfSplit[i].trim();
@@ -549,6 +576,7 @@ export function parseASUP(files) {
     if (!shelf) continue;
     if (shelf.disks && shelf.disks.length > 0) continue;
 
+     // Pass 1: "Disk N: NETAPP Model (Size, Type, FW: Rev, S/N: SN)"
      const diskRegex = /Disk\s+(\d+):\s+NETAPP\s+([^\s]+)\s+\(([\d.]+[GT]B),\s*([^,]+),(?:\s*FW:\s*([^,\s)]+),)?\s*S\/N:\s*([^)]+)\)/ig;
      let diskMatch;
      while ((diskMatch = diskRegex.exec(shelfText)) !== null) {
@@ -561,6 +589,38 @@ export function parseASUP(files) {
          type: diskMatch[4].trim(),
          firmware: diskMatch[5] ? diskMatch[5].trim() : "NA01",
          serial: diskMatch[6].trim()
+       });
+     }
+
+     // Pass 2: sysconfig -a tabular format — "0a.10   NETAPP   MODEL   FW   960.0GB   S/N: SN"
+     if (shelf.disks.length === 0) {
+       const sysconfigRegex = /(\d+[a-z]+)\.(\d+)\s+NETAPP\s+([^\s]+)\s+([^\s]+)\s+([\d.]+)(GB|TB|MB)\s+.*S\/N:\s*([^\s\r\n]+)/ig;
+       let sysMatch;
+       while ((sysMatch = sysconfigRegex.exec(shelfText)) !== null) {
+         const serial = sysMatch[7].trim();
+         if (shelf.disks.some(d => d.serial === serial)) continue;
+         const sizeVal = sysMatch[5] + sysMatch[6];
+         const sizeGB = parseSizeToGB(sizeVal);
+         const type = sysMatch[3].includes("X371") || sysMatch[3].includes("X343") || sysMatch[3].includes("NVMe") ? "NVMe SSD" : "SAS HDD";
+         shelf.disks.push({
+           slot: parseInt(sysMatch[2]),
+           model: sysMatch[3],
+           sizeStr: sizeVal,
+           sizeGB: sizeGB,
+           type: type,
+           firmware: sysMatch[4].trim(),
+           serial: serial
+         });
+       }
+     }
+
+     // Both passes failed — flag it rather than silently leaving a "parsed" shelf with 0 disks,
+     // which would otherwise zero out that shelf's contribution to capacity/RAID math with no
+     // visible warning anywhere in the Data Quality report.
+     if (shelf.disks.length === 0 && !isDemoMode) {
+       data.parseWarnings.push({
+         section: "Disk Shelves",
+         message: `Shelf ${shelfId} (${shelf.model}) was detected but its disk inventory could not be parsed — this shelf will show 0 disks and won't contribute to capacity/RAID calculations.`
        });
      }
   }
@@ -698,6 +758,9 @@ export function parseASUP(files) {
       if (aggrStatus.includes("raid_dp")) raidType = "raid_dp";
       else if (aggrStatus.includes("raid_tec")) raidType = "raid_tec";
       else if (aggrStatus.includes("raid4")) raidType = "raid4";
+      // MetroCluster SyncMirror status is reported inline in the same parenthetical,
+      // e.g. "aggr1 (raid_dp, mirrored, normal)" — captured here since it's already parsed.
+      const isMirrored = /\bmirrored\b/i.test(aggrStatus);
       
       let sizeGB = 0, usableGB = 0, usedGB = 0, freeGB = 0;
       const sizeLine = lines.find(l => l.toLowerCase().includes("size:"));
@@ -774,7 +837,8 @@ export function parseASUP(files) {
         rgSize,
         disksCount,
         diskType,
-        diskSizeGB
+        diskSizeGB,
+        isMirrored
       });
     }
   }
@@ -983,29 +1047,44 @@ export function parseASUP(files) {
   }
 
   // --- 7. Parse Ports ---
+  // Previously matched with one global regex across the whole document, then chopped the
+  // flat match list into groups of 4 in encounter order (portsList.slice(nodeIdx*4, ...))
+  // with no actual correlation to which node a port line belonged to — silently cross-wired
+  // ports on any cluster with >4 ports/node or >2 nodes. Now scoped per-node using the same
+  // indexOf(node.name) windowing already used for memory/CPU parsing above, bounded at the
+  // next node's position (when found) so one node's window can't swallow another's ports.
   const portRegex = /port\s+([\w\d]+)\s+(up|down)\s+([\w\d]+)\s+([a-zA-Z0-9\-]+)\s+([\w\-]+)/ig;
-  let portMatch;
-  const portsList = [];
-  while ((portMatch = portRegex.exec(combinedText)) !== null) {
-    portsList.push({
-      name: portMatch[1],
-      status: portMatch[2].toLowerCase(),
-      speed: portMatch[3],
-      duplex: portMatch[4],
-      type: portMatch[5],
-      mtu: portMatch[1].startsWith("e0a") || portMatch[1].startsWith("e0b") ? 9000 : 1500
-    });
-  }
 
-  data.nodes.forEach((node, nodeIdx) => {
-    node.ports = portsList.length > 0 ? 
-                 portsList.slice(nodeIdx * 4, (nodeIdx + 1) * 4) : 
-                 [
-                   { name: "e0a", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
-                   { name: "e0b", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
-                   { name: "e0c", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 },
-                   { name: "e0d", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 }
-                 ];
+  data.nodes.forEach(node => {
+    const nodeHeaderIdx = combinedText.indexOf(node.name);
+    let windowEnd = nodeHeaderIdx + 15000;
+    data.nodes.forEach(other => {
+      if (other === node) return;
+      const otherIdx = combinedText.indexOf(other.name);
+      if (otherIdx > nodeHeaderIdx && otherIdx < windowEnd) windowEnd = otherIdx;
+    });
+    const nodeBlock = nodeHeaderIdx !== -1 ? combinedText.substring(nodeHeaderIdx, windowEnd) : "";
+
+    const ports = [];
+    let portMatch;
+    portRegex.lastIndex = 0;
+    while ((portMatch = portRegex.exec(nodeBlock)) !== null) {
+      ports.push({
+        name: portMatch[1],
+        status: portMatch[2].toLowerCase(),
+        speed: portMatch[3],
+        duplex: portMatch[4],
+        type: portMatch[5],
+        mtu: portMatch[1].startsWith("e0a") || portMatch[1].startsWith("e0b") ? 9000 : 1500
+      });
+    }
+
+    node.ports = ports.length > 0 ? ports : [
+      { name: "e0a", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
+      { name: "e0b", status: "up", speed: "10GbE", duplex: "full-duplex", type: "cluster-interconnect", mtu: 9000 },
+      { name: "e0c", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 },
+      { name: "e0d", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 }
+    ];
   });
 
   // Resilient network port show table parsing (mtu and status)
@@ -1302,7 +1381,7 @@ export function parseASUP(files) {
 
   // 3f. Aggregate Space Usage
   data.aggregates.forEach(agg => {
-    const spaceMatch = combinedText.match(new RegExp(agg.name + '\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+)%', 'i'));
+    const spaceMatch = combinedText.match(new RegExp(escapeRegExp(agg.name) + '\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+[TGMK]B)\\s+([\\d.]+)%', 'i'));
     if (spaceMatch) {
       agg.totalSpace = spaceMatch[1];
       agg.usedSpace = spaceMatch[2];
@@ -1401,9 +1480,9 @@ export function parseASUP(files) {
   // Augment existing data.switches[] with RCF version if found
   if (data.switches && data.switches.length > 0) {
     data.switches.forEach(sw => {
-      const rcfMatch = combinedText.match(new RegExp(sw.name + '[\\s\\S]{0,300}RCF[\\s\\S]{0,100}v([\\d.]+)', 'i'));
+      const rcfMatch = combinedText.match(new RegExp(escapeRegExp(sw.name) + '[\\s\\S]{0,300}RCF[\\s\\S]{0,100}v([\\d.]+)', 'i'));
       if (rcfMatch) sw.rcfVersion = rcfMatch[1];
-      const efosMatch = combinedText.match(new RegExp(sw.name + '[\\s\\S]{0,300}EFOS[\\s\\S]{0,100}([\\d.]+)', 'i'));
+      const efosMatch = combinedText.match(new RegExp(escapeRegExp(sw.name) + '[\\s\\S]{0,300}EFOS[\\s\\S]{0,100}([\\d.]+)', 'i'));
       if (efosMatch) sw.fwVersion = efosMatch[1];
     });
   }
@@ -1500,7 +1579,7 @@ function extractASUPAlerts(combinedText, files) {
       if (line.trim().length < 20 || line.trim().length > 180) continue; // Skip noisy headers or giant dumps
       
       alerts.push({
-        id: `ASUP_LOG_ALERT_${Math.floor(100 + Math.random() * 900)}`,
+        id: `ASUP_LOG_ALERT_${hashString(line.trim())}`,
         component: "System Logs",
         severity: (lowerLine.includes("error") || lowerLine.includes("critical") || lowerLine.includes("fail")) ? "critical" : "warning",
         message: `${line.trim()}`,

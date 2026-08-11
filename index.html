@@ -37,7 +37,7 @@
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.54</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.55</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -1042,42 +1042,42 @@
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.54</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.55</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
-        
+
         <!-- Feature 1 -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
-          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🗄️</span>
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🩺</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Complete Hardware Registry Refresh</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Audit Engine Correctness Fixes</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              Full platform database updated: AFF A20/A30/A50 (ONTAP 9.16.1), AFF C30/C60/C80 capacity-flash, ASA R2 architecture, FAS50/70/90. All 20+ new profiles with accurate slot counts, shelf support, and protocol lists.
+              MetroCluster site-symmetry and SyncMirror checks now match real parsed node/aggregate data instead of literal placeholder strings that never matched — they were silently reporting "compliant" on real ASUPs. Fixed a duplicate-report bug that was inflating the compliance score, and a crash when selecting a shelf type.
             </span>
           </div>
         </div>
 
         <!-- Feature 2 -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
-          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">📋</span>
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🧮</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Accurate ONTAP Lifecycle Data</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Unified Capacity Math</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              ONTAP 9.7–9.11.1 correctly flagged as End of Support. ONTAP 9.16.1 (P11) is the current recommended release. Latest patch levels for all supported versions now embedded in audit rules.
+              Five independently hand-written usable-capacity formulas across the sizing modeler now converge on one RAID-DP-correct calculation, closing the class of bug behind several past capacity miscalculations.
             </span>
           </div>
         </div>
 
         <!-- Feature 3 -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
-          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🔧</span>
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🛡️</span>
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Switch & Firmware Intelligence</strong>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Parser Hardening</strong>
             <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
-              Cluster switch firmware tracking: BES-53248 EFOS 3.10.0.3, Nexus 9336C-FX2 NX-OS 10.4(2)F, RCF v1.9. NS224 shelf firmware IOM 1.1.3X0. BMC v24.05 for gen-5 platforms.
+              Shelves that parse but silently end up with zero disks now get a fallback pass and a visible warning. Port-to-node assignment is now correlated to each node's own text block instead of blind chunking. Parsed values interpolated into the page are now HTML-escaped.
             </span>
           </div>
         </div>
@@ -1085,8 +1085,8 @@
       </div>
 
       <!-- Action Button -->
-      <button id="close-splash-btn" class="btn-primary" 
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.54','true')}catch(e){}" 
+      <button id="close-splash-btn" class="btn-primary"
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.55','true')}catch(e){}"
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
