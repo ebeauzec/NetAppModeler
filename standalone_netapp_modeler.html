@@ -12101,6 +12101,10 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
     // *stacks*, not "shelf position within its site".
     let siteAShelfCount = 0;
     let siteBShelfCount = 0;
+    // Separate per-site counters for SAS/DS224C shelves (distinct from the NS224
+    // counters above — SAS shelves reach the "else" cable-drawing branch below).
+    let siteASasStackCount = 0;
+    let siteBSasStackCount = 0;
 
     // Resolve every shelf's site ONCE, globally, before drawing anything.
     // Untagged shelves (e.g. from ASUP parsing, which doesn't currently record
@@ -12131,7 +12135,6 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
 
     for (let sIdx = 0; sIdx < stacks.length; sIdx++) {
       const originalStack = stacks[sIdx];
-      const isPortExhausted = (sIdx * 2 + 1) >= allStoragePortsA.length;
 
       const siteASplit = originalStack.filter(item => shelfSiteMap.get(item.index) === 'A');
       const siteBSplit = originalStack.filter(item => shelfSiteMap.get(item.index) === 'B');
@@ -12281,11 +12284,20 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               }
             }
           } else {
-            // SAS: existing outbound (j===0) and return (j===last) loop pattern
-            if (j === 0 && !isPortExhausted) {
-              const k = sIdx % nodesPerSite;
+            // SAS: existing outbound (j===0) and return (j===last) loop pattern.
+            // Port-pair index and the port-exhaustion check must be resolved
+            // per-site (like the NS224 branch above), not from the global sIdx —
+            // otherwise a shelf near the end of the combined shelf list (e.g. the
+            // last shelf added to Site B) reads a port index far beyond that
+            // site's own real port count and gets silently skipped (no cables
+            // drawn at all), even though its own site only has a few shelves.
+            if (j === 0) {
+              const stackIndexInSite = isSiteA ? siteASasStackCount++ : siteBSasStackCount++;
+              const isPortExhaustedLocal = (stackIndexInSite * 2 + 1) >= (isSiteA ? allStoragePortsA.length : allStoragePortsB.length);
+              if (!isPortExhaustedLocal) {
+              const k = stackIndexInSite % nodesPerSite;
               const yNode = 10 + k * 90;
-              const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
+              const localPortPairIdx = Math.floor(stackIndexInSite / nodesPerSite) * 2;
               const portY = yNode + 50;
 
               const pAIdx = Math.min(localPortPairIdx, allStoragePortsA.length - 2);
@@ -12297,8 +12309,8 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               const pBX = startXB + pBIdx * spacingB + portWB / 2;
               const repAX = startXA + repAIdx * spacingA + portWA / 2;
               const repBX = startXB + repBIdx * spacingB + portWB / 2;
-              
-              const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12;
+
+              const ctrlY = (portY + cy) / 2 + (stackIndexInSite - Math.floor(stacks.length / 4)) * 12;
 
               if (isSiteA) {
                 // Site A local loop outbound: Node A e0a/e1a -> Site A Shelf IOM-A IN
@@ -12311,13 +12323,20 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
                 // Site B redundancy loop outbound: Node B e0b/e1b -> Site B Shelf IOM-B IN
                 svgStr += `<path d="M ${repBX},${portY} C ${repBX},${ctrlY} 700,${ctrlY} 700,${cy}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
               }
+              }
             }
 
             // 2. Return loops from last shelf in stack
-            if (j === stack.length - 1 && !isPortExhausted && !isSinglePath) {
-              const k = sIdx % nodesPerSite;
+            if (j === stack.length - 1 && !isSinglePath) {
+              // Recompute the same per-site stack index this stack was assigned
+              // above (siteA/BSasStackCount was already incremented at j===0,
+              // so subtract 1 to reference this stack rather than the next one).
+              const stackIndexInSite = (isSiteA ? siteASasStackCount : siteBSasStackCount) - 1;
+              const isPortExhaustedLocal = (stackIndexInSite * 2 + 1) >= (isSiteA ? allStoragePortsA.length : allStoragePortsB.length);
+              if (!isPortExhaustedLocal) {
+              const k = stackIndexInSite % nodesPerSite;
               const yNode = 10 + k * 90;
-              const localPortPairIdx = Math.floor(sIdx / nodesPerSite) * 2;
+              const localPortPairIdx = Math.floor(stackIndexInSite / nodesPerSite) * 2;
               const portY = yNode + 50;
 
               const rAIdx = Math.min(localPortPairIdx + 1, allStoragePortsA.length - 1);
@@ -12326,7 +12345,7 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               const rAX = startXA + rAIdx * spacingA + portWA / 2;
               const rBX = startXB + rBIdx * spacingB + portWB / 2;
 
-              const ctrlY = (portY + cy) / 2 + (sIdx - Math.floor(stacks.length / 2)) * 12 + 6;
+              const ctrlY = (portY + cy) / 2 + (stackIndexInSite - Math.floor(stacks.length / 4)) * 12 + 6;
 
               if (isSiteA) {
                 // Site A local loop return: Site A Shelf IOM-A OUT -> Node A e0b/e1b
@@ -12338,6 +12357,7 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
                 svgStr += `<path d="M 510,${cy} C 510,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5"/>`;
                 // Site B redundancy loop return: Site B Shelf IOM-B OUT -> Node B replication return
                 svgStr += `<path d="M 720,${cy} C 720,${ctrlY} ${rBX},${ctrlY} ${rBX},${portY}" class="visual-cable multipath" stroke-dasharray="4 3" stroke="var(--color-success)" fill="none" stroke-width="1.5"/>`;
+              }
               }
             }
           }
