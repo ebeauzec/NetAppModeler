@@ -173,11 +173,15 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v20.0",
     description: "Next-generation mid-range NVMe storage system.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/a70-a90/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — cluster/HA is e1a+e7a, host is
+    // e9a/e9b (100GbE), NS224 storage is on PCIe slots 8/11, not the generic
+    // e0a/e0b/e0c/e0d/e2a-e5b template every other unreviewed platform still carries.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e1a", "e7a"],
+      data: ["e9a", "e9b"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b", "e5a", "e5b"]
+      storage: ["e8a", "e8b", "e11a", "e11b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -196,11 +200,14 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v20.0",
     description: "Next-generation NVMe storage platform.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/a70-a90/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — same scheme as AFF A90 (shares
+    // the same cabling doc): cluster e1a+e7a, host e9a/e9b, storage on PCIe slots 8/11.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e1a", "e7a"],
+      data: ["e9a", "e9b"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b"]
+      storage: ["e8a", "e8b", "e11a", "e11b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 6
@@ -280,11 +287,14 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v17.0",
     description: "Modern entry-level NVMe storage array.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/a20-a30-a50/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — cluster/HA is e2a+e4a (2-IOM SKU),
+    // host data is e2b/e4b, NS224 storage is e3a/e3b, not the generic e0a-e0d template.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e2a", "e4a"],
+      data: ["e2b", "e4b"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b"]
+      storage: ["e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
@@ -331,11 +341,14 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v17.0",
     description: "Modern entry NVMe storage platform.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/a20-a30-a50/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — same scheme as AFF A50 (shares the
+    // same cabling doc): cluster e2a+e4a, host e2b/e4b, storage e3a/e3b.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e2a", "e4a"],
+      data: ["e2b", "e4b"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b"]
+      storage: ["e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
@@ -354,11 +367,14 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v17.0",
     description: "Modern entry NVMe performance storage array.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/a20-a30-a50/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — AFF A20 only ships the one-I/O-module
+    // SKU, so cluster/HA is e4a+e4b (not e2a+e4a like A30/A50); storage is e3a/e3b.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e4a", "e4b"],
+      data: ["e2a", "e2b", "e2c", "e2d"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b"]
+      storage: ["e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
@@ -478,11 +494,14 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v20.0",
     description: "High-density capacity-optimized NVMe QLC storage array.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/c80/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — same port scheme as AFF A70/A90's
+    // cabling doc: cluster e1a+e7a, host e9a/e9b, storage on PCIe slots 8/11.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e1a", "e7a"],
+      data: ["e9a", "e9b"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b", "e5a", "e5b"]
+      storage: ["e8a", "e8b", "e11a", "e11b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port", "nic_200g_2port", "fc_hba_64g_2port"],
     maxPcieSlots: 6
@@ -577,11 +596,14 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v17.0",
     description: "Modern entry capacity NVMe storage.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/c30-c60/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — same scheme as AFF A50/A30's
+    // 2-IOM variant: cluster e2a+e4a, host e2b/e4b, storage e3a/e3b.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e2a", "e4a"],
+      data: ["e2b", "e4b"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b"]
+      storage: ["e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
@@ -601,11 +623,14 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool", "MetroCluster"],
     maxFirmware: "v17.0",
     description: "Modern mid-range capacity NVMe storage.",
+    // Corrected against docs.netapp.com/us-en/ontap-systems/c30-c60/install-cable.html
+    // (harvested 2026-08-12, see js/rackLayouts.js) — shares AFF C30's cabling doc and
+    // port scheme: cluster e2a+e4a, host e2b/e4b, storage e3a/e3b.
     ports: {
-      cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
+      cluster: ["e2a", "e4a"],
+      data: ["e2b", "e4b"],
       san: ["0e", "0f"],
-      storage: ["e2a", "e2b", "e3a", "e3b", "e4a", "e4b"]
+      storage: ["e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "nic_100g_2port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 4
