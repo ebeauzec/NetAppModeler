@@ -2853,9 +2853,14 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
     expansionCards: expansionCards,
     metrocluster: mcType,
     nodes: nodes,
+    // Greenfield is meant to start fully compliant (same pattern as systemFirmware
+    // above); audit-demo deliberately starts on an outdated version so the audit
+    // engine has something real to find, matching BP_SWITCH_RCF's real firmware
+    // catalog (compatibility.js's FIRMWARE_VERSIONS.switches — BES-53248's latest
+    // is 3.10.0.3, not 1.3.0.1).
     switches: [
-      { name: "CSW-BES-01", model: "BES-53248", version: "1.3.0.1", role: "cluster-switch" },
-      { name: "CSW-BES-02", model: "BES-53248", version: "1.3.0.1", role: "cluster-switch" }
+      { name: "CSW-BES-01", model: "BES-53248", version: isGreenfield ? "3.10.0.3" : "1.3.0.1", role: "cluster-switch" },
+      { name: "CSW-BES-02", model: "BES-53248", version: isGreenfield ? "3.10.0.3" : "1.3.0.1", role: "cluster-switch" }
     ],
     shelves: shelves,
     aggregates: aggregates,
