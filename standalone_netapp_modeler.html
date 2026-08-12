@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.63</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.64</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2053,12 +2053,23 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.63</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.64</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+
+        <!-- Feature -6 (v2.64) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🧩</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">SAS Shelf Cabling Diagram: Real Multipath-HA Topology</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              The non-MetroCluster SAS shelf cabling diagram (DS460C, DS224C, DS2246, DS212C — any platform, not just one) wired each controller to only one IOM module, which isn't real multipath-HA: a single controller failure would make its exclusive IOM unreachable. Now crosses each controller's redundant port to the other controller's IOM, confirmed against FAS50's real install guide and cross-checked against the app's own textual cabling report, which already had it right. Validated across port-exhaustion (up to 49 shelves), multi-HA-pair configs, and every call site this shared renderer feeds (live dashboard, shelf-add preview, both Before/After comparison panels).
+            </span>
+          </div>
+        </div>
 
         <!-- Feature -5 (v2.63) -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
@@ -2174,7 +2185,7 @@ svg.cabling-graph {
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary"
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.63','true')}catch(e){}"
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.64','true')}catch(e){}"
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
@@ -13382,14 +13393,28 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             }
           }
           
-          // 3. Return path A & B
-          // IOM-A OUT → Node A e0b (rAX), IOM-B OUT → Node B e0b (rBX)
+          // 3. Return path A & B — CROSSED, not same-side. Real NetApp multipath-HA
+          // cabling (confirmed against FAS50's own install-cable.html: "Cable
+          // controller A port 3d to IOMB port 3. Cable controller B port 3d to
+          // IOMA port 3.") has each controller's secondary/redundant port going to
+          // the OTHER controller's primary IOM, not its own — that's what makes it
+          // multipath: if controller A dies, IOM-A is still reachable via
+          // controller B's redundant port, and vice versa. The previous same-side
+          // wiring (IOM-A OUT -> Node A's return port, IOM-B OUT -> Node B's) drew
+          // each controller connected to only one IOM module, which isn't a real
+          // multipath topology for ANY SAS shelf type on this non-MCC view.
           if (j === stack.length - 1 && (!isSinglePath || shelfItem.isProposed)) {
             if (!isPortExhausted) {
-              // IOM-A OUT → Node A return port (same side, orange)
-              svgStr += `<path d="M 105,${iomCy} C 105,${currentY + 130} ${rAX},${currentY + 130} ${rAX},${srcY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
-              // IOM-B OUT → Node B return port (same side, green)
-              svgStr += `<path d="M 570,${iomCy} C 570,${currentY + 135} ${rBX},${currentY + 135} ${rBX},${srcY}" class="visual-cable multipath" stroke="var(--color-success)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              const midRA = (srcY + iomCy) / 2;
+              const midRB = (srcY + iomCy) / 2;
+              // IOM-A OUT → Node B's redundant port (crossed, orange)
+              svgStr += `<path d="M 105,${iomCy} C 105,${currentY + 130} ${rBX},${currentY + 130} ${rBX},${srcY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              svgStr += `<rect x="${rBX - 10}" y="${midRA - 7}" width="20" height="10" rx="3" fill="rgba(245,158,11,0.35)" stroke="var(--color-warning)" stroke-width="0.8"/>`;
+              svgStr += `<text x="${rBX}" y="${midRA + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${retNameB}</text>`;
+              // IOM-B OUT → Node A's redundant port (crossed, green)
+              svgStr += `<path d="M 570,${iomCy} C 570,${currentY + 135} ${rAX},${currentY + 135} ${rAX},${srcY}" class="visual-cable multipath" stroke="var(--color-success)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              svgStr += `<rect x="${rAX - 10}" y="${midRB - 7}" width="20" height="10" rx="3" fill="rgba(34,197,94,0.35)" stroke="var(--color-success)" stroke-width="0.8"/>`;
+              svgStr += `<text x="${rAX}" y="${midRB + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${retNameA}</text>`;
             }
           }
         }

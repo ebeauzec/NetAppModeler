@@ -39,16 +39,55 @@
 
 All 16 pass `tools/apply_reference_data.py` with no drift.
 
-**FAS50** has a real sourced `install-cable.html` too, but it's DS460C
-(SAS) shelf cabling, not NS224 — FAS50 doesn't support NS224 at all (matches
-the existing `compatibility.js` flag). The DS460C cable-endpoint data
+**FAS50** has a real sourced `install-cable.html` too, for DS460C (SAS)
+shelf cabling, not NS224 — FAS50 doesn't support NS224 at all (matches the
+existing `compatibility.js` flag). The specific real endpoints
 (`controller port 3a/3d` ↔ `shelf IOM A/B port 1/3`, mini-SAS HD, daisy-
-chainable across two shelves) is a genuinely different shape than every
-other entry in this file and isn't captured in `js/rackLayouts.js` yet —
-the SAS/DS460C rendering path in `js/ui.js`'s `drawCablingTopology` doesn't
-call `getShelfCabling()` the way the NS224 path does, so there's nowhere to
-plug it in without also extending that renderer. Tracked as a follow-up,
-not done.
+chainable across two shelves) aren't captured as a `getShelfCabling()`
+sourced-data entry in `js/rackLayouts.js` — that would need a schema
+extension to represent inter-shelf daisy-chain links, which the current
+`{shelfIOM, shelfPort, controllerSide, controllerPort}` shape (point-to-
+point only, no shelf-to-shelf) doesn't support. Not done; the 2-shelf
+daisy-chain case specifically would need this.
+
+However, investigating this surfaced and fixed a bigger, more consequential
+bug in the SAME renderer (2026-08-13): the non-MetroCluster SAS shelf
+cabling view (`js/ui.js`, `drawCablingTopology`'s "Draw Shelves for this HA
+pair" block) wired each controller to only ONE IOM module (Controller A ->
+IOM-A only, Controller B -> IOM-B only) for every SAS shelf type (DS460C,
+DS224C, DS2246, DS212C) on every non-MCC platform — not a real multipath-HA
+topology, since a single controller failure would make its exclusive IOM
+module unreachable. Confirmed against FAS50's own sourced doc ("Cable
+controller A port 3d to IOMB port 3. Cable controller B port 3d to IOMA
+port 3.") that real cabling crosses each controller's redundant port to the
+OTHER IOM module. Fixed the return-path cable assignment to cross
+controllers, verified by reading actual rendered SVG path endpoints, pinned
+with 2 new regression tests. This fix applies to every SAS-shelf platform
+using this view, not just FAS50.
+
+Validated broadly (2026-08-13) across the dimensions this logic actually
+depends on (it's platform/shelf-model-agnostic — only `isNS224Shelf` is
+model-based anywhere in this function, and that's a different branch):
+port-count exhaustion up to 49 shelves/13 stacks (FAS50, 2→50000TB) with no
+off-by-one errors; multi-HA-pair (4-node, round-robin stack distribution
+across pairs) with independent correct crossing per pair; and cross-checked
+against `generateCablingTableHtml` (the textual cabling report), which
+already encoded the correct crossed topology before this fix — confirming
+the SVG diagram was the one that was wrong, not the underlying model.
+`drawCablingTopology` is a single shared function called from all 5 places
+shelf diagrams render (live dashboard, shelf-add preview, both Before/After
+comparison panels), so one fix covers all of them.
+
+**Left unverified, not touched:** the MetroCluster+SAS-shelves branch (a
+narrower combination — SAS shelves under MCC) has two cases. 2-node MCC
+(1 controller/site) is structurally correct as-is — there's no second local
+controller to cross to. 4-node MCC (2 controllers/site) uses a different,
+simpler redundancy model (shelf stacks distributed round-robin across the
+two local controllers, each stack still gets full IOM-A/IOM-B redundancy
+from its assigned controller) rather than crossing each stack between both
+local controllers. Confirmed it renders without error, but there's no
+sourced NetApp doc for this specific combination to verify which model is
+actually correct — left as-is rather than guessing.
 
 **Note on A70/A90/C80 vs A50/A30/A20/C60/C30:** the former three share one
 port scheme (cluster e1a+e7a, host e9a/e9b, NS224 storage on PCIe slots

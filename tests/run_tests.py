@@ -446,6 +446,28 @@ window.addEventListener('DOMContentLoaded', function() {
     check('audit demo: node RAM readout mentions "128 GB" (the fallback default for platforms with no catalogued ram spec)',
       demoText.indexOf('128 GB RAM') !== -1);
 
+    // --- ui.js: non-MCC SAS shelf cabling draws real multipath-HA topology (crossed),
+    // not same-side pairing. Confirmed against FAS50's own install-cable.html
+    // ("Cable controller A port 3d to IOMB port 3. Cable controller B port 3d to IOMA
+    // port 3.") — a controller's redundant/return port must land on the OTHER
+    // controller's IOM, not its own, or a single controller failure would make that
+    // whole IOM module unreachable. Verified by reading the actual rendered SVG path
+    // endpoints, not just checking cable count. ---
+    resetState();
+    document.getElementById('manual-platform-select').value = 'FAS50';
+    document.getElementById('manual-nodes-select').value = '2';
+    var mccCbFas50 = document.getElementById('deploy-metrocluster');
+    if (mccCbFas50.checked) { mccCbFas50.checked = false; mccCbFas50.dispatchEvent(new Event('change', { bubbles: true })); }
+    document.getElementById('load-greenfield-btn').click();
+    var sasSvg = document.getElementById('visualizer-svg-frame') || document.querySelector('svg');
+    var sasPaths = sasSvg ? Array.from(sasSvg.querySelectorAll('path.visual-cable')) : [];
+    var returnFromIomA = sasPaths.find(function(p) { var d = p.getAttribute('d'); return d && d.indexOf('M 105,') === 0 && /\d+,\d+$/.test(d) && parseFloat(d.split(' ').pop().split(',')[0]) > 400; });
+    var returnFromIomB = sasPaths.find(function(p) { var d = p.getAttribute('d'); return d && d.indexOf('M 570,') === 0 && /\d+,\d+$/.test(d) && parseFloat(d.split(' ').pop().split(',')[0]) < 400; });
+    check('non-MCC SAS shelf: IOM-A\'s return cable crosses to Controller B\'s port (x > 400), not back to Controller A',
+      !!returnFromIomA, returnFromIomA ? returnFromIomA.getAttribute('d') : sasPaths.map(function(p){return p.getAttribute('d');}));
+    check('non-MCC SAS shelf: IOM-B\'s return cable crosses to Controller A\'s port (x < 400), not back to Controller B',
+      !!returnFromIomB, returnFromIomB ? returnFromIomB.getAttribute('d') : null);
+
     var resDiv = document.createElement('div');
     resDiv.id = 'test-results';
     resDiv.textContent = JSON.stringify(results);
