@@ -2,7 +2,7 @@
 
 > **PURPOSE:** Every value in `compatibility.js` and version-related constants in `ui.js` and `bestPractices.js` must be traceable to an authoritative NetApp source. This document records those sources and must be updated whenever data is refreshed.
 >
-> **LAST VERIFIED:** July 28, 2026  
+> **LAST VERIFIED:** August 12, 2026 (platform port/cabling data); July 28, 2026 (ONTAP lifecycle/platform support tables below)  
 > **CURRENT LATEST ONTAP:** 9.19.1 (May 2026)  
 > **NEXT EXPECTED RELEASE:** 9.20.1 (Q4 2026)
 
@@ -50,6 +50,12 @@ flags drift — run it after any harvest or manual data edit.
 |------|--------|
 | `ontap-systems/{a400,a800,a900}/install-detailed-guide.html` | Controller cluster/HA/host cabling, port names |
 | `ontap-systems/a1k/install-cable.html`, `a1k/overview.html` | AFF A1K cabling + key specs |
+| `ontap-systems/a70-90/install-cable.html` | AFF A70/A90 controller cabling (shared page) |
+| `ontap-systems/a20-30-50/install-cable.html` | AFF A50/A30/A20 controller cabling (shared page) |
+| `ontap-systems/c80/install-cable.html` | AFF C80 controller cabling |
+| `ontap-systems/c30-60/install-cable.html` | AFF C60/C30 controller cabling (shared page) |
+| `ontap-systems/fas-70-90/install-cable.html` | FAS70/FAS90 controller cabling (shared page) |
+| `ontap-systems/fas50/install-cable.html` | FAS50 controller cabling — DS460C (SAS) shelf, not NS224 |
 | `ontap-systems/ns224/ns224-shelf-overview.html` | NSM module naming, default shelf IDs |
 | `ontap-systems/ns224/hot-add-aff-cable-{a400-c400,a800-c800,a900,a1k}.html` | Exact NS224-to-controller cable endpoint pairs, per platform and shelf count |
 
@@ -61,6 +67,24 @@ lists didn't match these sourced guides): AFF A1K storage ports (was
 storage ports missing their PCIe-slot pairs. Re-run
 `tools/apply_reference_data.py` after touching any of these platforms'
 `ports` field.
+
+**Confirmed corrections made 2026-08-12** (10 more platforms found on the
+same generic placeholder port scheme — cluster `e0a/e0b`, data `e0c/e0d`,
+storage `e2a-e5b` — regardless of what the platform actually uses): AFF
+A70/A90/C80 turned out to share AFF A1K's real scheme (cluster `e1a+e7a`,
+host `e9a/e9b`, storage on PCIe slots 8/11), not the generic template at
+all. AFF A50/A30/A20/C60/C30 share a different real scheme (cluster
+`e2a+e4a` on the two-I/O-module SKU, host `e2b/e4b`, storage `e3a/e3b`).
+FAS70/FAS90 share the A70/A90 cluster/host scheme but use different storage
+slots (10/11). FAS50 is SAS-only (no NS224); its ports were corrected to
+cluster `e4a/e4b`, host `e2a-e2d`, storage `3a/3d`. All 16 sourced platforms
+pass `tools/apply_reference_data.py` with zero drift — see
+`PLATFORM_COVERAGE.md` for the full per-platform table and for which
+remaining platforms are confirmed unreachable by this technique (NetApp
+doesn't publish an `install-cable.html`-equivalent text page for them —
+verified by probing 26 URL patterns across ASA A/C-series, AFF
+A250/A220/A150/C250/C190, FAS8200/8300/9000/9500/8080/8060/8040/8020, and
+Tier 3 legacy FAS28xx/25xx, all returning HTTP 404).
 
 **What this deliberately does NOT do:** the shipped `standalone_netapp_modeler.html`
 never makes a network call — both harvest tools above are local, human/AI-run
@@ -209,6 +233,13 @@ Source: NetApp Hardware Universe (hwu.netapp.com)
 | FAS8700 assumed EOS at 9.16.1 | Still active on 9.19.1 | v2.23 | HWU |
 | AFF C30/C60/C80 minOntap 9.15.1 | Correct: 9.16.1 | v2.24 (pending) | HWU |
 | AFX 2K not present | Added in v2.24 (pending) | v2.24 (pending) | NetApp Jul 2026 |
+| AFF A1K storage ports were `e2a-e5b` | `e8a-e11b` | v2.56 | docs.netapp.com install-cable |
+| AFF A900 cluster ports were onboard `e0a/e0b` | PCIe slot `e4a/e8a` | v2.56 | docs.netapp.com install-detailed-guide |
+| A70/A90/C80/FAS70/FAS90 on generic e0a-e0d/e2a-e5b template | Real scheme: cluster `e1a+e7a`, host `e9a/e9b` | v2.60/v2.61 | docs.netapp.com install-cable |
+| A50/A30/A20/C60/C30 on generic e0a-e0d/e2a-e5b template | Real scheme: cluster `e2a+e4a`, host `e2b/e4b`, storage `e3a/e3b` | v2.60 | docs.netapp.com install-cable |
+| FAS50 ports were `e0a/e0b` cluster, `0a/0b` storage | Real: cluster `e4a/e4b`, storage `3a/3d` (SAS, no NS224) | v2.61 | docs.netapp.com install-cable |
+| BP_SWITCH_RCF compliance threshold hardcoded at `1.3.0.1` | Real latest (BES-53248): `3.10.0.3`, sourced from `FIRMWARE_VERSIONS.switches` | v2.63 | Already-catalogued firmware DB |
+| Non-MCC SAS shelf cabling diagram wired each controller to only one IOM (not real multipath) | Crossed: each controller's redundant port -> the OTHER controller's IOM | v2.64 | FAS50 install-cable.html |
 
 ---
 
