@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.68)
+# NetApp AutoSupport Analyzer & Modeler (v2.69)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,10 +6,17 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.68)
+## 🆕 New in this Version (v2.69)
+
+- **Upload warning text wrap fixed:** the v2.67 .7z/.rar warning under the upload drop zone still wrapped awkwardly, reported live — the icon and text weren't in a proper flex layout, so a wrapped line snapped to the container's left edge instead of aligning under the text. Shortened the copy and switched to a flex layout; confirmed it fits on one line at the drop zone's normal width and wraps cleanly (aligned, not left-snapped) at narrow widths.
+
+<details>
+<summary>Earlier changelog (v2.68)</summary>
 
 - **Real ASUP aggregate capacity now populates:** reported live — the "Modelled Configuration Transition" comparison showed "Used: 0 GB (0.0%)" / "Usable Total: 0 GB" on both panels for a real ASUP. The parser only recognized capacity from a single-line "Size: X, Usable: Y, Used: Z, Free: W" CLI format; this ASUP's only aggregate dump was `aggr status -r` output (RAID/disk membership only, no capacity numbers at all), so every real aggregate silently stayed at 0 GB. The parser now also reads `aggr-info.xml` when present — a structured export with real byte-accurate size/available/used fields, cross-referenced by aggregate name. Confirmed against the real system: Usable Total now correctly reads 264.5 TB, Used 199.4 TB (75.4%).
 - **Regression suite grew from 50 to 51 tests.**
+
+</details>
 
 <details>
 <summary>Earlier changelog (v2.67)</summary>
