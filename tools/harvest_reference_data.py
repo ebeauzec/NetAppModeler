@@ -95,6 +95,14 @@ TARGETS = [
     ("fas50-cable", "https://docs.netapp.com/us-en/ontap-systems/fas50/install-cable.html",
      "FAS50 controller cabling"),
 
+    # NOTE: a hyphenated-slug "-cable.html" probe (2026-08-12) was also tried for
+    # ASA A1K/A70-90/A20-30-50/A400/A800/A900 and AFF A250/A220/A150/C250/C190 —
+    # all 11 also returned a hard 404. Combined with the round-1 probe below,
+    # these platforms (plus ASA C250/C400/C800) have now been checked against
+    # every URL pattern that's worked for any other platform in this file, with
+    # no hits. Not worth re-probing without a genuinely different technique
+    # (Hardware Universe scraping) — see PLATFORM_COVERAGE.md.
+
     # NOTE: an "install-cable.html" text-variant probe was tried for ASA
     # C250/C400/C800/A900/A800/A400, FAS8300/FAS8200/FAS9000/FAS9500, AFF A300,
     # and AFF A700 on 2026-08-12 — all 12 returned a hard HTTP 404 (not a soft
@@ -114,6 +122,16 @@ TARGETS = [
      "FAS2820 controller cabling"),
     ("fas2600-setup", "https://docs.netapp.com/us-en/ontap-systems/fas2600/install-setup.html",
      "FAS2650/FAS2620 install/cabling summary"),
+
+    # NOTE (2026-08-12): probed "-cable.html" for FAS2700/FAS2800/FAS2600 and
+    # "-detailed-guide.html" for FAS8080/8060/8040/8020, FAS2554/2552/2520 —
+    # every single one 404'd, including platforms that had never been fetched
+    # in ANY form before. Unlike the Tier 1/2 dead ends above (page exists as
+    # an image-only guide, just not the text-cabling variant), these Tier 3
+    # legacy/EOL platforms have no docs.netapp.com presence at all under this
+    # URL scheme — NetApp appears to have stopped publishing (or archived
+    # elsewhere, e.g. a login-gated legacy docs system) install docs for
+    # controllers this old. Not worth further URL guessing.
 ]
 
 
