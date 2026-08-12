@@ -60,13 +60,14 @@ is published — a second-shelf port assignment was not found in NetApp's
 docs for this family and is not modeled (`shelfCabling.ns224` only has a
 `1` entry, no `2`).
 
-## Tier 1 — Current-gen lineup (recommended next)
+## Tier 1 — Current-gen lineup (ASA remainder is blocked)
 
 Actively sold/marketed as of this writing. Same install-guide pattern as
-the platforms above; expect the same class of drift.
+the platforms above; expect the same class of drift — but see below, this
+family turned out to be unreachable by this technique.
 
-- [ ] ASA A1K, ASA A90, ASA A70, ASA A50, ASA A30, ASA A20
-- [ ] ASA C800, ASA C400, ASA C250, ASA C30
+- [ ] ASA A1K, ASA A90, ASA A70, ASA A50, ASA A30, ASA A20 — **blocked**
+- [ ] ASA C800, ASA C400, ASA C250, ASA C30 — **blocked**
 
 ASA controllers are commonly the same physical chassis as their AFF
 counterpart with different licensing/software — but this has NOT been
@@ -76,25 +77,42 @@ install pages harvested so far (`asa400-guide.txt`, `asa800-guide.txt`,
 `asa900-guide.txt`, `asac250/400/800-guide.txt`) are all
 `install-detailed-guide.html`-style pages that reference cabling
 illustrations rather than embedding port names as text — the scraper can't
-extract port data from them. **Confirmed 2026-08-12:** the `install-cable.html`
-variant that worked for every Tier 1 AFF/FAS platform returns a hard HTTP
-404 for all of these — NetApp genuinely doesn't publish that page for this
-family. Would need the Hardware Universe fallback path (different
-sourcing technique, not yet built) instead of another URL guess.
+extract port data from them. **Confirmed 2026-08-12 (two probe rounds):**
+neither the bare `asaXX/install-cable.html` pattern nor the hyphenated
+`asa-aXX/install-cable.html` pattern (which does work for ASA C-series'
+`install-detailed-guide.html`) resolves for any ASA A-series or the
+remaining ASA C-series model — all return a hard HTTP 404. This family is
+genuinely blocked by this technique; would need the Hardware Universe
+fallback path (different sourcing technique, not yet built), not another
+URL guess.
 
 ## Tier 2 — Recent/still-common in the field
 
-- [ ] AFF A300 (confirmed no `install-cable.html`, HTTP 404, 2026-08-12), AFF A250, AFF A220, AFF A150
-- [ ] AFF C250, AFF C190
-- [ ] ASA A900, ASA A800, ASA A400 (confirmed no `install-cable.html`, HTTP 404, 2026-08-12)
 - [x] ~~FAS90, FAS70~~ — done, see above
-- [ ] FAS9500, FAS9000, FAS8700, FAS8300, FAS8200 (confirmed no `install-cable.html`, HTTP 404, 2026-08-12)
-- [x] ~~FAS50~~ — port catalog corrected N/A (FAS50 doesn't support NS224); DS460C cabling sourced but not wired into the renderer, see note above
+- [x] ~~FAS50~~ — port catalog corrected (N/A for NS224 — FAS50 doesn't support it); DS460C cabling sourced but not wired into the renderer, see note above
+- [ ] AFF A300, AFF A250, AFF A220, AFF A150 — **blocked** (confirmed no `install-cable.html`, HTTP 404, 2026-08-12)
+- [ ] AFF C250, AFF C190 — **blocked** (confirmed no `install-cable.html`, HTTP 404, 2026-08-12)
+- [ ] ASA A900, ASA A800, ASA A400 — **blocked**, see Tier 1 ASA note above
+- [ ] FAS9500, FAS9000, FAS8700, FAS8300, FAS8200 — **blocked** (confirmed no `install-cable.html`, HTTP 404, 2026-08-12)
 
-## Tier 3 — Legacy/EOL
+Every remaining Tier 2 platform is now confirmed blocked by this technique —
+none have a scrapable text-cabling page. Nothing left to attempt here
+without the Hardware Universe fallback.
+
+## Tier 3 — Legacy/EOL — all confirmed blocked, no docs.netapp.com presence
 
 - [ ] FAS2820, FAS2750, FAS2720, FAS2650, FAS2620, FAS2554, FAS2552, FAS2520
 - [ ] FAS8080, FAS8060, FAS8040, FAS8020
+
+**Confirmed 2026-08-12:** unlike Tier 1/2's dead ends (the page exists as an
+image-only guide, just not the text-cabling variant), these get a hard 404
+on `install-detailed-guide.html`/`install-setup.html` too — the URL pattern
+that DID work for FAS2700/FAS2800/FAS2600 (Tier 3's own "recent-legacy"
+siblings, still `-guide`/`-setup` style pages, harvested and already listed
+above but never fully checked against this scheme). NetApp appears to have
+stopped publishing install docs for controllers this old under the current
+docs.netapp.com URL scheme — they may be archived elsewhere (a login-gated
+legacy docs system) or simply retired. Not worth further URL guessing.
 
 ## Not applicable (no physical rear panel)
 

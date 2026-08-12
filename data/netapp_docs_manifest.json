@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-08-11T22:49:08.741834",
+  "fetchedAt": "2026-08-12T05:27:30.132212",
   "pages": [
     {
       "id": "a400-cable",
@@ -218,78 +218,6 @@
       "file": "data/netapp_docs_raw/fas50-cable.txt"
     },
     {
-      "id": "asac250-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/asa-c250/install-cable.html",
-      "description": "ASA C250 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
-      "id": "asac400-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/asa-c400/install-cable.html",
-      "description": "ASA C400 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
-      "id": "asac800-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/asa-c800/install-cable.html",
-      "description": "ASA C800 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
-      "id": "asa900-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/asa900/install-cable.html",
-      "description": "ASA A900 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
-      "id": "asa800-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/asa800/install-cable.html",
-      "description": "ASA A800 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
-      "id": "asa400-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/asa400/install-cable.html",
-      "description": "ASA A400 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
-      "id": "fas8300-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/fas8300/install-cable.html",
-      "description": "FAS8300 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
-      "id": "fas8200-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/fas8200/install-cable.html",
-      "description": "FAS8200 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
-      "id": "fas9000-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/fas9000/install-cable.html",
-      "description": "FAS9000 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
-      "id": "fas9500-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/fas9500/install-cable.html",
-      "description": "FAS9500 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
-      "id": "a300-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/a300/install-cable.html",
-      "description": "AFF A300 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
-      "id": "a700-cable",
-      "url": "https://docs.netapp.com/us-en/ontap-systems/a700/install-cable.html",
-      "description": "AFF A700 controller cabling (text variant probe)",
-      "status": "http_error_404"
-    },
-    {
       "id": "a700-guide",
       "url": "https://docs.netapp.com/us-en/ontap-systems/a700/install-detailed-guide.html",
       "description": "AFF A700 controller cabling",
@@ -328,6 +256,66 @@
       "status": "ok",
       "chars": 1044,
       "file": "data/netapp_docs_raw/fas2600-setup.txt"
+    },
+    {
+      "id": "fas2700-cable",
+      "url": "https://docs.netapp.com/us-en/ontap-systems/fas2700/install-cable.html",
+      "description": "FAS2720/FAS2750 controller cabling (text variant probe)",
+      "status": "http_error_404"
+    },
+    {
+      "id": "fas2800-cable",
+      "url": "https://docs.netapp.com/us-en/ontap-systems/fas2800/install-cable.html",
+      "description": "FAS2820 controller cabling (text variant probe)",
+      "status": "http_error_404"
+    },
+    {
+      "id": "fas2600-cable",
+      "url": "https://docs.netapp.com/us-en/ontap-systems/fas2600/install-cable.html",
+      "description": "FAS2650/FAS2620 controller cabling (text variant probe)",
+      "status": "http_error_404"
+    },
+    {
+      "id": "fas8080-guide",
+      "url": "https://docs.netapp.com/us-en/ontap-systems/fas8080/install-detailed-guide.html",
+      "description": "FAS8080 controller cabling",
+      "status": "http_error_404"
+    },
+    {
+      "id": "fas8060-guide",
+      "url": "https://docs.netapp.com/us-en/ontap-systems/fas8060/install-detailed-guide.html",
+      "description": "FAS8060 controller cabling",
+      "status": "http_error_404"
+    },
+    {
+      "id": "fas8040-guide",
+      "url": "https://docs.netapp.com/us-en/ontap-systems/fas8040/install-detailed-guide.html",
+      "description": "FAS8040 controller cabling",
+      "status": "http_error_404"
+    },
+    {
+      "id": "fas8020-guide",
+      "url": "https://docs.netapp.com/us-en/ontap-systems/fas8020/install-detailed-guide.html",
+      "description": "FAS8020 controller cabling",
+      "status": "http_error_404"
+    },
+    {
+      "id": "fas2554-guide",
+      "url": "https://docs.netapp.com/us-en/ontap-systems/fas2554/install-detailed-guide.html",
+      "description": "FAS2554 controller cabling",
+      "status": "http_error_404"
+    },
+    {
+      "id": "fas2552-guide",
+      "url": "https://docs.netapp.com/us-en/ontap-systems/fas2552/install-detailed-guide.html",
+      "description": "FAS2552 controller cabling",
+      "status": "http_error_404"
+    },
+    {
+      "id": "fas2520-guide",
+      "url": "https://docs.netapp.com/us-en/ontap-systems/fas2520/install-detailed-guide.html",
+      "description": "FAS2520 controller cabling",
+      "status": "http_error_404"
     }
   ]
 }
