@@ -1666,7 +1666,7 @@ async function handleFiles(fileList) {
   2. Inside the extracted folder, find the ASUP text files (sysconfig, version, disk show, etc.)
   3. Drag and drop those text files directly onto this upload area
 
-Accepted formats: plain text, .zip, .tar.gz / .tgz`;
+Accepted formats: plain text, .zip, .tar, .tar.gz / .tgz, .gz`;
         // Show in UI without throwing — let other files continue
         _perFileResults.push({
           filename: file.name,
@@ -3422,6 +3422,12 @@ function getShelfVisualSVG(shelfObj, x, y, width, height, isProposed) {
   return html;
 }
 
+// Distinct per-stack cable color, cycled by stack index — see the non-MCC SAS
+// stack loop below for why: with more than one storage-port stack, cables used
+// to be visually indistinguishable (all the same info/warning color) while also
+// running near-parallel through the same corridor.
+const STACK_CABLE_COLORS = ["#06b6d4", "#f59e0b", "#a855f7", "#22c55e", "#ec4899", "#3b82f6", "#f97316", "#14b8a6"];
+
 // Draw interactive SVG cabling diagram with MetroCluster support
 function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
   const container = document.getElementById(targetFrameId);
@@ -4161,6 +4167,21 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
         const pBX = startXB + pBIdx * spacingB + portWB / 2;
         const rBX = startXB + rBIdx * spacingB + portWB / 2;
 
+        // Every stack's primary/return cables share nearly identical anchor points
+        // (same controller-side y, same fixed IOM-box x), so with more than one
+        // stack they used to converge onto the same x early and then run dead-
+        // parallel through the same corridor for however many shelf-rows separated
+        // them — confirmed confusing live on a real 3-stack (12-shelf) system, all
+        // cables the same color and visually indistinguishable. Fixed two ways:
+        // (1) a distinct color per stack so a cable stays identifiable even where
+        // paths still cross, (2) a per-stack lane offset on the long vertical "belly"
+        // of the primary-path curves (into the open margins left of x=0..~55 and
+        // right of x~595..650) so stacks fan out into separate lanes instead of
+        // stacking on literally the same pixels.
+        const stackColor = STACK_CABLE_COLORS[pairStackIdx % STACK_CABLE_COLORS.length];
+        const laneA = Math.max(8, 55 - pairStackIdx * 12);
+        const laneB = Math.min(642, 595 + pairStackIdx * 12);
+
         for (let j = 0; j < stack.length; j++) {
           const shelfItem = stack[j];
           const shelfObj = shelfItem.obj;
@@ -4219,9 +4240,9 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               svgStr += `<text x="120" y="${y - 40}" fill="var(--color-danger)" font-size="7" font-weight="700">No Storage Port</text>`;
             } else {
               const midY1 = (srcY + iomCy) / 2;
-              svgStr += `<path d="M ${pAX},${srcY} C ${pAX},${currentY + 100} 80,${currentY + 120} 80,${iomCy}" class="${cableClassA}" stroke="var(--color-info)" fill="none" stroke-width="2"/>`;
+              svgStr += `<path d="M ${pAX},${srcY} C ${pAX},${currentY + 100} ${laneA},${currentY + 120} ${laneA},${(srcY + iomCy) / 2} S 80,${iomCy - 40} 80,${iomCy}" class="${cableClassA}" stroke="${stackColor}" fill="none" stroke-width="2"/>`;
               // Port label pill on cable
-              svgStr += `<rect x="${pAX - 10}" y="${midY1 - 7}" width="20" height="10" rx="3" fill="rgba(6,182,212,0.35)" stroke="var(--color-info)" stroke-width="0.8"/>`;
+              svgStr += `<rect x="${pAX - 10}" y="${midY1 - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${pAX}" y="${midY1 + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${portNameA}</text>`;
             }
           } else {
@@ -4230,7 +4251,7 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             const prevHeight = getShelfHeight(stack[j-1].obj.model);
             const prevCy = prevY + Math.floor((prevHeight - 30) / 2) + 15;
             // IOM-A daisy: OUT of shelf above (x=105) → IN of this shelf (x=80) — stays LEFT side
-            svgStr += `<path d="M 105,${prevCy} C 70,${(prevCy + iomCy) / 2} 70,${(prevCy + iomCy) / 2} 80,${iomCy}" class="${cableClassA}" stroke="var(--color-info)" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
+            svgStr += `<path d="M 105,${prevCy} C 70,${(prevCy + iomCy) / 2} 70,${(prevCy + iomCy) / 2} 80,${iomCy}" class="${cableClassA}" stroke="${stackColor}" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
           }
           
           // 2. Primary path B
@@ -4240,9 +4261,9 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               svgStr += `<text x="545" y="${iomCy + 3}" fill="#fff" font-size="8" font-weight="700" text-anchor="middle">!</text>`;
             } else if (!isSinglePath || shelfItem.isProposed) {
               const midY2 = (srcY + iomCy) / 2;
-              svgStr += `<path d="M ${pBX},${srcY} C ${pBX},${currentY + 100} 545,${currentY + 120} 545,${iomCy}" class="${cableClassB}" stroke="var(--color-warning)" fill="none" stroke-width="2"/>`;
+              svgStr += `<path d="M ${pBX},${srcY} C ${pBX},${currentY + 100} ${laneB},${currentY + 120} ${laneB},${(srcY + iomCy) / 2} S 545,${iomCy - 40} 545,${iomCy}" class="${cableClassB}" stroke="${stackColor}" fill="none" stroke-width="2"/>`;
               // Port label pill on cable
-              svgStr += `<rect x="${pBX - 10}" y="${midY2 - 7}" width="20" height="10" rx="3" fill="rgba(236,72,153,0.35)" stroke="var(--color-warning)" stroke-width="0.8"/>`;
+              svgStr += `<rect x="${pBX - 10}" y="${midY2 - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${pBX}" y="${midY2 + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${portNameB}</text>`;
             } else {
               svgStr += `<path d="M ${pBX},${srcY} C ${pBX},${currentY + 100} 470,${currentY + 110} 470,${currentY + 130}" class="${cableClassB}" stroke="var(--color-danger)" fill="none" stroke-dasharray="3 3" stroke-width="1.5"/>`;
@@ -4258,7 +4279,7 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             const prevCy = prevY + Math.floor((prevHeight - 30) / 2) + 15;
             if (!isSinglePath || shelfItem.isProposed) {
               // IOM-B daisy: OUT of shelf above (x=570) → IN of this shelf (x=545) — stays RIGHT side
-              svgStr += `<path d="M 570,${prevCy} C 610,${(prevCy + iomCy) / 2} 610,${(prevCy + iomCy) / 2} 545,${iomCy}" class="${cableClassB}" stroke="var(--color-warning)" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
+              svgStr += `<path d="M 570,${prevCy} C 610,${(prevCy + iomCy) / 2} 610,${(prevCy + iomCy) / 2} 545,${iomCy}" class="${cableClassB}" stroke="${stackColor}" fill="none" stroke-dasharray="2 1" stroke-width="1.5"/>`;
             }
           }
           
@@ -4276,13 +4297,16 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             if (!isPortExhausted) {
               const midRA = (srcY + iomCy) / 2;
               const midRB = (srcY + iomCy) / 2;
-              // IOM-A OUT → Node B's redundant port (crossed, orange)
-              svgStr += `<path d="M 105,${iomCy} C 105,${currentY + 130} ${rBX},${currentY + 130} ${rBX},${srcY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
-              svgStr += `<rect x="${rBX - 10}" y="${midRA - 7}" width="20" height="10" rx="3" fill="rgba(245,158,11,0.35)" stroke="var(--color-warning)" stroke-width="0.8"/>`;
+              // IOM-A OUT → Node B's redundant port (crossed). Same lane offset as
+              // the primary-B path above, on the same stackColor, so this stack's
+              // full cable set (primary + daisy + return) reads as one consistent
+              // color instead of overlapping with other stacks' return cables.
+              svgStr += `<path d="M 105,${iomCy} C 105,${currentY + 130} ${laneB},${currentY + 130} ${laneB},${midRA} S ${rBX},${srcY + 40} ${rBX},${srcY}" class="visual-cable multipath" stroke="${stackColor}" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              svgStr += `<rect x="${rBX - 10}" y="${midRA - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${rBX}" y="${midRA + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${retNameB}</text>`;
-              // IOM-B OUT → Node A's redundant port (crossed, green)
-              svgStr += `<path d="M 570,${iomCy} C 570,${currentY + 135} ${rAX},${currentY + 135} ${rAX},${srcY}" class="visual-cable multipath" stroke="var(--color-success)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
-              svgStr += `<rect x="${rAX - 10}" y="${midRB - 7}" width="20" height="10" rx="3" fill="rgba(34,197,94,0.35)" stroke="var(--color-success)" stroke-width="0.8"/>`;
+              // IOM-B OUT → Node A's redundant port (crossed)
+              svgStr += `<path d="M 570,${iomCy} C 570,${currentY + 135} ${laneA},${currentY + 135} ${laneA},${midRB} S ${rAX},${srcY + 40} ${rAX},${srcY}" class="visual-cable multipath" stroke="${stackColor}" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              svgStr += `<rect x="${rAX - 10}" y="${midRB - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${rAX}" y="${midRB + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${retNameA}</text>`;
             }
           }
