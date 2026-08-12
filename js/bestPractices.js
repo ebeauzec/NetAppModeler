@@ -852,14 +852,27 @@ export function runAudit(systemState) {
     }
   }
 
-  // --- Rule 16: Cluster Switch RCF File Version Verification ---
+  // --- Rule 16: Cluster Switch Firmware Currency ---
+  // `sw.version` is the switch OS/firmware version (from CDP/LLDP "Software version:",
+  // or parser.js's per-model defaultVer fallback) — not an RCF config-file version, which
+  // isn't discoverable via CDP/LLDP neighbor data at all. This rule used to compare that
+  // firmware version against a hardcoded "RCF version" threshold (1.3.0.1 for BES-53248,
+  // 2.2 for any "9336C" model) that both mislabeled what it was checking AND had drifted
+  // stale relative to compatibility.js's own FIRMWARE_VERSIONS.switches catalog (BES-53248's
+  // real latest is 3.10.0.3, not 1.3.0.1 — a system on 1.3.0.1 through 3.10.0.2 was reporting
+  // "compliant"). It also only ever checked 2 of the 8 switch models parser.js recognizes.
+  // Now looks up the real latest per-model from the shared catalog, like BP_SP_FIRMWARE does.
+  const switchFwCatalog = typeof FIRMWARE_VERSIONS !== 'undefined' ? (FIRMWARE_VERSIONS.switches || {}) : {};
   let switchWarnings = [];
+  let switchesChecked = 0;
   if (systemState.switches && systemState.switches.length > 0) {
     systemState.switches.forEach(sw => {
-      if (sw.model === "BES-53248" && compareVersions(sw.version, "1.3.0.1") < 0) {
-        switchWarnings.push(`Switch ${sw.name} (${sw.model}) runs legacy RCF version ${sw.version}. RCF v1.3.0.1 or higher is required.`);
-      } else if ((sw.model || '').includes("9336C") && compareVersions(sw.version, "2.2") < 0) {
-        switchWarnings.push(`Switch ${sw.name} (${sw.model}) runs legacy RCF version ${sw.version}. RCF v2.2 or higher is required for ONTAP 9.18+ compatibility.`);
+      const catalogKey = Object.keys(switchFwCatalog).find(k => (sw.model || '').includes(k));
+      if (!catalogKey || !sw.version) return;
+      switchesChecked++;
+      const latest = switchFwCatalog[catalogKey].latest;
+      if (sw.version !== latest && compareVersions(sw.version, latest) < 0) {
+        switchWarnings.push(`Switch ${sw.name} (${sw.model}) runs firmware ${sw.version}, behind the current qualified version ${latest}.`);
       }
     });
   }
@@ -867,20 +880,20 @@ export function runAudit(systemState) {
   if (switchWarnings.length > 0) {
     addReport(
       "BP_SWITCH_RCF",
-      "Cluster Interconnect Switch RCF Version Currency",
+      "Cluster Interconnect Switch Firmware Currency",
       "Network",
       "warning",
       switchWarnings.join("\n"),
-      "Upgrade the ethernet switch Reference Configuration File (RCF) to the latest NetApp qualified version (v1.3+ for Broadcom, v2.2+ for Cisco Nexus).",
-      "Download NetApp switch RCF configuration files and apply to the switches via CLI commands."
+      "Upgrade the switch firmware/EFOS to the latest NetApp-qualified version for each model, then verify the RCF (Reference Configuration File) matches the current release.",
+      "Download the qualified switch firmware image and apply per NetApp's per-model upgrade guide (see updateGuide in compatibility.js's FIRMWARE_VERSIONS.switches)."
     );
-  } else if (systemState.switches && systemState.switches.length > 0) {
+  } else if (switchesChecked > 0) {
     addReport(
       "BP_SWITCH_RCF",
-      "Cluster Interconnect Switch RCF Version Currency",
+      "Cluster Interconnect Switch Firmware Currency",
       "Network",
       "compliant",
-      "All cluster interconnect switches are running approved, up-to-date Reference Configuration Files (RCF).",
+      "All cluster interconnect switches with a known firmware catalog entry are running the current qualified firmware version.",
       "None required.",
       ""
     );

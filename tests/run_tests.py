@@ -84,6 +84,31 @@ window.addEventListener('DOMContentLoaded', function() {
     check('extractSizeLabel: already-clean size string passes through unchanged',
       extractSizeLabel('960GB') === '960GB', extractSizeLabel('960GB'));
 
+    // --- bestPractices.js: BP_SWITCH_RCF uses the real firmware catalog, not a stale
+    // hardcoded threshold (confirmed live: the rule compared switch firmware against a
+    // hardcoded "1.3.0.1" for BES-53248 that had drifted out of sync with
+    // compatibility.js's own FIRMWARE_VERSIONS.switches catalog, whose real latest is
+    // 3.10.0.3 — a switch running anywhere from 1.3.0.1 to 3.10.0.2 was silently
+    // reporting "compliant") ---
+    var switchStateOutdated = {
+      version: { model: 'AFF A1K', ontap: '9.19.1' },
+      nodes: [{ name: 'node-a', memoryGB: 128, cpus: 16, ports: [] }, { name: 'node-b', memoryGB: 128, cpus: 16, ports: [] }],
+      shelves: [], aggregates: [], spares: [], licenses: [], expansionCards: [],
+      switches: [{ name: 'CSW-01', model: 'BES-53248', version: '1.3.0.1', role: 'cluster-switch' }],
+      metrocluster: 'none', spFirmware: [], diskFirmware: [], acpStatus: {}
+    };
+    var switchReportsOutdated = runAudit(switchStateOutdated);
+    var swReportOutdated = switchReportsOutdated.find(function(r) { return r.id === 'BP_SWITCH_RCF'; });
+    check('runAudit: BP_SWITCH_RCF flags BES-53248 on 1.3.0.1 as outdated (real latest is 3.10.0.3, not the old 1.3.0.1 threshold)',
+      !!swReportOutdated && swReportOutdated.status === 'warning', swReportOutdated);
+
+    var switchStateCurrent = JSON.parse(JSON.stringify(switchStateOutdated));
+    switchStateCurrent.switches[0].version = '3.10.0.3';
+    var switchReportsCurrent = runAudit(switchStateCurrent);
+    var swReportCurrent = switchReportsCurrent.find(function(r) { return r.id === 'BP_SWITCH_RCF'; });
+    check('runAudit: BP_SWITCH_RCF reports compliant for BES-53248 on the real current version 3.10.0.3',
+      !!swReportCurrent && swReportCurrent.status === 'compliant', swReportCurrent);
+
     // --- bestPractices.js: duplicate-report fix (Task 2) ---
     var stateForAudit = {
       version: { model: 'AFF A400', ontap: '9.15.1' },
