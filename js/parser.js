@@ -923,8 +923,38 @@ export function parseASUP(files) {
     }
   }
 
+  // Aggregate capacity fallback: aggr-info.xml (present in some real ASUP bundles as a
+  // separate structured export) has authoritative <name>/<size>/<available_size>/<usedsize>
+  // fields in bytes per <asup:ROW>. Confirmed against a real customer ASUP where the only
+  // plain-text aggregate dump present was "aggr status -r" (RAID/disk membership only — no
+  // capacity numbers at all, not even wrong ones), so the "Size: X, Usable: Y, Used: Z,
+  // Free: W" single-line match below never found anything, silently leaving every real
+  // aggregate at 0 GB usable/used/free downstream (blank capacity bars in the audit
+  // dashboard and Before/After comparison view). size = available_size + usedsize, verified
+  // exactly byte-for-byte against real data. Decimal GB, matching this file's existing
+  // parseSizeToGB() convention ("ONTAP uses decimal standard for disk capacities").
+  const aggrInfoCapacityByName = {};
+  {
+    const aggrInfoRowRegex = /<asup:ROW[^>]*>([\s\S]*?)<\/asup:ROW>/g;
+    let aggrInfoRowMatch;
+    while ((aggrInfoRowMatch = aggrInfoRowRegex.exec(combinedText)) !== null) {
+      const rowText = aggrInfoRowMatch[1];
+      const nameMatch = rowText.match(/<name>([^<]+)<\/name>/);
+      const sizeMatch2 = rowText.match(/<size>(\d+)<\/size>/);
+      const availMatch = rowText.match(/<available_size>(\d+)<\/available_size>/);
+      const usedMatch2 = rowText.match(/<usedsize>(\d+)<\/usedsize>/);
+      if (nameMatch && sizeMatch2 && availMatch && usedMatch2) {
+        aggrInfoCapacityByName[nameMatch[1]] = {
+          usableGB: Math.round(parseInt(sizeMatch2[1], 10) / 1e9),
+          usedGB: Math.round(parseInt(usedMatch2[1], 10) / 1e9),
+          freeGB: Math.round(parseInt(availMatch[1], 10) / 1e9)
+        };
+      }
+    }
+  }
+
   const aggrBlocks = combinedText.split(/Aggregate\s+/i);
-  
+
   if (aggrBlocks.length > 1) {
     for (let i = 1; i < aggrBlocks.length; i++) {
       const block = aggrBlocks[i];
@@ -1009,6 +1039,14 @@ export function parseASUP(files) {
         }
       } else {
         nodeName = (aggrName.endsWith('_b') || aggrName.toLowerCase().includes('nodeb')) ? 'node-b' : 'node-a';
+      }
+
+      if (usableGB === 0 && aggrInfoCapacityByName[aggrName]) {
+        const xmlCap = aggrInfoCapacityByName[aggrName];
+        usableGB = xmlCap.usableGB;
+        usedGB = xmlCap.usedGB;
+        freeGB = xmlCap.freeGB;
+        if (sizeGB === 0) sizeGB = xmlCap.usableGB;
       }
 
       data.aggregates.push({

@@ -234,6 +234,34 @@ window.addEventListener('DOMContentLoaded', function() {
       !!sasNode && sasNode.ports.filter(function(p) { return p.type !== 'storage'; }).length === 4,
       sasNode ? sasNode.ports.map(function(p){return p.name + ':' + p.type;}) : null);
 
+    // --- parser.js: aggregate capacity falls back to aggr-info.xml when no "Size: X,
+    // Usable: Y, Used: Z, Free: W" line is present. Found live on a real ASUP whose only
+    // aggregate dump was "aggr status -r" (RAID/disk membership only, no capacity numbers
+    // at all) — every real aggregate silently stayed at 0 GB usable/used/free, showing
+    // "Usable Total: 0 GB" in the Before/After comparison view. size = available_size +
+    // usedsize in real data (120740423036928 = 49055440392192 + 71684982644736), decimal GB. ---
+    var aggrCapAsup = [
+      'Aggregate test_data_aggr1 (online, raid_dp) (block checksums)',
+      '  Plex /test_data_aggr1/plex0 (online, normal, active, pool0)',
+      '    RAID group /test_data_aggr1/plex0/rg0 (normal, block checksums)',
+      '',
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<T_AGGR_INFO>',
+      '<asup:ROW col_time_us="1">',
+      '<name>test_data_aggr1</name>',
+      '<uuid>abc-123</uuid>',
+      '<size>120740423036928</size>',
+      '<available_size>49055440392192</available_size>',
+      '<usedsize>71684982644736</usedsize>',
+      '</asup:ROW>',
+      '</T_AGGR_INFO>'
+    ].join('\n');
+    var aggrCapParsed = parseASUP(aggrCapAsup);
+    var aggrCapResult = aggrCapParsed.aggregates.find(function(a) { return a.name === 'test_data_aggr1'; });
+    check('parseASUP: aggregate capacity falls back to aggr-info.xml when no text "Size:" line exists',
+      !!aggrCapResult && aggrCapResult.usableGB === 120740 && aggrCapResult.usedGB === 71685 && aggrCapResult.freeGB === 49055,
+      aggrCapResult);
+
     // --- parser.js: model detection prefers the system-board field over a sub-component's
     // (confirmed against a real customer ASUP: a Flash Cache module's own "Model name:"
     // line was matched before the real system board's, resolving to the wrong platform) ---

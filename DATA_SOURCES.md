@@ -121,6 +121,27 @@ own prior auto-added cards before recomputing — so the later call inside
 `initStep4Inputs()` is a harmless no-op re-confirmation, not a duplicate).
 Confirmed: the remaining false exhaustion warning is gone.
 
+**Confirmed correction made 2026-08-12 (parser gap, not a catalog issue):**
+the "Modelled Configuration Transition" comparison view showed "Usable Total:
+0 GB" on both Before/After panels for a real ASUP. Cause: the parser only
+recognized aggregate capacity from a single-line `aggr show`-style "Size: X,
+Usable: Y, Used: Z, Free: W" text format; this real bundle's only aggregate
+dump was `aggr status -r` (RAID/disk membership, no capacity numbers at
+all), so every real aggregate's `usableGB`/`usedGB`/`freeGB` silently stayed
+at 0. Fixed: `js/parser.js` now also reads `aggr-info.xml` when present — a
+structured per-aggregate export with `<name>`/`<size>`/`<available_size>`/
+`<usedsize>` in bytes (verified exactly against real data: size =
+available_size + usedsize, byte-for-byte) — cross-referenced by aggregate
+name as a fallback when the text-format match finds nothing. Confirmed
+against the real 12-shelf FAS8040 system: Usable Total now reads 264.5 TB,
+Used 199.4 TB (75.4%). Known limitation, not fixed: one anonymized sample
+bundle (`manual_asup1.zip`) has aggregate names redacted inconsistently
+between its own files (`aggr-info.xml` uses SHA-like hashes, the text dump
+uses literal `XXXXXXXXXXXXXXXXXXXXXXX`), so the name-based join can't work
+there — deliberately not worked around with a positional fallback, since
+that risks silently attaching the wrong aggregate's capacity to the wrong
+name for a bundle with genuinely different aggregate ordering.
+
 **What this deliberately does NOT do:** the shipped `standalone_netapp_modeler.html`
 never makes a network call — both harvest tools above are local, human/AI-run
 Python scripts, run on demand, never from the browser app itself. This keeps
@@ -278,6 +299,7 @@ Source: NetApp Hardware Universe (hwu.netapp.com)
 | FAS8040 storage ports were `["0a","0b"]` (2 ports) | Real: `["0a","0b","0c","0d"]` (4 ports) | v2.65 | Real customer ASUP SYSCONFIG-A.txt + storage-port.xml |
 | Parser never read onboard SAS Host Adapter ports from `sysconfig -a` text (any platform) | Whole-document `SAS Host Adapter` regex pass extracts real storage ports, catalog is fallback only | v2.65 | Real customer ASUP (12-shelf FAS8040) |
 | Audit dashboard's initial cabling render ran before HBA auto-allocation, missing auto-added ports | `allocateHBACardsForState()` now runs before the initial render, not after | v2.66 | Real customer ASUP (12-shelf FAS8040), confirmed live |
+| Aggregate capacity stayed at 0 GB when only `aggr status -r` text was present (no "Size:" line) | Falls back to `aggr-info.xml`'s `<size>`/`<available_size>`/`<usedsize>` when present | v2.68 | Real customer ASUP (12-shelf FAS8040), confirmed live |
 
 ---
 

@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.67)
+# NetApp AutoSupport Analyzer & Modeler (v2.68)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,10 +6,18 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.67)
+## 🆕 New in this Version (v2.68)
+
+- **Real ASUP aggregate capacity now populates:** reported live — the "Modelled Configuration Transition" comparison showed "Used: 0 GB (0.0%)" / "Usable Total: 0 GB" on both panels for a real ASUP. The parser only recognized capacity from a single-line "Size: X, Usable: Y, Used: Z, Free: W" CLI format; this ASUP's only aggregate dump was `aggr status -r` output (RAID/disk membership only, no capacity numbers at all), so every real aggregate silently stayed at 0 GB. The parser now also reads `aggr-info.xml` when present — a structured export with real byte-accurate size/available/used fields, cross-referenced by aggregate name. Confirmed against the real system: Usable Total now correctly reads 264.5 TB, Used 199.4 TB (75.4%).
+- **Regression suite grew from 50 to 51 tests.**
+
+<details>
+<summary>Earlier changelog (v2.67)</summary>
 
 - **Multi-stack SAS cabling diagram decluttered:** reported live on the same real 12-shelf, 3-stack system. With more than one storage-port stack, every cable used the same color and nearly identical anchor points, so long primary/return cables ran almost perfectly parallel through the same corridor — unreadable. Each stack's full cable set (primary, daisy-chain, crossed return) now gets its own distinct color and fans into its own lane in the diagram's side margins instead of overlapping.
 - **File-upload picker's format filter fixed:** the `accept` attribute had a malformed trailing entry that silently restricted the OS file picker to `.zip` only, even though `.tar`, `.tar.gz`/`.tgz`, and `.gz` were always supported by the parser. All of them (plus plain text/log/xml) are now selectable directly. `.7z`/`.rar` genuinely aren't supported (no in-browser decoder for them, by design — this is a pure client-side tool) — that's now stated more clearly instead of implied.
+
+</details>
 
 <details>
 <summary>Earlier changelog (v2.66)</summary>
