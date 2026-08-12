@@ -300,6 +300,99 @@ window.addEventListener('DOMContentLoaded', function() {
     check('parseASUP: STORAGE-SHELF.txt shelves are not the fabricated MOCK-SHELF-001 fallback',
       shelfXmlParsed.shelves.every(function(s){ return s.serial !== 'MOCK-SHELF-001'; }));
 
+    // --- ui.js: greenfield MetroCluster shelf-expansion UI-flow regression matrix.
+    // Unlike the checks above (which call exported functions directly), these drive
+    // the real app DOM the same way the live browser repro that found these bugs did —
+    // resetState() (a top-level function, so it's on `window` in the bundle) instead
+    // of clicking #reset-btn, which would block on a native confirm() dialog under
+    // headless Edge. Shelf ids are read back from the rendered "NS224\nID: <id>"
+    // text in the Modelled Configuration Transition panel, not from internal state
+    // (currentState/modeledState are non-exported `let`s, not on `window`). ---
+    function extractShelfIds(text) {
+      var ids = [];
+      var re = /NS224\s*[\r\n]+\s*ID:\s*(\S+)/g;
+      var m;
+      while ((m = re.exec(text)) !== null) ids.push(m[1]);
+      return ids;
+    }
+    // "Disk Tiers / Sizes" rows only — not the whole page, which also contains the
+    // What's New splash's own changelog copy quoting the historical bug string
+    // ("...duplicated media-type label (\"1.9TB NVMe SSD NVMe SSD\")...") as
+    // release-note prose. A whole-page substring check would false-positive on
+    // that quote forever, independent of whether the app itself still has the bug.
+    function diskTierLines(text) {
+      return text.split('\n').filter(function(l) { return l.indexOf('Disk Tiers') === 0; });
+    }
+    function runGreenfieldMccShelfAdd(shelfCount) {
+      resetState();
+      document.getElementById('manual-platform-select').value = 'AFF A1K';
+      document.getElementById('manual-nodes-select').value = '2';
+      var mccCb = document.getElementById('deploy-metrocluster');
+      mccCb.checked = true;
+      mccCb.dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById('load-greenfield-btn').click();
+      var shelfSel = document.getElementById('shelf-type');
+      shelfSel.value = 'ns224';
+      shelfSel.dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById('shelf-count-input').value = String(shelfCount);
+      document.getElementById('next-btn').click();
+      return document.body.innerText;
+    }
+
+    var mcc1ShelfText = runGreenfieldMccShelfAdd(1);
+    var mcc1Ids = extractShelfIds(mcc1ShelfText);
+    // Both panels render a full shelf-list snapshot, not a diff: "Before" is the
+    // 2-shelf baseline (ids "1","2"); "After" is baseline + 1 new pair = 4 shelves
+    // total, of which the LAST 2 are the newly-added symmetric pair.
+    var mcc1AfterIds = mcc1Ids.slice(2);
+    var mcc1NewIds = mcc1AfterIds.slice(-2);
+    check('greenfield MCC + 1 shelf: After panel shows 4 shelves total (2 baseline + 2 new)',
+      mcc1AfterIds.length === 4, mcc1AfterIds);
+    check('greenfield MCC + 1 shelf: the 2 newly-added shelf ids are clean integers, not "<n>B"',
+      mcc1NewIds.every(function(id) { return /^\d+$/.test(id); }), mcc1NewIds);
+    check('greenfield MCC + 1 shelf: Disk Tiers rows have no duplicated media-type label',
+      diskTierLines(mcc1ShelfText).every(function(l) { return l.indexOf('NVMe SSD NVMe SSD') === -1; }),
+      diskTierLines(mcc1ShelfText));
+
+    var mcc2ShelfText = runGreenfieldMccShelfAdd(2);
+    var mcc2Ids = extractShelfIds(mcc2ShelfText);
+    // Baseline 2 + 2 requested x 2 sites = 6 shelves total in the After panel; the
+    // last 4 are the newly-added pairs.
+    var mcc2AfterIds = mcc2Ids.slice(2);
+    var mcc2NewIds = mcc2AfterIds.slice(-4);
+    check('greenfield MCC + 2 shelves: After panel shows 6 shelves total (2 baseline + 4 new)',
+      mcc2AfterIds.length === 6, mcc2AfterIds);
+    check('greenfield MCC + 2 shelves: the 4 newly-added shelf ids are clean integers',
+      mcc2NewIds.every(function(id) { return /^\d+$/.test(id); }), mcc2NewIds);
+    check('greenfield MCC + 2 shelves: the 4 newly-added shelf ids are mutually distinct',
+      (function() { var s = {}; mcc2NewIds.forEach(function(id){ s[id] = (s[id]||0)+1; }); return Object.keys(s).every(function(k){ return s[k] === 1; }); })(),
+      mcc2NewIds);
+    check('greenfield MCC + 2 shelves: Disk Tiers rows have no duplicated media-type label',
+      diskTierLines(mcc2ShelfText).every(function(l) { return l.indexOf('NVMe SSD NVMe SSD') === -1; }),
+      diskTierLines(mcc2ShelfText));
+
+    // --- Non-MCC regression: the shelf-id fix must not affect the plain HA-pair path
+    // (which never had the "<n>B" bug — its shelf ids come from a separate, simpler
+    // code path — but the fix should leave it untouched either way). ---
+    resetState();
+    document.getElementById('manual-platform-select').value = 'AFF A1K';
+    document.getElementById('manual-nodes-select').value = '2';
+    var mccCbOff = document.getElementById('deploy-metrocluster');
+    mccCbOff.checked = false;
+    mccCbOff.dispatchEvent(new Event('change', { bubbles: true }));
+    document.getElementById('load-greenfield-btn').click();
+    var shelfSelHa = document.getElementById('shelf-type');
+    shelfSelHa.value = 'ns224';
+    shelfSelHa.dispatchEvent(new Event('change', { bubbles: true }));
+    document.getElementById('shelf-count-input').value = '1';
+    document.getElementById('next-btn').click();
+    var haText = document.body.innerText;
+    var haIds = extractShelfIds(haText);
+    check('greenfield non-MCC + 1 shelf: no "Site-A"/"Site-B" split rendered (plain HA pair)',
+      haText.indexOf('Site-A Node') === -1 && haText.indexOf('Site-B Node') === -1, haText.indexOf('Site-A Node'));
+    check('greenfield non-MCC + 1 shelf: shelf ids are clean integers',
+      haIds.every(function(id) { return /^\d+$/.test(id); }), haIds);
+
     var resDiv = document.createElement('div');
     resDiv.id = 'test-results';
     resDiv.textContent = JSON.stringify(results);
