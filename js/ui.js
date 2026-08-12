@@ -1937,6 +1937,23 @@ function loadASUPData(input, isGreenfield = false) {
           });
         }
       }
+
+      // generatePlatformBaseline() output (both "Initialize Greenfield" and
+      // "Initialize (Audit Demo)") never went through parseASUP(), so it never
+      // populated dataSources — the Data Quality panel's computeOverallConfidence()
+      // falls back to a hardcoded 30 and every field's icon reads "Unknown" when
+      // dataSources is empty. That fallback exists for genuinely ambiguous real
+      // ASUP parses; it's just wrong here, since every field below IS fully known
+      // (synthetic, not uncertain) — confirmed live: the audit demo showed "30%
+      // Low confidence" with every row "Unknown" despite the platform/nodes/
+      // shelves/etc. all being populated correctly a few lines up.
+      if (!currentState.dataSources) {
+        currentState.dataSources = {};
+        ['ontapVersion', 'model', 'serial', 'nodes', 'shelves', 'aggregates',
+         'licenses', 'switches', 'spFirmware', 'diskFirmware'].forEach(key => {
+          currentState.dataSources[key] = { source: 'user', confidence: 1.0, note: 'Generated demo/greenfield configuration — not parsed from ASUP text.' };
+        });
+      }
     } else {
       currentState = parseASUP(input);
       if (!currentState.expansionCards) currentState.expansionCards = [];
@@ -2717,6 +2734,16 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
       id: `10000000${i + 1}`,
       name: nodeName,
       serial: i === 0 ? serial : `${serial}${suffix}`,
+      // profile.ram/cpus is only catalogued for some platforms in compatibility.js
+      // (e.g. ASA C400/C800) — falls back to the same 128GB/16-core default the
+      // real-ASUP-parse path uses when it can't find the field either, rather than
+      // leaving these unset. Left unset, the audit dashboard's RAM readout showed
+      // "N/A (parse error)" for every generated node — confirmed live for a demo
+      // profile that was never actually parsed from anything, so "parse error"
+      // was doubly wrong (nothing to fail parsing on, and the field just being
+      // 0/undefined isn't a parse error).
+      memoryGB: profile.ram || 128,
+      cpus: profile.cpus || 16,
       ports: (() => {
         const list = [
           { name: "e0a", status: "up", speed: isAllNVMe ? "25GbE" : "10GbE", duplex: "full", type: "cluster-interconnect" },
