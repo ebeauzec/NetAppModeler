@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.65)
+# NetApp AutoSupport Analyzer & Modeler (v2.66)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,12 +6,20 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.65)
+## 🆕 New in this Version (v2.66)
 
-Driven by the user's own real 12-shelf production ASUP showing incorrect "No Storage Port" exhaustion warnings across most of its cabling diagram — traced to two compounding parser/catalog gaps, not a rendering bug.
+Driven by the user's own real 12-shelf production ASUP showing incorrect "No Storage Port" exhaustion warnings across most of its cabling diagram — traced to three compounding gaps across two releases, not a rendering bug.
 
-- **Real ASUP storage port counts fixed (root cause of false exhaustion warnings):** the parser never read onboard SAS Host Adapter ports from real `sysconfig -a` dumps (`slot 0: SAS Host Adapter 0a (...)`) — a different line shape than the network `port` format it already handled, and real dumps can spread these lines 40,000+ characters apart due to verbose per-disk detail, far past the per-node parsing window. Separately, FAS8040's static port catalog only listed 2 storage ports when the real platform has 4, confirmed against a real customer's own ASUP and NetApp's `storage-port.xml` export. Fixed both: the parser now extracts real SAS adapter ports directly from ASUP text for any platform (catalog is fallback only), and FAS8040's catalog entry is corrected. Confirmed against the real 12-shelf system: false exhaustion warnings dropped from most of the shelf diagram down to a single remaining case that now reflects genuine capacity, not a parsing gap.
+- **Cabling diagram's first render now matches its own HBA auto-allocation:** v2.65 (below) fixed most of the false exhaustion, but one case remained, still visible live after that fix shipped. Root cause: the audit dashboard's cabling diagram was drawn *before* the Intelligent HBA Auto-Allocation step ran, so the first render of a real ASUP's cabling used only the real onboard storage ports, missing whatever HBA card the very next step was about to auto-add for full shelf coverage. Auto-allocation now runs before the initial render. Confirmed against the same real 12-shelf FAS8040 system: the one remaining false exhaustion warning is gone.
+- **Regression suite grew from 49 to 50 tests**, adding a case that drives the real-ASUP-audit code path (not the greenfield/demo path, which was never affected) with a 12-shelf single-node state and asserts the *initial* cabling render already reflects auto-allocated ports.
+
+<details>
+<summary>Earlier changelog (v2.65)</summary>
+
+- **Real ASUP storage port counts fixed (root cause of most false exhaustion warnings):** the parser never read onboard SAS Host Adapter ports from real `sysconfig -a` dumps (`slot 0: SAS Host Adapter 0a (...)`) — a different line shape than the network `port` format it already handled, and real dumps can spread these lines 40,000+ characters apart due to verbose per-disk detail, far past the per-node parsing window. Separately, FAS8040's static port catalog only listed 2 storage ports when the real platform has 4, confirmed against a real customer's own ASUP and NetApp's `storage-port.xml` export. Fixed both: the parser now extracts real SAS adapter ports directly from ASUP text for any platform (catalog is fallback only), and FAS8040's catalog entry is corrected.
 - **Regression suite grew from 46 to 49 tests**, adding coverage for the new SAS Host Adapter parsing pass (including a case that deliberately pads 25,000 characters between a node's port block and its SAS adapter lines, to prove the new pass isn't bounded by the same window that caused the original bug).
+
+</details>
 
 <details>
 <summary>Earlier changelog (v2.58 – v2.64)</summary>

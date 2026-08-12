@@ -1982,7 +1982,17 @@ function loadASUPData(input, isGreenfield = false) {
         });
       });
     }
-    
+
+    // Must run before renderCurrentAuditDashboard(): its cabling diagram reads
+    // currentState.expansionCards via resolveStoragePorts() to compute available
+    // storage ports. Previously this only ran later, inside initStep4Inputs()
+    // (line ~1999 below) — so the FIRST cabling render used only the real onboard
+    // ports and showed false "No Storage Port" exhaustion on shelves that would
+    // have been covered by the auto-allocated HBA card computed moments later.
+    // Idempotent (removes its own prior auto-added cards before recomputing), so
+    // initStep4Inputs()'s later call is a safe no-op re-confirmation, not a dupe.
+    allocateHBACardsForState(currentState);
+
     renderCurrentAuditDashboard();
     renderDataQualityPanel(currentState);
     renderCriticalGapsPanel(currentState);
