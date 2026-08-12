@@ -37,7 +37,7 @@
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.66</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.67</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -109,7 +109,7 @@
           <div style="text-align: center; max-width: 600px; margin-bottom: 1rem;">
             <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Import AutoSupport Message Bundle</h2>
             <p style="color: var(--color-muted); font-size: 0.95rem;">
-              Upload an ONTAP AutoSupport message bundle (ZIP/GZ format) or drop individual configuration files (`VERSION`, `SYSCONFIG-A`, `SYSCONFIG-R`, `LICENSE`, `NETPORT`).
+              Upload an ONTAP AutoSupport message bundle (ZIP, TAR, TAR.GZ/TGZ, or GZ format) or drop individual configuration files (`VERSION`, `SYSCONFIG-A`, `SYSCONFIG-R`, `LICENSE`, `NETPORT`).
             </p>
           </div>
           
@@ -120,9 +120,9 @@
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
             <p>Drag and drop ASUP files here</p>
-            <span>Accepted: <strong>.zip</strong>, <strong>.tar.gz</strong>, <strong>.gz</strong>, or plain <strong>text files</strong> — upload multiple nodes at once</span>
-            <span style="font-size:0.72rem; color:#f87171; margin-top:4px; display:block;">⚠️ .7z archives must be extracted first — right-click → Extract Here, then upload the text files</span>
-            <input type="file" id="file-input" multiple class="hidden" accept=".zip,.tar.gz,.tgz,.gz,.txt,.log,.xml,*">
+            <span>Accepted: <strong>.zip</strong>, <strong>.tar.gz</strong>, <strong>.tgz</strong>, <strong>.tar</strong>, <strong>.gz</strong>, or plain <strong>text files</strong> — upload multiple nodes at once</span>
+            <span style="font-size:0.72rem; color:#f87171; margin-top:4px; display:block;">⚠️ .7z/.rar and other archive formats aren't supported (this tool decompresses entirely in your browser, with no 7z/rar decoder available) — extract them first (right-click → Extract Here) and upload the text files, or re-zip the extracted contents as a .zip</span>
+            <input type="file" id="file-input" multiple class="hidden" accept=".zip,.tar.gz,.tgz,.tar,.gz,.txt,.log,.xml">
           </div>
 
           <!-- File upload status tiles — populated by renderFileStatusGrid() after each upload -->
@@ -1057,12 +1057,23 @@
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.66</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.67</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+
+        <!-- Feature -9 (v2.67) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🎨</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Multi-Stack SAS Cabling Diagram Decluttered</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              Reported live on a real 12-shelf, 3-stack system: with more than one storage-port stack, every cable used the same color and nearly identical anchor points, so long primary/return cables ran almost perfectly parallel through the same corridor — an unreadable tangle. Each stack's full cable set (primary, daisy-chain, and crossed return) now gets its own distinct color, and each stack's cables fan into their own lane in the diagram's side margins instead of overlapping. Also fixed: the file-upload picker's format filter had a malformed entry that silently restricted it to .zip only, even though .tar, .tar.gz/.tgz, and .gz were always supported — all of them (plus plain text/log/xml) are now selectable directly, with a clearer note that only .7z/.rar genuinely aren't supported (no in-browser decoder exists for them).
+            </span>
+          </div>
+        </div>
 
         <!-- Feature -8 (v2.66) -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
@@ -1211,7 +1222,7 @@
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary"
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.66','true')}catch(e){}"
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.67','true')}catch(e){}"
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
