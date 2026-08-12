@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.64</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.65</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2053,12 +2053,23 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.64</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.65</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+
+        <!-- Feature -7 (v2.65) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🔍</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Real ASUP Storage Port Counts Fixed (Was Causing False Exhaustion Warnings)</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              Two compounding bugs made the cabling diagram show "No Storage Port" exhaustion on shelves that weren't actually exhausted: (1) the parser never read onboard SAS Host Adapter ports from real `sysconfig -a` dumps ("slot 0: SAS Host Adapter 0a...") — a different line shape than the network `port` format it already handled, and real dumps can spread these lines 40,000+ characters apart due to verbose per-disk detail, far past the per-node parsing window; (2) FAS8040's static port catalog only listed 2 storage ports when the real platform has 4, confirmed against a real customer's own ASUP and NetApp's storage-port.xml export. Fixed both: the parser now extracts real SAS adapter ports directly from ASUP text (works for any platform, not just FAS8040) with the catalog as fallback only, and FAS8040's catalog entry is corrected. Confirmed against a real 12-shelf production system: false exhaustion warnings dropped from most of the shelf diagram down to a single remaining case, which now reflects a genuine capacity note rather than a parsing gap.
+            </span>
+          </div>
+        </div>
 
         <!-- Feature -6 (v2.64) -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
@@ -2185,7 +2196,7 @@ svg.cabling-graph {
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary"
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.64','true')}catch(e){}"
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.65','true')}catch(e){}"
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
@@ -4358,8 +4369,12 @@ function parseASUP(files) {
     }
   }
 
+  // Node start positions computed once here, reused below by the SAS-adapter pass
+  // so it doesn't need its own second lookup.
+  const nodeHeaderIdxByNode = new Map();
   data.nodes.forEach(node => {
     const nodeHeaderIdx = findNodeSectionIdx(node.name);
+    nodeHeaderIdxByNode.set(node, nodeHeaderIdx);
     let windowEnd = nodeHeaderIdx + 15000;
     data.nodes.forEach(other => {
       if (other === node) return;
@@ -4389,6 +4404,54 @@ function parseASUP(files) {
       { name: "e0d", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 }
     ];
   });
+
+  // Onboard SAS storage ports — a `sysconfig -a`-style dump lists these as
+  // "slot 0: SAS Host Adapter 0a (PMC-Sierra PM8001 rev. C, SAS, <UP>)", a
+  // completely different line shape than the "port <name> <up|down> ..." format
+  // above, so the per-node pass never catches them; without this, storage-port
+  // count fell back entirely to compatibility.js's static catalog entry for the
+  // platform — confirmed wrong for at least one real platform (FAS8040 listed 2
+  // ports; a real customer's own ASUP showed 4 real SAS Host Adapters), and
+  // there's no way to hand-verify every platform's real onboard SAS port count.
+  // Reading it from the ASUP text itself, when present, fixes this for every
+  // platform at once instead of one manually-confirmed catalog entry at a time.
+  //
+  // Scans the FULL combinedText once (not a per-node windowed substring) and
+  // attributes each match to whichever node's section it falls after — real
+  // sysconfig dumps can spread these adapter lines across tens of thousands of
+  // characters (confirmed: ~41,000 in one real bundle, verbose per-disk detail
+  // between each adapter entry), far past the 15000-char per-node window above,
+  // which exists as a cross-node guard and shouldn't be widened just to reach
+  // these — one whole-document scan for this one specific pattern is both
+  // cheaper and correct regardless of node count.
+  const sortedNodeStarts = data.nodes
+    .map(n => ({ node: n, start: nodeHeaderIdxByNode.get(n) }))
+    .filter(e => e.start !== -1)
+    .sort((a, b) => a.start - b.start);
+  if (sortedNodeStarts.length > 0) {
+    const sasAdapterRegex = /SAS Host Adapter\s+(\S+)\s*\([^)]*<(UP|DOWN)>[^)]*\)/ig;
+    let sasMatch;
+    while ((sasMatch = sasAdapterRegex.exec(combinedText)) !== null) {
+      const matchIdx = sasMatch.index;
+      let owner = null;
+      for (const entry of sortedNodeStarts) {
+        if (entry.start <= matchIdx) owner = entry.node;
+        else break;
+      }
+      if (!owner) continue;
+      const portName = sasMatch[1].trim();
+      if (!owner.ports) owner.ports = [];
+      if (owner.ports.some(p => p.name.toLowerCase() === portName.toLowerCase())) continue;
+      owner.ports.push({
+        name: portName,
+        status: sasMatch[2].toLowerCase(),
+        speed: "12Gb SAS",
+        duplex: "full-duplex",
+        type: "storage",
+        mtu: 1500
+      });
+    }
+  }
 
   // Resilient network port show table parsing (mtu and status)
   const netportLines = combinedText.split(/\r?\n/);
@@ -6563,11 +6626,18 @@ const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
     maxFirmware: "v9.6",
     description: "Legacy mid-range FAS controller platform.",
+    // storage ports corrected from e0a/e0b to the real 4-port onboard SAS Host
+    // Adapter set — confirmed directly against a real customer ASUP's
+    // SYSCONFIG-A.txt ("slot 0: SAS Host Adapter 0a/0b/0c/0d") and the
+    // authoritative storage-port.xml export (<port>0a</port>...<port>0d</port>),
+    // 2026-08-13. The 2-port version undercounted this platform's real SAS
+    // capacity by half, causing false "port exhausted" warnings on the shelf
+    // cabling diagram for real systems with more than ~2 shelf stacks.
     ports: {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["0a", "0b"]
+      storage: ["0a", "0b", "0c", "0d"]
     },
     supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
     maxPcieSlots: 4,

@@ -1256,8 +1256,12 @@ export function parseASUP(files) {
     }
   }
 
+  // Node start positions computed once here, reused below by the SAS-adapter pass
+  // so it doesn't need its own second lookup.
+  const nodeHeaderIdxByNode = new Map();
   data.nodes.forEach(node => {
     const nodeHeaderIdx = findNodeSectionIdx(node.name);
+    nodeHeaderIdxByNode.set(node, nodeHeaderIdx);
     let windowEnd = nodeHeaderIdx + 15000;
     data.nodes.forEach(other => {
       if (other === node) return;
@@ -1287,6 +1291,54 @@ export function parseASUP(files) {
       { name: "e0d", status: "up", speed: "10GbE", duplex: "full-duplex", type: "data", mtu: 1500 }
     ];
   });
+
+  // Onboard SAS storage ports — a `sysconfig -a`-style dump lists these as
+  // "slot 0: SAS Host Adapter 0a (PMC-Sierra PM8001 rev. C, SAS, <UP>)", a
+  // completely different line shape than the "port <name> <up|down> ..." format
+  // above, so the per-node pass never catches them; without this, storage-port
+  // count fell back entirely to compatibility.js's static catalog entry for the
+  // platform — confirmed wrong for at least one real platform (FAS8040 listed 2
+  // ports; a real customer's own ASUP showed 4 real SAS Host Adapters), and
+  // there's no way to hand-verify every platform's real onboard SAS port count.
+  // Reading it from the ASUP text itself, when present, fixes this for every
+  // platform at once instead of one manually-confirmed catalog entry at a time.
+  //
+  // Scans the FULL combinedText once (not a per-node windowed substring) and
+  // attributes each match to whichever node's section it falls after — real
+  // sysconfig dumps can spread these adapter lines across tens of thousands of
+  // characters (confirmed: ~41,000 in one real bundle, verbose per-disk detail
+  // between each adapter entry), far past the 15000-char per-node window above,
+  // which exists as a cross-node guard and shouldn't be widened just to reach
+  // these — one whole-document scan for this one specific pattern is both
+  // cheaper and correct regardless of node count.
+  const sortedNodeStarts = data.nodes
+    .map(n => ({ node: n, start: nodeHeaderIdxByNode.get(n) }))
+    .filter(e => e.start !== -1)
+    .sort((a, b) => a.start - b.start);
+  if (sortedNodeStarts.length > 0) {
+    const sasAdapterRegex = /SAS Host Adapter\s+(\S+)\s*\([^)]*<(UP|DOWN)>[^)]*\)/ig;
+    let sasMatch;
+    while ((sasMatch = sasAdapterRegex.exec(combinedText)) !== null) {
+      const matchIdx = sasMatch.index;
+      let owner = null;
+      for (const entry of sortedNodeStarts) {
+        if (entry.start <= matchIdx) owner = entry.node;
+        else break;
+      }
+      if (!owner) continue;
+      const portName = sasMatch[1].trim();
+      if (!owner.ports) owner.ports = [];
+      if (owner.ports.some(p => p.name.toLowerCase() === portName.toLowerCase())) continue;
+      owner.ports.push({
+        name: portName,
+        status: sasMatch[2].toLowerCase(),
+        speed: "12Gb SAS",
+        duplex: "full-duplex",
+        type: "storage",
+        mtu: 1500
+      });
+    }
+  }
 
   // Resilient network port show table parsing (mtu and status)
   const netportLines = combinedText.split(/\r?\n/);

@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.64)
+# NetApp AutoSupport Analyzer & Modeler (v2.65)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,9 +6,15 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.58 – v2.64)
+## 🆕 New in this Version (v2.65)
 
-This stretch was driven by testing against real customer ASUP bundles and live use of the app — every item below is a confirmed bug found either in real ASUP data or by using the running app, not a speculative cleanup.
+Driven by the user's own real 12-shelf production ASUP showing incorrect "No Storage Port" exhaustion warnings across most of its cabling diagram — traced to two compounding parser/catalog gaps, not a rendering bug.
+
+- **Real ASUP storage port counts fixed (root cause of false exhaustion warnings):** the parser never read onboard SAS Host Adapter ports from real `sysconfig -a` dumps (`slot 0: SAS Host Adapter 0a (...)`) — a different line shape than the network `port` format it already handled, and real dumps can spread these lines 40,000+ characters apart due to verbose per-disk detail, far past the per-node parsing window. Separately, FAS8040's static port catalog only listed 2 storage ports when the real platform has 4, confirmed against a real customer's own ASUP and NetApp's `storage-port.xml` export. Fixed both: the parser now extracts real SAS adapter ports directly from ASUP text for any platform (catalog is fallback only), and FAS8040's catalog entry is corrected. Confirmed against the real 12-shelf system: false exhaustion warnings dropped from most of the shelf diagram down to a single remaining case that now reflects genuine capacity, not a parsing gap.
+- **Regression suite grew from 46 to 49 tests**, adding coverage for the new SAS Host Adapter parsing pass (including a case that deliberately pads 25,000 characters between a node's port block and its SAS adapter lines, to prove the new pass isn't bounded by the same window that caused the original bug).
+
+<details>
+<summary>Earlier changelog (v2.58 – v2.64)</summary>
 
 - **Real-ASUP parser fixes:** verified against two real customer ASUP bundles. Model detection could pick up a sub-component's (e.g. Flash Cache module) part number instead of the system board's; a shelf-detection pass produced garbled ghost shelf IDs (`Set#forEach` has no index, so using its 2nd param as one silently mangled IDs); the `storage disk show -v` disk-inventory format — the *only* format present in either real bundle — wasn't recognized at all, zeroing out capacity math; a parse warning duplicated once per repeated shelf header across a bundle's many files; and the `Shelf name:/Shelf id:/Shelf S/N:` shelf format (cross-referenced against `storage-shelf.xml`) is now supported, closing the last gap where a real bundle's shelves fell through to a fully-fabricated placeholder.
 - **Greenfield MetroCluster fixes:** adding a shelf to a greenfield MCC deployment produced a garbled Site-B shelf ID (e.g. `3B` next to a clean `3`); a disk-size dropdown's full label (`"1.9TB NVMe SSD"`) was stored as both the size and the type field, showing `"1.9TB NVMe SSD NVMe SSD"` in the capacity-change summary.
@@ -18,6 +24,8 @@ This stretch was driven by testing against real customer ASUP bundles and live u
 - **One-step launcher:** `launch.py` / `launch.bat` start the local update helper and open the app together — "Check for Updates" works without a manual second terminal.
 - **16 platforms now sourced and verified** against NetApp's official install guides with zero drift (up from 6): AFF A400/C400/A800/C800/A900/A1K/A70/A90/A50/A30/A20/C80/C60/C30, FAS70/FAS90/FAS50. Several had been carrying an identical placeholder port scheme since being added. See `PLATFORM_COVERAGE.md` for the full breakdown, including which platforms are confirmed unreachable by this sourcing technique (NetApp doesn't publish a text-cabling page for them) versus which are still open.
 - **Regression suite grew from 19 to 46 tests**, including a DOM-driven UI-flow matrix that exercises the real app (greenfield MCC shelf-expansion, audit demo, SAS cabling topology) the same way the live testing that found these bugs did, not just unit-level function calls.
+
+</details>
 
 <details>
 <summary>Earlier changelog (v2.51 – v2.57)</summary>
