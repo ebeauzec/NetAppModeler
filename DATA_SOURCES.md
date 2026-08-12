@@ -108,6 +108,19 @@ false exhaustion warnings on a real 12-shelf FAS8040 system; the FAS8040
 catalog correction alone would only have helped platforms whose ASUP lacks
 this text entirely.
 
+**Confirmed correction made 2026-08-12 (call-order bug, not a data issue):**
+after the two corrections above shipped (v2.65), one false "No Storage Port"
+warning remained on the same real 12-shelf FAS8040 system, confirmed live.
+Cause: `js/ui.js`'s `loadASUPData()` drew the audit dashboard's cabling SVG
+via `renderCurrentAuditDashboard()` *before* `initStep4Inputs()` ran
+`allocateHBACardsForState()` — so the very first render computed available
+storage ports from only the real onboard ports, missing the auto-added HBA
+card the very next step was about to compute. `allocateHBACardsForState()`
+now runs before the initial dashboard render (it's idempotent — removes its
+own prior auto-added cards before recomputing — so the later call inside
+`initStep4Inputs()` is a harmless no-op re-confirmation, not a duplicate).
+Confirmed: the remaining false exhaustion warning is gone.
+
 **What this deliberately does NOT do:** the shipped `standalone_netapp_modeler.html`
 never makes a network call — both harvest tools above are local, human/AI-run
 Python scripts, run on demand, never from the browser app itself. This keeps
@@ -264,6 +277,7 @@ Source: NetApp Hardware Universe (hwu.netapp.com)
 | Non-MCC SAS shelf cabling diagram wired each controller to only one IOM (not real multipath) | Crossed: each controller's redundant port -> the OTHER controller's IOM | v2.64 | FAS50 install-cable.html |
 | FAS8040 storage ports were `["0a","0b"]` (2 ports) | Real: `["0a","0b","0c","0d"]` (4 ports) | v2.65 | Real customer ASUP SYSCONFIG-A.txt + storage-port.xml |
 | Parser never read onboard SAS Host Adapter ports from `sysconfig -a` text (any platform) | Whole-document `SAS Host Adapter` regex pass extracts real storage ports, catalog is fallback only | v2.65 | Real customer ASUP (12-shelf FAS8040) |
+| Audit dashboard's initial cabling render ran before HBA auto-allocation, missing auto-added ports | `allocateHBACardsForState()` now runs before the initial render, not after | v2.66 | Real customer ASUP (12-shelf FAS8040), confirmed live |
 
 ---
 

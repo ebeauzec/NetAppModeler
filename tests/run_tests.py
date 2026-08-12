@@ -503,6 +503,32 @@ window.addEventListener('DOMContentLoaded', function() {
     check('non-MCC SAS shelf: IOM-B\'s return cable crosses to Controller A\'s port (x < 400), not back to Controller B',
       !!returnFromIomB, returnFromIomB ? returnFromIomB.getAttribute('d') : null);
 
+    // --- loadASUPData: real-ASUP audit dashboard's FIRST cabling render must reflect
+    // auto-allocated HBA ports, not just later ones. Found live: a real single-node
+    // FAS8040 audit with 12 SAS shelves only has 4 real onboard storage ports, needing
+    // an auto-allocated HBA card to cover all 3 four-shelf stacks. allocateHBACardsForState()
+    // was only being called inside initStep4Inputs(), AFTER renderCurrentAuditDashboard()
+    // already drew the cabling SVG with just the 4 real ports — so the initial dashboard
+    // showed a false "No Storage Port" break on the 3rd stack even though the auto-added
+    // card (computed moments later) would have covered it. Uses the "manual state" branch
+    // of loadASUPData (state.version truthy), the same branch parseASUP output takes,
+    // not the greenfield/demo branch (which already called allocation before this point). ---
+    var manyShelvesState = {
+      version: { model: 'FAS8040', ontap: '9.10.1', serial: 'SAS-EXHAUST-TEST' },
+      nodes: [{ name: 'node-sas-exhaust-test', ports: [] }],
+      shelves: Array.from({ length: 12 }, function(_, i) {
+        return { id: i, model: 'DS2246', cabling: 'Multipath HA', disks: [] };
+      }),
+      aggregates: [], spares: [], licenses: [], switches: [], expansionCards: [],
+      alerts: [], parseWarnings: [], metrocluster: 'none'
+    };
+    loadASUPData(manyShelvesState, false);
+    var exhaustSvg = document.getElementById('visualizer-svg-frame') || document.querySelector('svg');
+    var exhaustText = exhaustSvg ? exhaustSvg.textContent : '';
+    check('loadASUPData: real-ASUP audit dashboard\'s initial cabling render already reflects auto-allocated HBA ports (no false "No Storage Port")',
+      exhaustText.indexOf('No Storage Port') === -1,
+      { autoAddedCards: (manyShelvesState.expansionCards || []).filter(function(c){return c.autoAdded;}) });
+
     var resDiv = document.createElement('div');
     resDiv.id = 'test-results';
     resDiv.textContent = JSON.stringify(results);
