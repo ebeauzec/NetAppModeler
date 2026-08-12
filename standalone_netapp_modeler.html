@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.61</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.62</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2053,12 +2053,23 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.61</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.62</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+
+        <!-- Feature -4 (v2.62) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">📋</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Audit Demo / Greenfield Data Quality Panel Fixed</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              "Initialize (Audit Demo)" and "Initialize Greenfield" states never populated the parser's data-source tracking, so the Data Quality Report showed every field as "Unknown" at a hardcoded 30% confidence — a fallback meant for genuinely ambiguous real ASUP parses, misapplied to fully-known synthetic demo data. Now shows 100%/Good confidence with every field correctly marked "Parsed." Also fixed generated nodes showing "N/A (parse error)" for RAM even though nothing was ever parsed — they now report a real value.
+            </span>
+          </div>
+        </div>
 
         <!-- Feature -3 (v2.61) -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
@@ -2152,7 +2163,7 @@ svg.cabling-graph {
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary"
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.61','true')}catch(e){}"
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.62','true')}catch(e){}"
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
@@ -11032,6 +11043,23 @@ function loadASUPData(input, isGreenfield = false) {
           });
         }
       }
+
+      // generatePlatformBaseline() output (both "Initialize Greenfield" and
+      // "Initialize (Audit Demo)") never went through parseASUP(), so it never
+      // populated dataSources — the Data Quality panel's computeOverallConfidence()
+      // falls back to a hardcoded 30 and every field's icon reads "Unknown" when
+      // dataSources is empty. That fallback exists for genuinely ambiguous real
+      // ASUP parses; it's just wrong here, since every field below IS fully known
+      // (synthetic, not uncertain) — confirmed live: the audit demo showed "30%
+      // Low confidence" with every row "Unknown" despite the platform/nodes/
+      // shelves/etc. all being populated correctly a few lines up.
+      if (!currentState.dataSources) {
+        currentState.dataSources = {};
+        ['ontapVersion', 'model', 'serial', 'nodes', 'shelves', 'aggregates',
+         'licenses', 'switches', 'spFirmware', 'diskFirmware'].forEach(key => {
+          currentState.dataSources[key] = { source: 'user', confidence: 1.0, note: 'Generated demo/greenfield configuration — not parsed from ASUP text.' };
+        });
+      }
     } else {
       currentState = parseASUP(input);
       if (!currentState.expansionCards) currentState.expansionCards = [];
@@ -11812,6 +11840,16 @@ function generatePlatformBaseline(model, manualOntap, capacityTB = 50, nodesCoun
       id: `10000000${i + 1}`,
       name: nodeName,
       serial: i === 0 ? serial : `${serial}${suffix}`,
+      // profile.ram/cpus is only catalogued for some platforms in compatibility.js
+      // (e.g. ASA C400/C800) — falls back to the same 128GB/16-core default the
+      // real-ASUP-parse path uses when it can't find the field either, rather than
+      // leaving these unset. Left unset, the audit dashboard's RAM readout showed
+      // "N/A (parse error)" for every generated node — confirmed live for a demo
+      // profile that was never actually parsed from anything, so "parse error"
+      // was doubly wrong (nothing to fail parsing on, and the field just being
+      // 0/undefined isn't a parse error).
+      memoryGB: profile.ram || 128,
+      cpus: profile.cpus || 16,
       ports: (() => {
         const list = [
           { name: "e0a", status: "up", speed: isAllNVMe ? "25GbE" : "10GbE", duplex: "full", type: "cluster-interconnect" },

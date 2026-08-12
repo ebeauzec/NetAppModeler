@@ -393,6 +393,34 @@ window.addEventListener('DOMContentLoaded', function() {
     check('greenfield non-MCC + 1 shelf: shelf ids are clean integers',
       haIds.every(function(id) { return /^\d+$/.test(id); }), haIds);
 
+    // --- Audit Demo (generatePlatformBaseline, isGreenfield=false): Data Quality panel
+    // and node RAM readout. Confirmed live: the audit demo showed "30% Low confidence"
+    // with every field "Unknown" (dataSources was never populated for demo/greenfield
+    // states — computeOverallConfidence() falls back to a hardcoded 30 when it's empty,
+    // which is correct for a genuinely ambiguous real ASUP parse but wrong here, since
+    // every field is fully known synthetic data) and "N/A (parse error)" RAM (memoryGB
+    // was never set on generated nodes, despite nothing having been parsed at all). ---
+    resetState();
+    document.getElementById('manual-platform-select').value = 'AFF A1K';
+    document.getElementById('manual-nodes-select').value = '2';
+    document.getElementById('load-manual-platform-btn').click();
+    var demoText = document.body.innerText;
+    check('audit demo: Data Quality panel shows Good/100% confidence, not the 30% empty-dataSources fallback',
+      demoText.indexOf('Good confidence') !== -1,
+      demoText.slice(demoText.indexOf('Data Quality'), demoText.indexOf('Data Quality') + 120));
+    check('audit demo: no field in the Data Quality panel reads "Unknown"',
+      demoText.slice(demoText.indexOf('Data Quality'), demoText.indexOf('Current Storage')).indexOf('Unknown') === -1);
+    // Scoped to the "MOTHERBOARD RAM" row specifically, not the whole page — the
+    // What's New splash's own changelog copy for this exact fix quotes the string
+    // "N/A (parse error)" while describing the bug, which false-positived a
+    // whole-page check the same way the disk-tiers check did earlier in this file.
+    var ramLineIdx = demoText.indexOf('MOTHERBOARD RAM');
+    var ramLine = ramLineIdx !== -1 ? demoText.slice(ramLineIdx, ramLineIdx + 100) : '';
+    check('audit demo: node RAM shows a real value, not "N/A (parse error)"',
+      ramLine.indexOf('N/A (parse error)') === -1, ramLine);
+    check('audit demo: node RAM readout mentions "128 GB" (the fallback default for platforms with no catalogued ram spec)',
+      demoText.indexOf('128 GB RAM') !== -1);
+
     var resDiv = document.createElement('div');
     resDiv.id = 'test-results';
     resDiv.textContent = JSON.stringify(results);
