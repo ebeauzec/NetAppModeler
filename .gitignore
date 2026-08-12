@@ -3,3 +3,5 @@ scratch/
 test_run.html
 __pycache__/
 *.pyc
+.claude/
+_tmp_*.html

@@ -86,6 +86,28 @@ verified by probing 26 URL patterns across ASA A/C-series, AFF
 A250/A220/A150/C250/C190, FAS8200/8300/9000/9500/8080/8060/8040/8020, and
 Tier 3 legacy FAS28xx/25xx, all returning HTTP 404).
 
+**Confirmed correction made 2026-08-12 (storage port count, real ASUP data):**
+FAS8040's `ports.storage` was `["0a","0b"]` (2 ports) — corrected to
+`["0a","0b","0c","0d"]` (4 ports), sourced directly from a real customer
+ASUP's `SYSCONFIG-A.txt` (`slot 0: SAS Host Adapter 0a/0b/0c/0d`) and the
+authoritative `storage-port.xml` export. The 2-port version undercounted
+this platform's real SAS capacity by half, causing false "port exhausted"
+warnings on the shelf cabling diagram for real systems with more than ~2
+shelf stacks. Sibling platforms `FAS8020`/`FAS8060`/`FAS8080` are
+deliberately left at `["0a","0b"]` — there's no real customer data
+confirming their actual port counts, and entry vs. high-end hardware within
+the same generation can genuinely differ; don't propagate this fix to them
+without independent confirmation.
+
+Separately (same date, parser-level rather than catalog-level): `js/parser.js`
+now extracts onboard SAS Host Adapter ports directly from ASUP `sysconfig -a`
+text (`slot 0: SAS Host Adapter 0a (...)`) when present, for any platform —
+the compatibility.js catalog above is now a fallback for when this text
+isn't in the bundle, not the only source. This is what actually fixed the
+false exhaustion warnings on a real 12-shelf FAS8040 system; the FAS8040
+catalog correction alone would only have helped platforms whose ASUP lacks
+this text entirely.
+
 **What this deliberately does NOT do:** the shipped `standalone_netapp_modeler.html`
 never makes a network call — both harvest tools above are local, human/AI-run
 Python scripts, run on demand, never from the browser app itself. This keeps
@@ -240,6 +262,8 @@ Source: NetApp Hardware Universe (hwu.netapp.com)
 | FAS50 ports were `e0a/e0b` cluster, `0a/0b` storage | Real: cluster `e4a/e4b`, storage `3a/3d` (SAS, no NS224) | v2.61 | docs.netapp.com install-cable |
 | BP_SWITCH_RCF compliance threshold hardcoded at `1.3.0.1` | Real latest (BES-53248): `3.10.0.3`, sourced from `FIRMWARE_VERSIONS.switches` | v2.63 | Already-catalogued firmware DB |
 | Non-MCC SAS shelf cabling diagram wired each controller to only one IOM (not real multipath) | Crossed: each controller's redundant port -> the OTHER controller's IOM | v2.64 | FAS50 install-cable.html |
+| FAS8040 storage ports were `["0a","0b"]` (2 ports) | Real: `["0a","0b","0c","0d"]` (4 ports) | v2.65 | Real customer ASUP SYSCONFIG-A.txt + storage-port.xml |
+| Parser never read onboard SAS Host Adapter ports from `sysconfig -a` text (any platform) | Whole-document `SAS Host Adapter` regex pass extracts real storage ports, catalog is fallback only | v2.65 | Real customer ASUP (12-shelf FAS8040) |
 
 ---
 

@@ -1364,11 +1364,18 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone"],
     maxFirmware: "v9.6",
     description: "Legacy mid-range FAS controller platform.",
+    // storage ports corrected from e0a/e0b to the real 4-port onboard SAS Host
+    // Adapter set — confirmed directly against a real customer ASUP's
+    // SYSCONFIG-A.txt ("slot 0: SAS Host Adapter 0a/0b/0c/0d") and the
+    // authoritative storage-port.xml export (<port>0a</port>...<port>0d</port>),
+    // 2026-08-13. The 2-port version undercounted this platform's real SAS
+    // capacity by half, causing false "port exhausted" warnings on the shelf
+    // cabling diagram for real systems with more than ~2 shelf stacks.
     ports: {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
       san: ["0e", "0f"],
-      storage: ["0a", "0b"]
+      storage: ["0a", "0b", "0c", "0d"]
     },
     supportedCards: ["nic_10g_2port", "fc_hba_16g_2port", "sas_hba_12g_4port"],
     maxPcieSlots: 4,

@@ -199,6 +199,41 @@ window.addEventListener('DOMContentLoaded', function() {
       !!nodeTwo && nodeTwo.ports && nodeTwo.ports.length === 2,
       nodeTwo ? nodeTwo.ports.map(function(p){return p.name;}) : null);
 
+    // --- parser.js: onboard SAS Host Adapter extraction (sysconfig -a dumps list these as
+    // "slot 0: SAS Host Adapter 0a (PMC-Sierra PM8001 rev. C, SAS, <UP>)", a different line
+    // shape than the "port <name> up ..." format above, and real dumps can spread these
+    // lines tens of thousands of characters past the per-node port-parsing window due to
+    // verbose per-disk detail between each adapter entry — confirmed against a real customer
+    // ASUP with a ~41000-char gap). 25000 chars of filler here deliberately exceeds the
+    // 15000-char per-node window to prove the whole-document SAS-adapter pass isn't bounded
+    // by it. ---
+    var sasAsup = [
+      'System ID: 300 (node-sas); System Serial Number: 1000000300',
+      filler('sas-header-section', 2000),
+      'node-sas details:',
+      'port e0a up 1000 full-duplex cluster-interconnect',
+      'port e0b up 1000 full-duplex cluster-interconnect',
+      'port e0c up 1000 full-duplex data',
+      'port e0d up 1000 full-duplex data',
+      filler('sas-disk-detail-section', 25000),
+      '\tslot 0: SAS Host Adapter 0a (PMC-Sierra PM8001 rev. C, SAS, <UP>)',
+      '\tslot 0: SAS Host Adapter 0b (PMC-Sierra PM8001 rev. C, SAS, <UP>)',
+      '\tslot 0: SAS Host Adapter 0c (PMC-Sierra PM8001 rev. C, SAS, <UP>)',
+      '\tslot 0: SAS Host Adapter 0d (PMC-Sierra PM8001 rev. C, SAS, <DOWN>)'
+    ].join('\n');
+    var sasParsed = parseASUP(sasAsup);
+    var sasNode = sasParsed.nodes.find(function(n) { return /node.?sas/i.test(n.name); });
+    var sasStoragePorts = sasNode && sasNode.ports ? sasNode.ports.filter(function(p) { return p.type === 'storage'; }) : [];
+    check('parseASUP: onboard SAS Host Adapter lines are captured as storage ports even ~25000 chars past the per-node window',
+      sasStoragePorts.length === 4,
+      sasNode ? sasNode.ports.map(function(p){return p.name + ':' + p.type;}) : null);
+    check('parseASUP: SAS Host Adapter <DOWN> status is captured correctly',
+      sasStoragePorts.some(function(p) { return p.name === '0d' && p.status === 'down'; }),
+      sasStoragePorts);
+    check('parseASUP: SAS Host Adapter pass does not clobber the real "port ..." pass\'s cluster/data ports',
+      !!sasNode && sasNode.ports.filter(function(p) { return p.type !== 'storage'; }).length === 4,
+      sasNode ? sasNode.ports.map(function(p){return p.name + ':' + p.type;}) : null);
+
     // --- parser.js: model detection prefers the system-board field over a sub-component's
     // (confirmed against a real customer ASUP: a Flash Cache module's own "Model name:"
     // line was matched before the real system board's, resolving to the wrong platform) ---
