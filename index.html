@@ -37,7 +37,7 @@
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.68</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.69</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -121,7 +121,7 @@
             </svg>
             <p>Drag and drop ASUP files here</p>
             <span>Accepted: <strong>.zip</strong>, <strong>.tar.gz</strong>, <strong>.tgz</strong>, <strong>.tar</strong>, <strong>.gz</strong>, or plain <strong>text files</strong> — upload multiple nodes at once</span>
-            <span style="font-size:0.72rem; color:#f87171; margin-top:4px; display:block;">⚠️ .7z/.rar aren't supported — extract them first (right-click → Extract Here), then upload the text files or re-zip as .zip</span>
+            <span style="font-size:0.72rem; color:#f87171; margin-top:6px; display:flex; align-items:flex-start; gap:5px; text-align:left; max-width:480px; margin-left:auto; margin-right:auto;"><span style="flex-shrink:0;">⚠️</span><span>.7z/.rar aren't supported — extract them first, then upload the files inside</span></span>
             <input type="file" id="file-input" multiple class="hidden" accept=".zip,.tar.gz,.tgz,.tar,.gz,.txt,.log,.xml">
           </div>
 
@@ -1057,12 +1057,23 @@
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.68</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.69</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+
+        <!-- Feature -11 (v2.69) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">✏️</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Upload Warning Text Wrap Fixed</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              The v2.67 .7z/.rar warning under the upload drop zone still wrapped awkwardly — the icon and text weren't in a proper flex layout, so a wrapped line snapped to the container's left edge instead of aligning under the text. Shortened the copy and switched to a flex layout with the icon in its own column, confirmed it now fits on one line at the drop zone's normal width and wraps cleanly (aligned, not left-snapped) at narrow widths.
+            </span>
+          </div>
+        </div>
 
         <!-- Feature -10 (v2.68) -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
@@ -1233,7 +1244,7 @@
 
       <!-- Action Button -->
       <button id="close-splash-btn" class="btn-primary"
-        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.68','true')}catch(e){}"
+        onclick="document.getElementById('splash-modal').style.display='none'; try{localStorage.setItem('splash-dismissed-v2.69','true')}catch(e){}"
         style="width: 100%; justify-content: center; padding: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 10px 15px -3px rgba(6,182,212,0.3);">
         Get Started
       </button>
