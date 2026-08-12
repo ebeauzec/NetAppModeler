@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.57)
+# NetApp AutoSupport Analyzer & Modeler (v2.64)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,17 +6,32 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.57)
-- **"Check for Updates" Button:** A new header button re-runs the sourced-data drift check on demand from inside the app. See [Checking for Updates](#-checking-for-updates) below — it talks only to a local helper script you start yourself; the app never reaches the internet on its own.
+## 🆕 New in this Version (v2.58 – v2.64)
 
-## Previously (v2.56)
-- **Sourced Cabling Reference Data:** New `js/rackLayouts.js` encodes exact NS224-to-controller cable endpoints sourced directly from NetApp's official public install/cabling guides (`docs.netapp.com`, no login required) for AFF A400/C400/A800/C800/A900/A1K — see `DATA_SOURCES.md`'s new Physical/Cabling Reference Sources section. `tools/harvest_reference_data.py` (re)fetches these pages; `tools/apply_reference_data.py` cross-checks them against `compatibility.js`'s port catalog.
-- **Port-Catalog Corrections:** That cross-check caught real, previously-unnoticed errors — AFF A1K's storage ports didn't match any published cabling step (`e2a-e5b` vs. the real `e8a-e11b`), AFF A900's cluster ports were listed as onboard `e0a/e0b` when NetApp's guide places them on PCIe slots `e4a/e8a`, and A400/C400/A800/C800 were missing their PCIe-slot NS224 storage ports entirely.
-- **Automated Regression Suite:** `tests/run_tests.py` rebuilds the bundle and exercises it headless, pinning the v2.55 correctness fixes (capacity math, audit-rule duplication/matching, escapeHtml, parser windowing) as automated assertions — this is the check that was missing when several of those bugs were introduced and found reactively.
-- **Audit Engine Correctness Fixes (v2.55):** MetroCluster site-symmetry (Rule 10) and SyncMirror (Rule 18) checks now match real parsed node/aggregate data instead of literal placeholder strings that never matched real ASUPs — both were silently reporting "compliant" regardless of actual configuration. Fixed a duplicate-report bug (SP firmware/disk firmware/ACP rules were being reported twice, inflating the compliance score) and a `ReferenceError` crash when selecting a shelf type in Step 4.
-- **Unified Capacity Math (v2.55):** Consolidated 5 independently hand-written usable-capacity formulas (flat 0.70/0.80/0.82/0.85 fudge factors plus a ratio-based MCC shortcut) into one shared, RAID-DP-correct helper used everywhere.
-- **Parser Hardening (v2.55):** Shelves that parse but silently end up with zero disks now get a fallback pass and a visible Data Quality warning. Port-to-node assignment is now correlated to each node's own text block instead of blind index-chunking.
-- **XSS Hardening (v2.55):** Parsed ASUP values rendered into the page are now HTML-escaped at the highest-traffic report/inventory views.
+This stretch was driven by testing against real customer ASUP bundles and live use of the app — every item below is a confirmed bug found either in real ASUP data or by using the running app, not a speculative cleanup.
+
+- **Real-ASUP parser fixes:** verified against two real customer ASUP bundles. Model detection could pick up a sub-component's (e.g. Flash Cache module) part number instead of the system board's; a shelf-detection pass produced garbled ghost shelf IDs (`Set#forEach` has no index, so using its 2nd param as one silently mangled IDs); the `storage disk show -v` disk-inventory format — the *only* format present in either real bundle — wasn't recognized at all, zeroing out capacity math; a parse warning duplicated once per repeated shelf header across a bundle's many files; and the `Shelf name:/Shelf id:/Shelf S/N:` shelf format (cross-referenced against `storage-shelf.xml`) is now supported, closing the last gap where a real bundle's shelves fell through to a fully-fabricated placeholder.
+- **Greenfield MetroCluster fixes:** adding a shelf to a greenfield MCC deployment produced a garbled Site-B shelf ID (e.g. `3B` next to a clean `3`); a disk-size dropdown's full label (`"1.9TB NVMe SSD"`) was stored as both the size and the type field, showing `"1.9TB NVMe SSD NVMe SSD"` in the capacity-change summary.
+- **Data Quality panel & RAM readout fixed for Audit Demo / Greenfield:** these states never populated the parser's data-source tracking, so the report showed every field "Unknown" at a hardcoded 30% confidence (a fallback meant for genuinely ambiguous real ASUP parses, misapplied to fully-known synthetic data) and node RAM as "N/A (parse error)" despite nothing ever being parsed.
+- **Switch firmware currency check fixed:** compared parsed switch firmware against a hardcoded threshold that had drifted stale relative to the real firmware catalog already in `compatibility.js` — a switch could be 2+ years out of date and still report "compliant". Also only checked 2 of the 8 switch models the parser recognizes; now checks every model with a catalog entry.
+- **SAS shelf cabling diagram fixed to real multipath-HA topology:** the non-MetroCluster cabling diagram (any SAS shelf type — DS460C, DS224C, DS2246, DS212C — on any platform) wired each controller to only one IOM module; a single controller failure would make its exclusive IOM unreachable. Now crosses each controller's redundant port to the other controller's IOM, confirmed against a real install guide and cross-checked against the app's own textual cabling report.
+- **One-step launcher:** `launch.py` / `launch.bat` start the local update helper and open the app together — "Check for Updates" works without a manual second terminal.
+- **16 platforms now sourced and verified** against NetApp's official install guides with zero drift (up from 6): AFF A400/C400/A800/C800/A900/A1K/A70/A90/A50/A30/A20/C80/C60/C30, FAS70/FAS90/FAS50. Several had been carrying an identical placeholder port scheme since being added. See `PLATFORM_COVERAGE.md` for the full breakdown, including which platforms are confirmed unreachable by this sourcing technique (NetApp doesn't publish a text-cabling page for them) versus which are still open.
+- **Regression suite grew from 19 to 46 tests**, including a DOM-driven UI-flow matrix that exercises the real app (greenfield MCC shelf-expansion, audit demo, SAS cabling topology) the same way the live testing that found these bugs did, not just unit-level function calls.
+
+<details>
+<summary>Earlier changelog (v2.51 – v2.57)</summary>
+
+- **v2.57 — "Check for Updates" Button:** re-runs the sourced-data drift check on demand from inside the app. See [Checking for Updates](#-checking-for-updates) below — talks only to a local helper script; the app never reaches the internet on its own.
+- **v2.56 — Sourced Cabling Reference Data:** `js/rackLayouts.js` encodes exact NS224-to-controller cable endpoints sourced from NetApp's official public install/cabling guides for AFF A400/C400/A800/C800/A900/A1K — see `DATA_SOURCES.md`. `tools/harvest_reference_data.py` (re)fetches these pages; `tools/apply_reference_data.py` cross-checks them against `compatibility.js`'s port catalog.
+- **v2.56 — Port-Catalog Corrections:** that cross-check caught AFF A1K's storage ports not matching any published cabling step, AFF A900's cluster ports listed as onboard when NetApp's guide places them on PCIe slots, and A400/C400/A800/C800 missing their PCIe-slot NS224 storage ports entirely.
+- **v2.56 — Automated Regression Suite:** `tests/run_tests.py` rebuilds the bundle and exercises it headless, pinning the v2.55 correctness fixes as automated assertions.
+- **v2.55 — Audit Engine Correctness Fixes:** MetroCluster site-symmetry and SyncMirror checks now match real parsed data instead of literal placeholder strings that never matched real ASUPs. Fixed a duplicate-report bug and a crash when selecting a shelf type.
+- **v2.55 — Unified Capacity Math:** consolidated 5 independently hand-written usable-capacity formulas into one shared, RAID-DP-correct helper.
+- **v2.55 — Parser Hardening:** shelves that parse but end up with zero disks now get a fallback pass and a visible warning. Port-to-node assignment correlated to each node's own text block instead of blind index-chunking.
+- **v2.55 — XSS Hardening:** parsed ASUP values rendered into the page are now HTML-escaped at the highest-traffic views.
+
+</details>
 
 ---
 
@@ -63,21 +78,24 @@ NetAppModeler/
 ├── app.css                     # Premium Dark-Mode / Glassmorphic UI stylesheet
 ├── build_standalone.py         # Python build script to compile the offline bundle
 ├── standalone_netapp_modeler.html # Compiled single-file offline distribution
+├── launch.py / launch.bat      # One-step launcher: starts the update helper + opens the app
 ├── README.md                   # Project documentation
 ├── DATA_SOURCES.md             # Data sourcing/traceability registry (ONTAP lifecycle + cabling)
+├── PLATFORM_COVERAGE.md        # Tracks which platforms' port/cabling data is sourced & verified
 ├── .gitignore                  # Git ignore rules
 │
 ├── js/                         # JavaScript application logic
 │   ├── parser.js               # AutoSupport text parser engine
 │   ├── bestPractices.js        # Best practice audit rules engine
 │   ├── compatibility.js        # NetApp platform registry, port layouts & support boundaries
-│   ├── rackLayouts.js          # Sourced NS224-to-controller cable endpoint data
+│   ├── rackLayouts.js          # Sourced controller-to-shelf cable endpoint data
 │   ├── ui.js                   # Wizard workflow controller and interactive sizing UI
 │   └── jszip.min.js            # Library for compressing/decompressing configurations
 │
 ├── tools/                      # Offline data-refresh tooling (never called by the shipped app)
 │   ├── harvest_reference_data.py   # Fetches NetApp's public cabling docs -> data/netapp_docs_raw/
-│   └── apply_reference_data.py     # Cross-checks sourced ports against compatibility.js, flags drift
+│   ├── apply_reference_data.py     # Cross-checks sourced ports against compatibility.js, flags drift
+│   └── update_server.py            # Local helper (127.0.0.1:8765) the in-app "Check for Updates" button talks to
 │
 ├── data/                       # Harvested reference data (raw text + manifest)
 │
