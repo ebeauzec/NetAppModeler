@@ -4252,14 +4252,28 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
             }
           }
           
-          // 3. Return path A & B
-          // IOM-A OUT → Node A e0b (rAX), IOM-B OUT → Node B e0b (rBX)
+          // 3. Return path A & B — CROSSED, not same-side. Real NetApp multipath-HA
+          // cabling (confirmed against FAS50's own install-cable.html: "Cable
+          // controller A port 3d to IOMB port 3. Cable controller B port 3d to
+          // IOMA port 3.") has each controller's secondary/redundant port going to
+          // the OTHER controller's primary IOM, not its own — that's what makes it
+          // multipath: if controller A dies, IOM-A is still reachable via
+          // controller B's redundant port, and vice versa. The previous same-side
+          // wiring (IOM-A OUT -> Node A's return port, IOM-B OUT -> Node B's) drew
+          // each controller connected to only one IOM module, which isn't a real
+          // multipath topology for ANY SAS shelf type on this non-MCC view.
           if (j === stack.length - 1 && (!isSinglePath || shelfItem.isProposed)) {
             if (!isPortExhausted) {
-              // IOM-A OUT → Node A return port (same side, orange)
-              svgStr += `<path d="M 105,${iomCy} C 105,${currentY + 130} ${rAX},${currentY + 130} ${rAX},${srcY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
-              // IOM-B OUT → Node B return port (same side, green)
-              svgStr += `<path d="M 570,${iomCy} C 570,${currentY + 135} ${rBX},${currentY + 135} ${rBX},${srcY}" class="visual-cable multipath" stroke="var(--color-success)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              const midRA = (srcY + iomCy) / 2;
+              const midRB = (srcY + iomCy) / 2;
+              // IOM-A OUT → Node B's redundant port (crossed, orange)
+              svgStr += `<path d="M 105,${iomCy} C 105,${currentY + 130} ${rBX},${currentY + 130} ${rBX},${srcY}" class="visual-cable multipath" stroke="var(--color-warning)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              svgStr += `<rect x="${rBX - 10}" y="${midRA - 7}" width="20" height="10" rx="3" fill="rgba(245,158,11,0.35)" stroke="var(--color-warning)" stroke-width="0.8"/>`;
+              svgStr += `<text x="${rBX}" y="${midRA + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${retNameB}</text>`;
+              // IOM-B OUT → Node A's redundant port (crossed, green)
+              svgStr += `<path d="M 570,${iomCy} C 570,${currentY + 135} ${rAX},${currentY + 135} ${rAX},${srcY}" class="visual-cable multipath" stroke="var(--color-success)" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              svgStr += `<rect x="${rAX - 10}" y="${midRB - 7}" width="20" height="10" rx="3" fill="rgba(34,197,94,0.35)" stroke="var(--color-success)" stroke-width="0.8"/>`;
+              svgStr += `<text x="${rAX}" y="${midRB + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${retNameA}</text>`;
             }
           }
         }
