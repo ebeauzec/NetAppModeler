@@ -370,6 +370,86 @@ export function runAudit(systemState) {
     );
   }
 
+  // --- Rule: BP_MIN_DISK_AGGR: Minimum Disk Count per Aggregate ---
+  // Well-established NetApp storage best practice: RAID-DP aggregates should have >= 5 disks,
+  // RAID4 >= 3 disks, or fault tolerance/performance is degraded. Like Rule 5's RAID-group-size
+  // check above, this applies to all non-root aggregates, using totalDiskCount (summed across
+  // every RAID group in the aggregate, not just the first — see parser.js for why that's a
+  // separate field).
+  let minDiskAggrWarnings = [];
+  systemState.aggregates.forEach(aggr => {
+    if (aggr.isRootAggr || aggr.name.startsWith("aggr0")) return;
+    const total = aggr.totalDiskCount || aggr.disksCount || 0;
+    if (total === 0) return;
+    if (aggr.raidType === "raid_dp" && total < 5) {
+      minDiskAggrWarnings.push(`Aggregate ${aggr.name} (RAID-DP) has only ${total} disk(s) — NetApp recommends a minimum of 5 for fault tolerance and performance.`);
+    } else if (aggr.raidType === "raid4" && total < 3) {
+      minDiskAggrWarnings.push(`Aggregate ${aggr.name} (RAID4) has only ${total} disk(s) — NetApp recommends a minimum of 3.`);
+    }
+  });
+
+  if (minDiskAggrWarnings.length > 0) {
+    addReport(
+      "BP_MIN_DISK_AGGR",
+      "Minimum Disk Count per Aggregate",
+      "Hardware",
+      "warning",
+      minDiskAggrWarnings.join("\n"),
+      "Add disks to bring undersized aggregates up to NetApp's recommended minimum (RAID-DP >= 5 disks, RAID4 >= 3 disks) for adequate fault tolerance and performance.",
+      "storage aggregate show -fields diskcount,raidtype\nstorage aggregate add-disks -aggregate <aggr name> -diskcount <number of disks>"
+    );
+  } else if (systemState.aggregates.some(a => !a.isRootAggr && !a.name.startsWith("aggr0"))) {
+    addReport(
+      "BP_MIN_DISK_AGGR",
+      "Minimum Disk Count per Aggregate",
+      "Hardware",
+      "compliant",
+      "All non-root aggregates meet NetApp's recommended minimum disk count for their RAID type.",
+      "No action required.",
+      ""
+    );
+  }
+
+  // --- Rule: BP_NON_ROOT_CFO_HAPOLICY: Non-Root Aggregate HA-Policy ---
+  // Well-established NetApp HA concept: a non-root aggregate with "cfo" HA-policy means its HA
+  // partner cannot take it over on failover — real data-loss risk, not just a best-practice nit.
+  // ⚠ UNCONFIRMED AGAINST A REAL ASUP as of 2026-08-16 — parser.js's haPolicy extraction (an
+  // "HA Policy: sfo/cfo" instance-style line, or a "-fields ha-policy" tabular row) is a
+  // best-effort guess at how real ASUP text might expose this field; it has not been validated
+  // against an actual customer bundle. This rule therefore only ever fires when that field was
+  // actually found — see PLATFORM_COVERAGE.md.
+  let cfoAggrWarnings = [];
+  let haPolicyChecked = 0;
+  systemState.aggregates.forEach(aggr => {
+    if (aggr.isRootAggr || aggr.name.startsWith("aggr0") || !aggr.haPolicy) return;
+    haPolicyChecked++;
+    if (aggr.haPolicy === "cfo") {
+      cfoAggrWarnings.push(`Aggregate ${aggr.name} is a non-root aggregate with HA-policy "cfo" — its HA partner cannot take over this aggregate on failover, risking data loss/unavailability.`);
+    }
+  });
+
+  if (cfoAggrWarnings.length > 0) {
+    addReport(
+      "BP_NON_ROOT_CFO_HAPOLICY",
+      "Non-Root Aggregate HA-Policy",
+      "Hardware",
+      "warning",
+      cfoAggrWarnings.join("\n"),
+      "Non-root aggregates should always use \"sfo\" HA-policy. Coordinate a maintenance window to correct this — changing HA-policy on an existing aggregate requires NetApp support guidance.",
+      "storage aggregate show -root false -fields ha-policy"
+    );
+  } else if (haPolicyChecked > 0) {
+    addReport(
+      "BP_NON_ROOT_CFO_HAPOLICY",
+      "Non-Root Aggregate HA-Policy",
+      "Hardware",
+      "compliant",
+      "All non-root aggregates with a known HA-policy are correctly set to \"sfo\".",
+      "No action required.",
+      ""
+    );
+  }
+
   // --- Rule 6: Aggregate Space / Capacity ---
   let capacityAlerts = [];
   systemState.aggregates.forEach(aggr => {
@@ -1153,7 +1233,9 @@ export function runAudit(systemState) {
 
   // --- Rule: BP_ACP_STATUS: Alternate Control Path (ACP) Connectivity ---
   {
-    const hasSasShelves = (systemState.shelves || []).some(s => (s.model || '').toLowerCase().match(/ds224c|ds460c|ds2246|ds4246|ds4486/));
+    // ds212c was missing from this list — a cluster with only ds212c SAS shelves silently skipped
+    // the ACP connectivity check entirely (found while sourcing real firmware data, 2026-08-16).
+    const hasSasShelves = (systemState.shelves || []).some(s => (s.model || '').toLowerCase().match(/ds224c|ds212c|ds460c|ds2246|ds4246|ds4486/));
     const hasNvmeOnly = (systemState.shelves || []).every(s => (s.model || '').toLowerCase() === 'ns224');
     if (hasSasShelves && !hasNvmeOnly) {
       const acp = systemState.acpStatus || {};

@@ -166,3 +166,78 @@ are real gaps in the "every component and configuration" scope but are a
 separate harvesting pass — NS224 was prioritized first because it's the
 current-gen shelf and the one this project's git history shows the most
 repeated cabling bugs on.
+
+## New stubs added 2026-08-16 — specs unverified, need HWU/docs.netapp.com
+
+AFX 1K, FAS2850, FAS2880, and FAS500f are real current-generation NetApp
+platforms without full catalog entries yet. Each stub below borrows its
+`ports`, `supportedCards`, and `maxPcieSlots` from a same-family sibling
+already in `js/compatibility.js` as a placeholder, and is marked with a
+`⚠ UNVERIFIED SPECS` prefix in its `description` field so it's visibly
+flagged in the UI until corrected.
+
+| Platform | Borrowed from | Real gap this fixed |
+|---|---|---|
+| AFX 1K | AFX 2K profile verbatim | Previously any "AFX 1K" ASUP string silently matched the "AFX 2K" profile — wrong model entirely, not just unsourced |
+| FAS2850 | FAS2820 | Not recognized at all — fell through to `Default` |
+| FAS2880 | FAS2820 | Not recognized at all — fell through to `Default` |
+| FAS500f | AFF A250 | Not recognized at all — fell through to `Default` |
+
+Next step: source real HWU/`install-cable.html` data for these four and
+drop the `⚠ UNVERIFIED SPECS` marker, same process as the Done section above.
+
+## Open gap: ds212c shelf firmware not tracked
+
+`ds212c` is referenced throughout `NETAPP_PLATFORMS` (`js/compatibility.js`)
+as a supported shelf but has no entry in `FIRMWARE_VERSIONS.shelves` —
+open gap, needs sourcing from NetApp's Shelf Firmware Matrix / HWU.
+
+Also fixed: `js/bestPractices.js`'s `BP_ACP_STATUS` rule matched SAS shelf
+models via a regex that omitted `ds212c` — a cluster with only `ds212c`
+shelves silently skipped the ACP connectivity check entirely. Added
+`ds212c` to that regex.
+
+## Switch model misidentification bug fixed (2026-08-16)
+
+`js/parser.js`'s `"Cisco Nexus 9336C-FX2"` switch-detection pattern's
+regex included a bare `9336C` alternation, so it matched (and mislabeled)
+ANY 9336C-family switch model string as FX2 — meaning any other real
+Cisco 9336C-series switch would be checked against FX2's firmware
+baseline instead of its own. This also made the pre-existing `"Cisco
+Catalyst 9336"` pattern (not a real Cisco product name) permanently
+unreachable dead code. Tightened the FX2 regex to `9336C-FX2` only and
+removed the non-product "Catalyst 9336" pattern. Verified in-browser: the
+narrowed pattern still correctly resolves `N9K-C9336C-FX2` sample text
+via `parseASUP()`, on both the dev-server ES modules and the standalone
+bundle.
+
+## Two new audit rules for aggregate health (2026-08-16)
+
+Two new `bestPractices.js` rules based on well-established NetApp storage
+best practices:
+
+- **`BP_MIN_DISK_AGGR`**: RAID-DP aggregates should have >= 5 disks,
+  RAID4 >= 3, or fault tolerance/performance is degraded. Required a
+  `parser.js` fix first: the aggregate-parsing loop only ever captured
+  the FIRST RAID group's disk count (`rgSize`/`disksCount`, used
+  elsewhere by pinned capacity math — deliberately left untouched), so a
+  new `totalDiskCount` field now sums disks across every RAID group in
+  the aggregate block. Verified: a 2-RAID-group aggregate (3+3 disks)
+  correctly totals 6 and does NOT false-positive, while a real 1-group
+  3-disk RAID-DP aggregate correctly fires the warning.
+- **`BP_NON_ROOT_CFO_HAPOLICY`**: a non-root aggregate with `cfo`
+  HA-policy means its HA partner can't take it over on failover — real
+  data-loss risk. **⚠ UNCONFIRMED AGAINST A REAL ASUP**: `parser.js`'s
+  new `haPolicy` extraction (an "HA Policy: sfo/cfo" instance-style
+  line, or a "-fields ha-policy" tabular row) is a best-effort guess at
+  how this field might appear in real ASUP text, modeled on conventions
+  this parser already relies on elsewhere — it has never been seen in an
+  actual customer bundle. The rule only ever fires when that field is
+  actually found, and reports neither "compliant" nor "warning" when it
+  isn't (no false confidence). **Next real-ASUP test should specifically
+  check whether `ha-policy` ever appears in the aggregate/storage
+  sections of an actual bundle**, and correct the regex in `parser.js`
+  if the real format differs.
+
+Both rules follow Rule 5's existing convention of excluding root
+aggregates (`aggr0` prefix / literal "root" in the block's Options text).

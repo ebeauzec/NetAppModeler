@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.69)
+# NetApp AutoSupport Analyzer & Modeler (v2.73)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,9 +6,37 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.69)
+## 🆕 New in this Version (v2.73)
+
+- **Two new audit rules for aggregate health:** added two new audit rules based on well-established NetApp storage best practices — minimum disk count per aggregate (RAID-DP needs 5+, RAID4 needs 3+, or fault tolerance degrades — required fixing a parser bug where only the first RAID group's disk count was ever counted, undercounting multi-group aggregates), and non-root aggregates with "cfo" HA-policy (a real failover/data-loss risk). The second rule's underlying field has not been confirmed against a real ASUP bundle yet — it only fires when found, never claims false compliance. See `PLATFORM_COVERAGE.md` for details.
+
+<details>
+<summary>Earlier changelog (v2.72)</summary>
+
+- **Switch model misidentification fixed:** the switch-detection pattern for "Nexus 9336C-FX2" matched any 9336C-family model string, so other real Cisco 9336C-series switch models could be silently mislabeled as FX2 and checked against the wrong firmware baseline. The detection pattern is now scoped to FX2 specifically.
+
+</details>
+
+<details>
+<summary>Earlier changelog (v2.71)</summary>
+
+- **ACP connectivity check gap fixed for DS212C:** the ACP (Alternate Control Path) connectivity check's shelf-detection regex omitted DS212C, so a cluster with only DS212C shelves silently skipped that check entirely. Fixed.
+
+</details>
+
+<details>
+<summary>Earlier changelog (v2.70)</summary>
+
+- **New platforms added, one detection bug fixed:** found a real bug — any ASUP reporting "AFX 1K" was silently matched to the "AFX 2K" profile, a distinct model with different specs. Also added recognition for three platforms the catalog didn't previously carry: FAS2850, FAS2880, FAS500f (previously fell through to `Default`). All four are now recognized, with same-family placeholder specs clearly marked "⚠ UNVERIFIED SPECS" pending sourcing from HWU — see `PLATFORM_COVERAGE.md`.
+
+</details>
+
+<details>
+<summary>Earlier changelog (v2.69)</summary>
 
 - **Upload warning text wrap fixed:** the v2.67 .7z/.rar warning under the upload drop zone still wrapped awkwardly, reported live — the icon and text weren't in a proper flex layout, so a wrapped line snapped to the container's left edge instead of aligning under the text. Shortened the copy and switched to a flex layout; confirmed it fits on one line at the drop zone's normal width and wraps cleanly (aligned, not left-snapped) at narrow widths.
+
+</details>
 
 <details>
 <summary>Earlier changelog (v2.68)</summary>
