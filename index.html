@@ -37,7 +37,7 @@
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.74</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.75</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -1057,12 +1057,23 @@
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.74</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.75</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+
+        <!-- Feature -17 (v2.75) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🔑</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Software Licenses Now Read from licenses.xml (Was Showing Every License "Inactive")</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              Reported live on a real ASUP bundle: every license (Cluster, NFS, CIFS, SnapMirror, all of them) showed "Inactive" in the Entitlement panel, even though the real cluster was genuinely licensed for all of them. Root cause: that bundle carried no plain-text "license show" CLI output at all — only a structured licenses.xml export — and the parser only ever looked for plain-text license lines. The parser now also reads licenses.xml when present, correctly showing Cluster/NFS/CIFS/SnapMirror as active and a demo FlexClone entitlement as expired (with its real 2018 expiry date) on the real system tested against. XML data takes precedence over a plain-text guess for the same license, same precedent as the earlier aggr-info.xml fix.
+            </span>
+          </div>
+        </div>
 
         <!-- Feature -16 (v2.74) -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">

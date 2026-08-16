@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.74)
+# NetApp AutoSupport Analyzer & Modeler (v2.75)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,9 +6,16 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.74)
+## 🆕 New in this Version (v2.75)
+
+- **Software licenses now read from licenses.xml (was showing every license "Inactive"):** reported live on a real ASUP bundle — every license (Cluster, NFS, CIFS, SnapMirror, all of them) showed "Inactive" in the Entitlement panel, even though the real cluster was genuinely licensed for all of them. Root cause: that bundle carried no plain-text "license show" CLI output at all — only a structured licenses.xml export — and the parser only ever looked for plain-text license lines. The parser now also reads licenses.xml when present, correctly showing Cluster/NFS/CIFS/SnapMirror as active and a demo FlexClone entitlement as expired (with its real 2018 expiry date) on the real system tested against.
+
+<details>
+<summary>Earlier changelog (v2.74)</summary>
 
 - **SAS cabling diagram: untangled controller-to-shelf cable curves:** reported live — the controller-to-shelf storage cables took sharp, twisted double-loops instead of clean curves. Root cause: each cable path mixed a cubic bezier segment with a "smooth continuation" segment, whose implicit control point is a reflection of the prior one — when the per-stack lane offset and port positions didn't line up, that reflection produced a visible kink. Replaced all four cable paths (primary A/B, crossed-return A/B) with single, direct bezier curves that still route through the same per-stack lane for multi-stack separation, just without the twist.
+
+</details>
 
 <details>
 <summary>Earlier changelog (v2.73)</summary>

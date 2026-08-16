@@ -1267,6 +1267,52 @@ export function parseASUP(files) {
     }
   });
 
+  // --- Licenses from licenses.xml (structured cluster_licenses_v2_asup export) ---
+  // Confirmed against a real customer ASUP (manual "asup generate" bundle) that carried
+  // NO plain-text "license show" CLI output at all — only this structured XML export —
+  // so all three plain-text passes above found nothing, and every license silently
+  // showed "Inactive" in the UI even though Cluster/NFS/CIFS/SnapMirror were genuinely
+  // licensed (real <type>license</type> rows) on that system. XML is authoritative
+  // structured data, so it overrides a plain-text guess for the same license name
+  // rather than deferring to it (same precedent as aggr-info.xml overriding "aggr
+  // status -r" capacity numbers above).
+  const XML_TO_UI_LICENSE_NAME = {
+    "Base": "Cluster", "NFS": "NFS", "CIFS": "CIFS", "FCP": "FCP", "iSCSI": "iSCSI",
+    "SnapMirror": "SnapMirror", "FlexClone": "FlexClone", "FabricPool": "FabricPool",
+    "MetroCluster": "MetroCluster", "NVMe": "NVMe", "NVMe_tcp": "NVMe"
+  };
+  const licXmlRowRegex = /<asup:ROW[^>]*>([\s\S]*?)<\/asup:ROW>/g;
+  let licXmlMatch;
+  while ((licXmlMatch = licXmlRowRegex.exec(combinedText)) !== null) {
+    const rowText = licXmlMatch[1];
+    const pkgMatch = rowText.match(/<package>([^<]+)<\/package>/);
+    const typeMatch = rowText.match(/<type>([^<]+)<\/type>/);
+    if (!pkgMatch || !typeMatch) continue;
+    const uiName = XML_TO_UI_LICENSE_NAME[pkgMatch[1].trim()];
+    if (!uiName) continue; // not a package the UI checkbox suite tracks (e.g. SnapRestore)
+    let status = 'active';
+    let details = '';
+    if (typeMatch[1].trim() === 'demo') {
+      // Demo/eval entitlements carry an "expires" date inside entitlement-info instead
+      // of a real permanent grant — only "active" while that date hasn't passed.
+      const expiresMatch = rowText.match(/&quot;expires&quot;\s*:\s*&quot;([^&]+)&quot;/);
+      if (expiresMatch) {
+        const expiryDate = new Date(expiresMatch[1].trim());
+        if (!isNaN(expiryDate) && expiryDate < new Date()) {
+          status = 'expired';
+          details = `Expired: ${expiresMatch[1].trim()}`;
+        }
+      }
+    }
+    const existingXmlLic = data.licenses.find(l => l.name.toUpperCase() === uiName.toUpperCase());
+    if (existingXmlLic) {
+      existingXmlLic.status = status;
+      existingXmlLic.details = details;
+    } else {
+      data.licenses.push({ name: uiName, status, details, serial: data.version.serial });
+    }
+  }
+
   // Default licensing if none parsed
   if (data.licenses.length === 0) {
     if (!isDemoMode) {
