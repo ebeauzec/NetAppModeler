@@ -1,4 +1,4 @@
-# NetApp AutoSupport Analyzer & Modeler (v2.73)
+# NetApp AutoSupport Analyzer & Modeler (v2.74)
 
 A premium, client-side browser application designed for enterprise NetApp storage administrators and systems engineers to audit, analyze, and size NetApp ONTAP clusters. 
 
@@ -6,9 +6,16 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
-## 🆕 New in this Version (v2.73)
+## 🆕 New in this Version (v2.74)
+
+- **SAS cabling diagram: untangled controller-to-shelf cable curves:** reported live — the controller-to-shelf storage cables took sharp, twisted double-loops instead of clean curves. Root cause: each cable path mixed a cubic bezier segment with a "smooth continuation" segment, whose implicit control point is a reflection of the prior one — when the per-stack lane offset and port positions didn't line up, that reflection produced a visible kink. Replaced all four cable paths (primary A/B, crossed-return A/B) with single, direct bezier curves that still route through the same per-stack lane for multi-stack separation, just without the twist.
+
+<details>
+<summary>Earlier changelog (v2.73)</summary>
 
 - **Two new audit rules for aggregate health:** added two new audit rules based on well-established NetApp storage best practices — minimum disk count per aggregate (RAID-DP needs 5+, RAID4 needs 3+, or fault tolerance degrades — required fixing a parser bug where only the first RAID group's disk count was ever counted, undercounting multi-group aggregates), and non-root aggregates with "cfo" HA-policy (a real failover/data-loss risk). The second rule's underlying field has not been confirmed against a real ASUP bundle yet — it only fires when found, never claims false compliance. See `PLATFORM_COVERAGE.md` for details.
+
+</details>
 
 <details>
 <summary>Earlier changelog (v2.72)</summary>

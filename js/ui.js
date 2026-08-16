@@ -4240,7 +4240,7 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               svgStr += `<text x="120" y="${y - 40}" fill="var(--color-danger)" font-size="7" font-weight="700">No Storage Port</text>`;
             } else {
               const midY1 = (srcY + iomCy) / 2;
-              svgStr += `<path d="M ${pAX},${srcY} C ${pAX},${currentY + 100} ${laneA},${currentY + 120} ${laneA},${(srcY + iomCy) / 2} S 80,${iomCy - 40} 80,${iomCy}" class="${cableClassA}" stroke="${stackColor}" fill="none" stroke-width="2"/>`;
+              svgStr += `<path d="M ${pAX},${srcY} C ${laneA},${srcY} ${laneA},${iomCy} 80,${iomCy}" class="${cableClassA}" stroke="${stackColor}" fill="none" stroke-width="2"/>`;
               // Port label pill on cable
               svgStr += `<rect x="${pAX - 10}" y="${midY1 - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${pAX}" y="${midY1 + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${portNameA}</text>`;
@@ -4261,7 +4261,7 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               svgStr += `<text x="545" y="${iomCy + 3}" fill="#fff" font-size="8" font-weight="700" text-anchor="middle">!</text>`;
             } else if (!isSinglePath || shelfItem.isProposed) {
               const midY2 = (srcY + iomCy) / 2;
-              svgStr += `<path d="M ${pBX},${srcY} C ${pBX},${currentY + 100} ${laneB},${currentY + 120} ${laneB},${(srcY + iomCy) / 2} S 545,${iomCy - 40} 545,${iomCy}" class="${cableClassB}" stroke="${stackColor}" fill="none" stroke-width="2"/>`;
+              svgStr += `<path d="M ${pBX},${srcY} C ${laneB},${srcY} ${laneB},${iomCy} 545,${iomCy}" class="${cableClassB}" stroke="${stackColor}" fill="none" stroke-width="2"/>`;
               // Port label pill on cable
               svgStr += `<rect x="${pBX - 10}" y="${midY2 - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${pBX}" y="${midY2 + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${portNameB}</text>`;
@@ -4301,11 +4301,11 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               // the primary-B path above, on the same stackColor, so this stack's
               // full cable set (primary + daisy + return) reads as one consistent
               // color instead of overlapping with other stacks' return cables.
-              svgStr += `<path d="M 105,${iomCy} C 105,${currentY + 130} ${laneB},${currentY + 130} ${laneB},${midRA} S ${rBX},${srcY + 40} ${rBX},${srcY}" class="visual-cable multipath" stroke="${stackColor}" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              svgStr += `<path d="M 105,${iomCy} C ${laneB},${iomCy} ${laneB},${srcY} ${rBX},${srcY}" class="visual-cable multipath" stroke="${stackColor}" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
               svgStr += `<rect x="${rBX - 10}" y="${midRA - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${rBX}" y="${midRA + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${retNameB}</text>`;
               // IOM-B OUT → Node A's redundant port (crossed)
-              svgStr += `<path d="M 570,${iomCy} C 570,${currentY + 135} ${laneA},${currentY + 135} ${laneA},${midRB} S ${rAX},${srcY + 40} ${rAX},${srcY}" class="visual-cable multipath" stroke="${stackColor}" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              svgStr += `<path d="M 570,${iomCy} C ${laneA},${iomCy} ${laneA},${srcY} ${rAX},${srcY}" class="visual-cable multipath" stroke="${stackColor}" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
               svgStr += `<rect x="${rAX - 10}" y="${midRB - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${rAX}" y="${midRB + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${retNameA}</text>`;
             }

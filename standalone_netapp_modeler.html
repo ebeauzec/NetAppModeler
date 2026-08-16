@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.73</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.74</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2053,12 +2053,23 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.73</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.74</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+
+        <!-- Feature -16 (v2.74) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🎨</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">SAS Cabling Diagram: Untangled Controller-to-Shelf Cable Curves</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              Reported live: the controller-to-shelf storage cables on the SAS cabling diagram took sharp, twisted double-loops instead of clean curves. Root cause: each cable path mixed a cubic bezier segment with a "smooth continuation" segment, whose implicit control point is a reflection of the prior one — when the per-stack lane offset and port positions didn't line up, that reflection produced a visible kink. Replaced all four cable paths (primary A/B, crossed-return A/B) with single, direct bezier curves that still route through the same per-stack lane for multi-stack separation, just without the twist.
+            </span>
+          </div>
+        </div>
 
         <!-- Feature -15 (v2.73) -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
@@ -13797,7 +13808,7 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               svgStr += `<text x="120" y="${y - 40}" fill="var(--color-danger)" font-size="7" font-weight="700">No Storage Port</text>`;
             } else {
               const midY1 = (srcY + iomCy) / 2;
-              svgStr += `<path d="M ${pAX},${srcY} C ${pAX},${currentY + 100} ${laneA},${currentY + 120} ${laneA},${(srcY + iomCy) / 2} S 80,${iomCy - 40} 80,${iomCy}" class="${cableClassA}" stroke="${stackColor}" fill="none" stroke-width="2"/>`;
+              svgStr += `<path d="M ${pAX},${srcY} C ${laneA},${srcY} ${laneA},${iomCy} 80,${iomCy}" class="${cableClassA}" stroke="${stackColor}" fill="none" stroke-width="2"/>`;
               // Port label pill on cable
               svgStr += `<rect x="${pAX - 10}" y="${midY1 - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${pAX}" y="${midY1 + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${portNameA}</text>`;
@@ -13818,7 +13829,7 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               svgStr += `<text x="545" y="${iomCy + 3}" fill="#fff" font-size="8" font-weight="700" text-anchor="middle">!</text>`;
             } else if (!isSinglePath || shelfItem.isProposed) {
               const midY2 = (srcY + iomCy) / 2;
-              svgStr += `<path d="M ${pBX},${srcY} C ${pBX},${currentY + 100} ${laneB},${currentY + 120} ${laneB},${(srcY + iomCy) / 2} S 545,${iomCy - 40} 545,${iomCy}" class="${cableClassB}" stroke="${stackColor}" fill="none" stroke-width="2"/>`;
+              svgStr += `<path d="M ${pBX},${srcY} C ${laneB},${srcY} ${laneB},${iomCy} 545,${iomCy}" class="${cableClassB}" stroke="${stackColor}" fill="none" stroke-width="2"/>`;
               // Port label pill on cable
               svgStr += `<rect x="${pBX - 10}" y="${midY2 - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${pBX}" y="${midY2 + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${portNameB}</text>`;
@@ -13858,11 +13869,11 @@ function drawCablingTopology(state, targetFrameId, proposedShelf = null) {
               // the primary-B path above, on the same stackColor, so this stack's
               // full cable set (primary + daisy + return) reads as one consistent
               // color instead of overlapping with other stacks' return cables.
-              svgStr += `<path d="M 105,${iomCy} C 105,${currentY + 130} ${laneB},${currentY + 130} ${laneB},${midRA} S ${rBX},${srcY + 40} ${rBX},${srcY}" class="visual-cable multipath" stroke="${stackColor}" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              svgStr += `<path d="M 105,${iomCy} C ${laneB},${iomCy} ${laneB},${srcY} ${rBX},${srcY}" class="visual-cable multipath" stroke="${stackColor}" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
               svgStr += `<rect x="${rBX - 10}" y="${midRA - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${rBX}" y="${midRA + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${retNameB}</text>`;
               // IOM-B OUT → Node A's redundant port (crossed)
-              svgStr += `<path d="M 570,${iomCy} C 570,${currentY + 135} ${laneA},${currentY + 135} ${laneA},${midRB} S ${rAX},${srcY + 40} ${rAX},${srcY}" class="visual-cable multipath" stroke="${stackColor}" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+              svgStr += `<path d="M 570,${iomCy} C ${laneA},${iomCy} ${laneA},${srcY} ${rAX},${srcY}" class="visual-cable multipath" stroke="${stackColor}" fill="none" stroke-width="1.5" stroke-dasharray="3 2"/>`;
               svgStr += `<rect x="${rAX - 10}" y="${midRB - 7}" width="20" height="10" rx="3" fill="${stackColor}59" stroke="${stackColor}" stroke-width="0.8"/>`;
               svgStr += `<text x="${rAX}" y="${midRB + 1}" fill="#fff" font-size="5.5" text-anchor="middle" font-family="var(--font-mono)" font-weight="700">${retNameA}</text>`;
             }
