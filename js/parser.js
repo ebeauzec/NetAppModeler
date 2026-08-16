@@ -993,7 +993,7 @@ export function parseASUP(files) {
       let disksCount = 0;
       let diskType = data.shelves[0]?.disks[0]?.type || "SSD";
       let diskSizeGB = data.shelves[0]?.disks[0]?.sizeGB || 960;
-      
+
       const rgLine = lines.find(l => l.toLowerCase().includes("raid group"));
       if (rgLine) {
         const disksLineIndex = lines.indexOf(rgLine) + 1;
@@ -1007,6 +1007,41 @@ export function parseASUP(files) {
             diskType = disksMatch[3].trim();
           }
         }
+      }
+
+      // Total disk count across ALL RAID groups in this aggregate (rgSize/disksCount above only
+      // capture the first RAID group — used by existing capacity math, left untouched). This is
+      // its own field because the minimum-disks-per-aggregate best practice (see
+      // PLATFORM_COVERAGE.md) compares against the aggregate's TOTAL disk count, not any single
+      // RAID group's count.
+      let totalDiskCount = 0;
+      for (let li = 0; li < lines.length; li++) {
+        if (/raid group/i.test(lines[li]) && li + 1 < lines.length) {
+          const m = lines[li + 1].match(/Disks:\s*(\d+)\s*\(/i);
+          if (m) totalDiskCount += parseInt(m[1], 10);
+        }
+      }
+      if (totalDiskCount === 0) totalDiskCount = disksCount;
+
+      // Root-aggregate heuristic: ONTAP's classic "aggr status" (non -r) Options column
+      // includes the literal word "root" for the root aggregate; falls back to the near-
+      // universal "aggr0" naming convention when that text isn't present in this ASUP's dump.
+      const isRootAggr = /\broot\b/i.test(block.split('\n').slice(0, 6).join(' ')) || /^aggr0/i.test(aggrName);
+
+      // HA-policy: best-effort, UNCONFIRMED against a real ASUP bundle as of 2026-08-16 (see
+      // PLATFORM_COVERAGE.md) — covers the two most common ONTAP CLI output conventions this
+      // parser already relies on elsewhere (an "-instance"-style "HA Policy: sfo" key/value
+      // line, and a "-fields ha-policy" tabular row keyed by aggregate name). Null if neither
+      // pattern is found in this bundle, in which case the consuming rule must skip the
+      // aggregate rather than assume a value.
+      let haPolicy = null;
+      const instanceMatch = block.match(/HA[\s-]?Policy:\s*(sfo|cfo)/i);
+      if (instanceMatch) {
+        haPolicy = instanceMatch[1].toLowerCase();
+      } else {
+        const tableRegex = new RegExp(`^\\s*${aggrName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+(sfo|cfo)\\s*$`, 'im');
+        const tableMatch = combinedText.match(tableRegex);
+        if (tableMatch) haPolicy = tableMatch[1].toLowerCase();
       }
 
       // Determine aggregate node ownership: match parsed node names first (handles MCC node-a1/a2/b1/b2)
@@ -1061,7 +1096,10 @@ export function parseASUP(files) {
         disksCount,
         diskType,
         diskSizeGB,
-        isMirrored
+        isMirrored,
+        totalDiskCount,
+        isRootAggr,
+        haPolicy
       });
     }
   }
@@ -1434,16 +1472,19 @@ export function parseASUP(files) {
 
   const seenSwitchNames = new Set();
 
-  // Known switch model patterns — used for keyword scan and model normalization
+  // Known switch model patterns — used for keyword scan and model normalization.
+  // NOTE (2026-08-16): "Cisco Nexus 9336C-FX2"'s regex used to include a bare `|9336C`
+  // alternation, matching ANY 9336C-family string (array order = match priority), which could
+  // mislabel other real 9336C-series switch models as FX2 and check them against FX2's firmware
+  // baseline instead of their own. Narrowed to match FX2 specifically.
   const switchPatterns = [
-    { model: "Cisco Nexus 9336C-FX2",  regex: /9336C-FX2|9336C/i,      defaultVer: "10.2(3)F",  role: "cluster-switch" },
+    { model: "Cisco Nexus 9336C-FX2",  regex: /9336C-FX2/i,            defaultVer: "10.2(3)F",  role: "cluster-switch" },
     { model: "Cisco Nexus 3132Q-V",    regex: /3132Q-V|3132Q/i,        defaultVer: "9.3(8)",    role: "cluster-switch" },
     { model: "Cisco Nexus 3172PQ",     regex: /3172PQ|3172T/i,         defaultVer: "9.3(5)",    role: "cluster-switch" },
     { model: "Cisco Nexus 92300YC",    regex: /92300YC/i,              defaultVer: "9.3(8)",    role: "cluster-switch" },
     { model: "Broadcom BES-53248",     regex: /BES-53248/i,            defaultVer: "1.3.0.1",   role: "cluster-switch" },
     { model: "NVIDIA SN2100",          regex: /SN2100/i,               defaultVer: "3.9.3000",  role: "cluster-switch" },
     { model: "Cisco Catalyst 3750",    regex: /WS-C3750|catalyst.?3750/i, defaultVer: "15.2(4)E", role: "cluster-switch" },
-    { model: "Cisco Catalyst 9336",    regex: /C9336C?/i,              defaultVer: "17.9.1",    role: "cluster-switch" },
   ];
 
   const addSwitch = (name, model, version, role, source) => {

@@ -1033,7 +1033,7 @@ svg.cabling-graph {
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.69</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.73</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -2053,12 +2053,56 @@ svg.cabling-graph {
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.69</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.73</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+
+        <!-- Feature -15 (v2.73) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🆕</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Two New Audit Rules for Aggregate Health</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              Added two new audit rules based on well-established NetApp storage best practices: minimum disk count per aggregate (RAID-DP needs 5+, RAID4 needs 3+, or fault tolerance degrades — required fixing a parser bug where only the first RAID group's disk count was ever counted, undercounting multi-group aggregates), and non-root aggregates with "cfo" HA-policy (a real failover/data-loss risk). The second rule's underlying field has not been confirmed against a real ASUP bundle yet — it only fires when found, never claims false compliance. See PLATFORM_COVERAGE.md for details.
+            </span>
+          </div>
+        </div>
+
+        <!-- Feature -14 (v2.72) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🔀</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Switch Model Misidentification Fixed</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              Fixed a real bug: the switch-detection pattern for "Nexus 9336C-FX2" matched any 9336C-family model string, so other real Cisco 9336C-series switch models could be silently mislabeled as FX2 and checked against the wrong firmware baseline. The detection pattern is now scoped to FX2 specifically.
+            </span>
+          </div>
+        </div>
+
+        <!-- Feature -13 (v2.71) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🔧</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">ACP Connectivity Check Gap Fixed for DS212C</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              The ACP (Alternate Control Path) connectivity check's shelf-detection regex omitted DS212C, so a cluster with only DS212C shelves silently skipped that check entirely. Fixed.
+            </span>
+          </div>
+        </div>
+
+        <!-- Feature -12 (v2.70) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🆕</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">New Platforms Added, One Detection Bug Fixed</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              Found a real bug: any ASUP reporting "AFX 1K" was silently matched to the "AFX 2K" profile — a distinct, differently-specced model, not just an unsourced one. Also added recognition for three platforms the catalog didn't previously carry: FAS2850, FAS2880, FAS500f. All four are now recognized with same-family placeholder specs, clearly marked "⚠ UNVERIFIED SPECS" until sourced from HWU — see PLATFORM_COVERAGE.md for the tracking entry.
+            </span>
+          </div>
+        </div>
 
         <!-- Feature -11 (v2.69) -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">
@@ -4150,7 +4194,7 @@ function parseASUP(files) {
       let disksCount = 0;
       let diskType = data.shelves[0]?.disks[0]?.type || "SSD";
       let diskSizeGB = data.shelves[0]?.disks[0]?.sizeGB || 960;
-      
+
       const rgLine = lines.find(l => l.toLowerCase().includes("raid group"));
       if (rgLine) {
         const disksLineIndex = lines.indexOf(rgLine) + 1;
@@ -4164,6 +4208,41 @@ function parseASUP(files) {
             diskType = disksMatch[3].trim();
           }
         }
+      }
+
+      // Total disk count across ALL RAID groups in this aggregate (rgSize/disksCount above only
+      // capture the first RAID group — used by existing capacity math, left untouched). This is
+      // its own field because the minimum-disks-per-aggregate best practice (see
+      // PLATFORM_COVERAGE.md) compares against the aggregate's TOTAL disk count, not any single
+      // RAID group's count.
+      let totalDiskCount = 0;
+      for (let li = 0; li < lines.length; li++) {
+        if (/raid group/i.test(lines[li]) && li + 1 < lines.length) {
+          const m = lines[li + 1].match(/Disks:\s*(\d+)\s*\(/i);
+          if (m) totalDiskCount += parseInt(m[1], 10);
+        }
+      }
+      if (totalDiskCount === 0) totalDiskCount = disksCount;
+
+      // Root-aggregate heuristic: ONTAP's classic "aggr status" (non -r) Options column
+      // includes the literal word "root" for the root aggregate; falls back to the near-
+      // universal "aggr0" naming convention when that text isn't present in this ASUP's dump.
+      const isRootAggr = /\broot\b/i.test(block.split('\n').slice(0, 6).join(' ')) || /^aggr0/i.test(aggrName);
+
+      // HA-policy: best-effort, UNCONFIRMED against a real ASUP bundle as of 2026-08-16 (see
+      // PLATFORM_COVERAGE.md) — covers the two most common ONTAP CLI output conventions this
+      // parser already relies on elsewhere (an "-instance"-style "HA Policy: sfo" key/value
+      // line, and a "-fields ha-policy" tabular row keyed by aggregate name). Null if neither
+      // pattern is found in this bundle, in which case the consuming rule must skip the
+      // aggregate rather than assume a value.
+      let haPolicy = null;
+      const instanceMatch = block.match(/HA[\s-]?Policy:\s*(sfo|cfo)/i);
+      if (instanceMatch) {
+        haPolicy = instanceMatch[1].toLowerCase();
+      } else {
+        const tableRegex = new RegExp(`^\\s*${aggrName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+(sfo|cfo)\\s*$`, 'im');
+        const tableMatch = combinedText.match(tableRegex);
+        if (tableMatch) haPolicy = tableMatch[1].toLowerCase();
       }
 
       // Determine aggregate node ownership: match parsed node names first (handles MCC node-a1/a2/b1/b2)
@@ -4218,7 +4297,10 @@ function parseASUP(files) {
         disksCount,
         diskType,
         diskSizeGB,
-        isMirrored
+        isMirrored,
+        totalDiskCount,
+        isRootAggr,
+        haPolicy
       });
     }
   }
@@ -4591,16 +4673,19 @@ function parseASUP(files) {
 
   const seenSwitchNames = new Set();
 
-  // Known switch model patterns — used for keyword scan and model normalization
+  // Known switch model patterns — used for keyword scan and model normalization.
+  // NOTE (2026-08-16): "Cisco Nexus 9336C-FX2"'s regex used to include a bare `|9336C`
+  // alternation, matching ANY 9336C-family string (array order = match priority), which could
+  // mislabel other real 9336C-series switch models as FX2 and check them against FX2's firmware
+  // baseline instead of their own. Narrowed to match FX2 specifically.
   const switchPatterns = [
-    { model: "Cisco Nexus 9336C-FX2",  regex: /9336C-FX2|9336C/i,      defaultVer: "10.2(3)F",  role: "cluster-switch" },
+    { model: "Cisco Nexus 9336C-FX2",  regex: /9336C-FX2/i,            defaultVer: "10.2(3)F",  role: "cluster-switch" },
     { model: "Cisco Nexus 3132Q-V",    regex: /3132Q-V|3132Q/i,        defaultVer: "9.3(8)",    role: "cluster-switch" },
     { model: "Cisco Nexus 3172PQ",     regex: /3172PQ|3172T/i,         defaultVer: "9.3(5)",    role: "cluster-switch" },
     { model: "Cisco Nexus 92300YC",    regex: /92300YC/i,              defaultVer: "9.3(8)",    role: "cluster-switch" },
     { model: "Broadcom BES-53248",     regex: /BES-53248/i,            defaultVer: "1.3.0.1",   role: "cluster-switch" },
     { model: "NVIDIA SN2100",          regex: /SN2100/i,               defaultVer: "3.9.3000",  role: "cluster-switch" },
     { model: "Cisco Catalyst 3750",    regex: /WS-C3750|catalyst.?3750/i, defaultVer: "15.2(4)E", role: "cluster-switch" },
-    { model: "Cisco Catalyst 9336",    regex: /C9336C?/i,              defaultVer: "17.9.1",    role: "cluster-switch" },
   ];
 
   const addSwitch = (name, model, version, role, source) => {
@@ -5773,6 +5858,35 @@ const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
   },
+  // FAS500f: a real current-generation NetApp platform, part of the "250-class" chassis family
+  // alongside AFF A250/C250 and ASA A250/C250 (FAS-branded flash SKU). ⚠ UNVERIFIED: fields below
+  // are copied from AFF A250 as a same-family placeholder pending full confirmation. Confirm
+  // against HWU or docs.netapp.com before relying on these fields (see DATA_SOURCES.md).
+  "FAS500f": {
+    maxOntap: "9.19.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: {
+      "ns224": "NS224 NVMe shelf is natively supported."
+    },
+    shelfErrors: {
+      "ds224c": "FAS500f is an NVMe-only chassis and does not support SAS shelves.",
+      "ds212c": "LFF HDD expansion is unsupported on FAS500f.",
+      "ds460c": "High-density SATA is unsupported on FAS500f.",
+      "ds2246": "Legacy SAS-2 is unsupported."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
+    maxFirmware: "v16.1",
+    description: "⚠ UNVERIFIED SPECS — Entry NVMe All Flash array, FAS-branded (250-class chassis).",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e2a", "e2b", "e3a", "e3b"]
+    },
+    supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 2
+  },
   "AFF A220": {
     maxOntap: "9.15.1",
     supportedShelves: ["ds224c"],
@@ -6130,6 +6244,52 @@ const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
     maxFirmware: "v16.1",
     description: "Entry hybrid storage array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "nic_25g_4port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 2
+  },
+  // FAS2850 / FAS2880: real current-generation NetApp platforms in the same family as FAS2820.
+  // ⚠ UNVERIFIED: fields below are copied from FAS2820 as a same-family placeholder pending full
+  // confirmation. Confirm against HWU or docs.netapp.com before relying on these fields (see
+  // DATA_SOURCES.md).
+  "FAS2850": {
+    maxOntap: "9.19.1",
+    supportedShelves: ["ds224c", "ds212c", "ds460c"],
+    unsupportedShelves: ["ns224", "ds2246"],
+    shelfWarnings: { "ds224c": "DS224C SFF shelf fully supported." },
+    shelfErrors: {
+      "ns224": "FAS2850 does not support NVMe expansion shelves.",
+      "ds2246": "Legacy 6G SAS is not supported."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
+    maxFirmware: "v16.1",
+    description: "⚠ UNVERIFIED SPECS — Entry hybrid storage array (mid tier of FAS28xx family).",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "nic_25g_4port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 2
+  },
+  "FAS2880": {
+    maxOntap: "9.19.1",
+    supportedShelves: ["ds224c", "ds212c", "ds460c"],
+    unsupportedShelves: ["ns224", "ds2246"],
+    shelfWarnings: { "ds224c": "DS224C SFF shelf fully supported." },
+    shelfErrors: {
+      "ns224": "FAS2880 does not support NVMe expansion shelves.",
+      "ds2246": "Legacy 6G SAS is not supported."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
+    maxFirmware: "v16.1",
+    description: "⚠ UNVERIFIED SPECS — Entry hybrid storage array (top tier of FAS28xx family).",
     ports: {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
@@ -6913,6 +7073,20 @@ const NETAPP_PLATFORMS = {
   maxFirmware: "v20.1", description: "Ultra high-performance All-Flash Extreme storage controller (July 2026).",
   ports: { cluster: ["e0a","e0b"], data: ["e1a","e1b","e1c","e1d"], san: ["0i","0j"], storage: ["e8a","e8b","e8c","e8d"] },
   supportedCards: ["nic_100g_4port","nic_200g_2port","fc_hba_64g_2port","roce_hba_100g_2port_v2"], maxPcieSlots: 12
+},
+// AFX 1K (all-flash extreme, smaller chassis) — a real, distinct model from AFX 2K in the same
+// product family. ⚠ UNVERIFIED: port names/PCIe slot count/RAM below are copied from AFX 2K as a
+// same-family placeholder pending full confirmation. Confirm against HWU or docs.netapp.com
+// before relying on these fields (see DATA_SOURCES.md).
+"AFX 1K": {
+  tier: "enterprise", minOntap: "9.19.1", maxOntap: "9.19.1", maxRamGB: 4096,
+  supportedShelves: ["ns224"], unsupportedShelves: ["ds224c","ds212c","ds460c","ds2246"],
+  shelfWarnings: { "ns224": "NS224 NVMe shelf natively supported at 400GbE." },
+  shelfErrors: { "ds224c": "SAS shelves not supported.", "ds212c": "HDD shelves not supported.", "ds460c": "HDD shelves not supported.", "ds2246": "Legacy SAS not supported." },
+  supportedLicenses: ["Cluster","NFS","CIFS","S3","FCP","iSCSI","NVMe/FC","NVMe/TCP","SnapMirror","FlexClone","FabricPool","MetroCluster"],
+  maxFirmware: "v20.1", description: "⚠ UNVERIFIED SPECS — All-Flash Extreme storage controller, smaller chassis than AFX 2K (July 2026).",
+  ports: { cluster: ["e0a","e0b"], data: ["e1a","e1b","e1c","e1d"], san: ["0i","0j"], storage: ["e8a","e8b","e8c","e8d"] },
+  supportedCards: ["nic_100g_4port","nic_200g_2port","fc_hba_64g_2port","roce_hba_100g_2port_v2"], maxPcieSlots: 12
 }
 };
 
@@ -6986,7 +7160,8 @@ function getPlatformProfile(modelStr) {
   if (upper.includes("AFF C60")  || upper.includes("AFFC60"))   return NETAPP_PLATFORMS["AFF C60"];
   if (upper.includes("AFF C30")  || upper.includes("AFFC30"))   return NETAPP_PLATFORMS["AFF C30"];
 
-  // === AFX (ultra-high-performance, new 2026) ===
+  // === AFX (ultra-high-performance, new 2026) — check 1K before the bare "AFX" fallback ===
+  if (upper.includes("AFX 1K") || upper.includes("AFX1K")) return NETAPP_PLATFORMS["AFX 1K"];
   if (upper.includes("AFX")) return NETAPP_PLATFORMS["AFX 2K"];
 
   // === FAS — longer/newer strings first to avoid partial matches ===
@@ -6999,6 +7174,8 @@ function getPlatformProfile(modelStr) {
   if (upper.includes("FAS8060"))  return NETAPP_PLATFORMS["FAS8060"];
   if (upper.includes("FAS8040"))  return NETAPP_PLATFORMS["FAS8040"];
   if (upper.includes("FAS8020"))  return NETAPP_PLATFORMS["FAS8020"];
+  if (upper.includes("FAS2880"))  return NETAPP_PLATFORMS["FAS2880"];
+  if (upper.includes("FAS2850"))  return NETAPP_PLATFORMS["FAS2850"];
   if (upper.includes("FAS2820"))  return NETAPP_PLATFORMS["FAS2820"];
   if (upper.includes("FAS2750"))  return NETAPP_PLATFORMS["FAS2750"];
   if (upper.includes("FAS2720"))  return NETAPP_PLATFORMS["FAS2720"];
@@ -7010,6 +7187,8 @@ function getPlatformProfile(modelStr) {
   // FAS next-gen (FAS90/70/50) — must come AFTER 4-digit FAS patterns
   if (upper.includes("FAS90"))    return NETAPP_PLATFORMS["FAS90"];
   if (upper.includes("FAS70"))    return NETAPP_PLATFORMS["FAS70"];
+  // FAS500f — "FAS500F" contains "FAS50" as a substring, so this MUST come before the FAS50 check
+  if (upper.includes("FAS500F"))  return NETAPP_PLATFORMS["FAS500f"];
   if (upper.includes("FAS50"))    return NETAPP_PLATFORMS["FAS50"];
 
   // === Virtual / Cloud ===
@@ -7304,6 +7483,9 @@ const FIRMWARE_VERSIONS = {
     "ds2246": { latest: "IOM6.0101",  iomType: "IOM6",   minOntap: "8.1",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
     "ds4246": { latest: "IOM6.0101",  iomType: "IOM6",   minOntap: "8.2",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
     "ds4486": { latest: "IOM6.0101",  iomType: "IOM6",   minOntap: "8.2",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
+    // ds212c is referenced elsewhere in this file (NETAPP_PLATFORMS supportedShelves lists) but
+    // has no firmware-currency entry yet — open gap, needs sourcing from NetApp's Shelf Firmware
+    // Matrix / HWU. Tracked in PLATFORM_COVERAGE.md.
   },
   sp: {
     // BMC/SP firmware version by controller platform model string (prefix match)
@@ -8411,6 +8593,86 @@ function runAudit(systemState) {
     );
   }
 
+  // --- Rule: BP_MIN_DISK_AGGR: Minimum Disk Count per Aggregate ---
+  // Well-established NetApp storage best practice: RAID-DP aggregates should have >= 5 disks,
+  // RAID4 >= 3 disks, or fault tolerance/performance is degraded. Like Rule 5's RAID-group-size
+  // check above, this applies to all non-root aggregates, using totalDiskCount (summed across
+  // every RAID group in the aggregate, not just the first — see parser.js for why that's a
+  // separate field).
+  let minDiskAggrWarnings = [];
+  systemState.aggregates.forEach(aggr => {
+    if (aggr.isRootAggr || aggr.name.startsWith("aggr0")) return;
+    const total = aggr.totalDiskCount || aggr.disksCount || 0;
+    if (total === 0) return;
+    if (aggr.raidType === "raid_dp" && total < 5) {
+      minDiskAggrWarnings.push(`Aggregate ${aggr.name} (RAID-DP) has only ${total} disk(s) — NetApp recommends a minimum of 5 for fault tolerance and performance.`);
+    } else if (aggr.raidType === "raid4" && total < 3) {
+      minDiskAggrWarnings.push(`Aggregate ${aggr.name} (RAID4) has only ${total} disk(s) — NetApp recommends a minimum of 3.`);
+    }
+  });
+
+  if (minDiskAggrWarnings.length > 0) {
+    addReport(
+      "BP_MIN_DISK_AGGR",
+      "Minimum Disk Count per Aggregate",
+      "Hardware",
+      "warning",
+      minDiskAggrWarnings.join("\n"),
+      "Add disks to bring undersized aggregates up to NetApp's recommended minimum (RAID-DP >= 5 disks, RAID4 >= 3 disks) for adequate fault tolerance and performance.",
+      "storage aggregate show -fields diskcount,raidtype\nstorage aggregate add-disks -aggregate <aggr name> -diskcount <number of disks>"
+    );
+  } else if (systemState.aggregates.some(a => !a.isRootAggr && !a.name.startsWith("aggr0"))) {
+    addReport(
+      "BP_MIN_DISK_AGGR",
+      "Minimum Disk Count per Aggregate",
+      "Hardware",
+      "compliant",
+      "All non-root aggregates meet NetApp's recommended minimum disk count for their RAID type.",
+      "No action required.",
+      ""
+    );
+  }
+
+  // --- Rule: BP_NON_ROOT_CFO_HAPOLICY: Non-Root Aggregate HA-Policy ---
+  // Well-established NetApp HA concept: a non-root aggregate with "cfo" HA-policy means its HA
+  // partner cannot take it over on failover — real data-loss risk, not just a best-practice nit.
+  // ⚠ UNCONFIRMED AGAINST A REAL ASUP as of 2026-08-16 — parser.js's haPolicy extraction (an
+  // "HA Policy: sfo/cfo" instance-style line, or a "-fields ha-policy" tabular row) is a
+  // best-effort guess at how real ASUP text might expose this field; it has not been validated
+  // against an actual customer bundle. This rule therefore only ever fires when that field was
+  // actually found — see PLATFORM_COVERAGE.md.
+  let cfoAggrWarnings = [];
+  let haPolicyChecked = 0;
+  systemState.aggregates.forEach(aggr => {
+    if (aggr.isRootAggr || aggr.name.startsWith("aggr0") || !aggr.haPolicy) return;
+    haPolicyChecked++;
+    if (aggr.haPolicy === "cfo") {
+      cfoAggrWarnings.push(`Aggregate ${aggr.name} is a non-root aggregate with HA-policy "cfo" — its HA partner cannot take over this aggregate on failover, risking data loss/unavailability.`);
+    }
+  });
+
+  if (cfoAggrWarnings.length > 0) {
+    addReport(
+      "BP_NON_ROOT_CFO_HAPOLICY",
+      "Non-Root Aggregate HA-Policy",
+      "Hardware",
+      "warning",
+      cfoAggrWarnings.join("\n"),
+      "Non-root aggregates should always use \"sfo\" HA-policy. Coordinate a maintenance window to correct this — changing HA-policy on an existing aggregate requires NetApp support guidance.",
+      "storage aggregate show -root false -fields ha-policy"
+    );
+  } else if (haPolicyChecked > 0) {
+    addReport(
+      "BP_NON_ROOT_CFO_HAPOLICY",
+      "Non-Root Aggregate HA-Policy",
+      "Hardware",
+      "compliant",
+      "All non-root aggregates with a known HA-policy are correctly set to \"sfo\".",
+      "No action required.",
+      ""
+    );
+  }
+
   // --- Rule 6: Aggregate Space / Capacity ---
   let capacityAlerts = [];
   systemState.aggregates.forEach(aggr => {
@@ -9194,7 +9456,9 @@ function runAudit(systemState) {
 
   // --- Rule: BP_ACP_STATUS: Alternate Control Path (ACP) Connectivity ---
   {
-    const hasSasShelves = (systemState.shelves || []).some(s => (s.model || '').toLowerCase().match(/ds224c|ds460c|ds2246|ds4246|ds4486/));
+    // ds212c was missing from this list — a cluster with only ds212c SAS shelves silently skipped
+    // the ACP connectivity check entirely (found while sourcing real firmware data, 2026-08-16).
+    const hasSasShelves = (systemState.shelves || []).some(s => (s.model || '').toLowerCase().match(/ds224c|ds212c|ds460c|ds2246|ds4246|ds4486/));
     const hasNvmeOnly = (systemState.shelves || []).every(s => (s.model || '').toLowerCase() === 'ns224');
     if (hasSasShelves && !hasNvmeOnly) {
       const acp = systemState.acpStatus || {};

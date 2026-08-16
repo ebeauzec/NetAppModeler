@@ -429,6 +429,35 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
   },
+  // FAS500f: a real current-generation NetApp platform, part of the "250-class" chassis family
+  // alongside AFF A250/C250 and ASA A250/C250 (FAS-branded flash SKU). ⚠ UNVERIFIED: fields below
+  // are copied from AFF A250 as a same-family placeholder pending full confirmation. Confirm
+  // against HWU or docs.netapp.com before relying on these fields (see DATA_SOURCES.md).
+  "FAS500f": {
+    maxOntap: "9.19.1",
+    supportedShelves: ["ns224"],
+    unsupportedShelves: ["ds224c", "ds212c", "ds460c", "ds2246"],
+    shelfWarnings: {
+      "ns224": "NS224 NVMe shelf is natively supported."
+    },
+    shelfErrors: {
+      "ds224c": "FAS500f is an NVMe-only chassis and does not support SAS shelves.",
+      "ds212c": "LFF HDD expansion is unsupported on FAS500f.",
+      "ds460c": "High-density SATA is unsupported on FAS500f.",
+      "ds2246": "Legacy SAS-2 is unsupported."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
+    maxFirmware: "v16.1",
+    description: "⚠ UNVERIFIED SPECS — Entry NVMe All Flash array, FAS-branded (250-class chassis).",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["e2a", "e2b", "e3a", "e3b"]
+    },
+    supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
+    maxPcieSlots: 2
+  },
   "AFF A220": {
     maxOntap: "9.15.1",
     supportedShelves: ["ds224c"],
@@ -786,6 +815,52 @@ export const NETAPP_PLATFORMS = {
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
     maxFirmware: "v16.1",
     description: "Entry hybrid storage array.",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "nic_25g_4port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 2
+  },
+  // FAS2850 / FAS2880: real current-generation NetApp platforms in the same family as FAS2820.
+  // ⚠ UNVERIFIED: fields below are copied from FAS2820 as a same-family placeholder pending full
+  // confirmation. Confirm against HWU or docs.netapp.com before relying on these fields (see
+  // DATA_SOURCES.md).
+  "FAS2850": {
+    maxOntap: "9.19.1",
+    supportedShelves: ["ds224c", "ds212c", "ds460c"],
+    unsupportedShelves: ["ns224", "ds2246"],
+    shelfWarnings: { "ds224c": "DS224C SFF shelf fully supported." },
+    shelfErrors: {
+      "ns224": "FAS2850 does not support NVMe expansion shelves.",
+      "ds2246": "Legacy 6G SAS is not supported."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
+    maxFirmware: "v16.1",
+    description: "⚠ UNVERIFIED SPECS — Entry hybrid storage array (mid tier of FAS28xx family).",
+    ports: {
+      cluster: ["e0a", "e0b"],
+      data: ["e0c", "e0d"],
+      san: ["0e", "0f"],
+      storage: ["0a", "0b"]
+    },
+    supportedCards: ["nic_10g_2port", "nic_25g_4port", "fc_hba_16g_2port", "fc_hba_32g_2port", "sas_hba_12g_4port"],
+    maxPcieSlots: 2
+  },
+  "FAS2880": {
+    maxOntap: "9.19.1",
+    supportedShelves: ["ds224c", "ds212c", "ds460c"],
+    unsupportedShelves: ["ns224", "ds2246"],
+    shelfWarnings: { "ds224c": "DS224C SFF shelf fully supported." },
+    shelfErrors: {
+      "ns224": "FAS2880 does not support NVMe expansion shelves.",
+      "ds2246": "Legacy 6G SAS is not supported."
+    },
+    supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
+    maxFirmware: "v16.1",
+    description: "⚠ UNVERIFIED SPECS — Entry hybrid storage array (top tier of FAS28xx family).",
     ports: {
       cluster: ["e0a", "e0b"],
       data: ["e0c", "e0d"],
@@ -1569,6 +1644,20 @@ export const NETAPP_PLATFORMS = {
   maxFirmware: "v20.1", description: "Ultra high-performance All-Flash Extreme storage controller (July 2026).",
   ports: { cluster: ["e0a","e0b"], data: ["e1a","e1b","e1c","e1d"], san: ["0i","0j"], storage: ["e8a","e8b","e8c","e8d"] },
   supportedCards: ["nic_100g_4port","nic_200g_2port","fc_hba_64g_2port","roce_hba_100g_2port_v2"], maxPcieSlots: 12
+},
+// AFX 1K (all-flash extreme, smaller chassis) — a real, distinct model from AFX 2K in the same
+// product family. ⚠ UNVERIFIED: port names/PCIe slot count/RAM below are copied from AFX 2K as a
+// same-family placeholder pending full confirmation. Confirm against HWU or docs.netapp.com
+// before relying on these fields (see DATA_SOURCES.md).
+"AFX 1K": {
+  tier: "enterprise", minOntap: "9.19.1", maxOntap: "9.19.1", maxRamGB: 4096,
+  supportedShelves: ["ns224"], unsupportedShelves: ["ds224c","ds212c","ds460c","ds2246"],
+  shelfWarnings: { "ns224": "NS224 NVMe shelf natively supported at 400GbE." },
+  shelfErrors: { "ds224c": "SAS shelves not supported.", "ds212c": "HDD shelves not supported.", "ds460c": "HDD shelves not supported.", "ds2246": "Legacy SAS not supported." },
+  supportedLicenses: ["Cluster","NFS","CIFS","S3","FCP","iSCSI","NVMe/FC","NVMe/TCP","SnapMirror","FlexClone","FabricPool","MetroCluster"],
+  maxFirmware: "v20.1", description: "⚠ UNVERIFIED SPECS — All-Flash Extreme storage controller, smaller chassis than AFX 2K (July 2026).",
+  ports: { cluster: ["e0a","e0b"], data: ["e1a","e1b","e1c","e1d"], san: ["0i","0j"], storage: ["e8a","e8b","e8c","e8d"] },
+  supportedCards: ["nic_100g_4port","nic_200g_2port","fc_hba_64g_2port","roce_hba_100g_2port_v2"], maxPcieSlots: 12
 }
 };
 
@@ -1642,7 +1731,8 @@ export function getPlatformProfile(modelStr) {
   if (upper.includes("AFF C60")  || upper.includes("AFFC60"))   return NETAPP_PLATFORMS["AFF C60"];
   if (upper.includes("AFF C30")  || upper.includes("AFFC30"))   return NETAPP_PLATFORMS["AFF C30"];
 
-  // === AFX (ultra-high-performance, new 2026) ===
+  // === AFX (ultra-high-performance, new 2026) — check 1K before the bare "AFX" fallback ===
+  if (upper.includes("AFX 1K") || upper.includes("AFX1K")) return NETAPP_PLATFORMS["AFX 1K"];
   if (upper.includes("AFX")) return NETAPP_PLATFORMS["AFX 2K"];
 
   // === FAS — longer/newer strings first to avoid partial matches ===
@@ -1655,6 +1745,8 @@ export function getPlatformProfile(modelStr) {
   if (upper.includes("FAS8060"))  return NETAPP_PLATFORMS["FAS8060"];
   if (upper.includes("FAS8040"))  return NETAPP_PLATFORMS["FAS8040"];
   if (upper.includes("FAS8020"))  return NETAPP_PLATFORMS["FAS8020"];
+  if (upper.includes("FAS2880"))  return NETAPP_PLATFORMS["FAS2880"];
+  if (upper.includes("FAS2850"))  return NETAPP_PLATFORMS["FAS2850"];
   if (upper.includes("FAS2820"))  return NETAPP_PLATFORMS["FAS2820"];
   if (upper.includes("FAS2750"))  return NETAPP_PLATFORMS["FAS2750"];
   if (upper.includes("FAS2720"))  return NETAPP_PLATFORMS["FAS2720"];
@@ -1666,6 +1758,8 @@ export function getPlatformProfile(modelStr) {
   // FAS next-gen (FAS90/70/50) — must come AFTER 4-digit FAS patterns
   if (upper.includes("FAS90"))    return NETAPP_PLATFORMS["FAS90"];
   if (upper.includes("FAS70"))    return NETAPP_PLATFORMS["FAS70"];
+  // FAS500f — "FAS500F" contains "FAS50" as a substring, so this MUST come before the FAS50 check
+  if (upper.includes("FAS500F"))  return NETAPP_PLATFORMS["FAS500f"];
   if (upper.includes("FAS50"))    return NETAPP_PLATFORMS["FAS50"];
 
   // === Virtual / Cloud ===
@@ -1960,6 +2054,9 @@ export const FIRMWARE_VERSIONS = {
     "ds2246": { latest: "IOM6.0101",  iomType: "IOM6",   minOntap: "8.1",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
     "ds4246": { latest: "IOM6.0101",  iomType: "IOM6",   minOntap: "8.2",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
     "ds4486": { latest: "IOM6.0101",  iomType: "IOM6",   minOntap: "8.2",  updateCmd: "storage shelf firmware update -shelf {id}",  checkCmd: "storage shelf show -fields firmware-version" },
+    // ds212c is referenced elsewhere in this file (NETAPP_PLATFORMS supportedShelves lists) but
+    // has no firmware-currency entry yet — open gap, needs sourcing from NetApp's Shelf Firmware
+    // Matrix / HWU. Tracked in PLATFORM_COVERAGE.md.
   },
   sp: {
     // BMC/SP firmware version by controller platform model string (prefix match)
