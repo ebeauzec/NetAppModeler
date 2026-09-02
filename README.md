@@ -6,6 +6,67 @@ This tool parses NetApp AutoSupport (ASUP) logs to audit hardware configurations
 
 ---
 
+## 📸 See It In Action
+
+| Data Quality Report | Cabling Topology |
+|---|---|
+| ![Data Quality Report](docs/screenshots/01-data-quality-report.png) | ![Cabling Diagram](docs/screenshots/02-cabling-diagram.png) |
+| Every field the parser found is scored: **Parsed** (confirmed), **Inferred** (a weaker, best-guess signal), or **Default** (a placeholder). You always know how much to trust the data before you act on it. | A rendered, physically-accurate multipath-HA cabling diagram, built directly from what the ASUP actually reported — not a generic template. |
+
+| Before / After Comparison | Remediation Report |
+|---|---|
+| ![Before/After Comparison](docs/screenshots/07-step5-compare.png) | ![Remediation Report](docs/screenshots/08-step6-report.png) |
+| Model an ONTAP upgrade, a shelf addition, or a license fix, and see the compliance score and usable capacity change side by side — before committing to anything. | A structured, exportable report: compliance score, severity breakdown, and a prioritized remediation list — ready to hand to a change-management board. |
+
+---
+
+## 🎯 Use Cases
+
+- **Audit an existing cluster.** Upload a real AutoSupport bundle and get an instant read on ONTAP lifecycle status, cabling risk (single points of failure), spare disk compliance, license expirations, and firmware currency — without hand-parsing `sysconfig -a` output yourself.
+- **Plan a capacity expansion.** Model adding a shelf (or several) to a real, currently-deployed cluster and see the projected usable capacity, rack space, and power/thermal impact before you order hardware.
+- **Plan an ONTAP upgrade.** Pick a target ONTAP version and let the tool work out the safe upgrade path and flag anything on the current configuration that the target version won't support.
+- **Size a greenfield deployment.** Starting from scratch (no ASUP yet)? Pick a platform and node count, and the tool builds a best-practice-compliant baseline configuration — optimal drive sizing, correct spare counts, no SPOFs — as a starting point to model from.
+- **Justify a hardware refresh.** Run a real cluster's current state against a proposed target configuration (newer ONTAP, added shelves, license changes) and get a Before/After compliance score and capacity comparison you can put in front of a change-management board.
+- **Generate a remediation report.** Export a structured report — compliance score, critical/warning/compliant breakdown, and a prioritized action list — for a specific system, without writing it by hand.
+
+---
+
+## 🧭 How It Works — Step-by-Step Walkthrough
+
+The tool is a six-step wizard. You can jump straight to Step 6 for a quick audit, or walk every step to build a full remediation plan.
+
+### Step 1 — Import
+![Step 1: Import](docs/screenshots/00-step1-import.png)
+
+Drag and drop an AutoSupport bundle (`.zip`, `.tar`, `.tar.gz`/`.tgz`, or `.gz`), or drop individual config text files directly. No real bundle handy? Use one of the built-in demo profiles (e.g. "AFF A1K Cluster Profile") to explore the tool with realistic synthetic data instead — every screenshot on this page was captured that way, never from a real customer bundle.
+
+### Step 2 — Audit
+The parser extracts everything it can from the bundle and scores its own confidence per field (screenshot above). From there you get:
+
+- **Cabling topology** — a rendered diagram of the real physical connections, with single-path (SPOF) risks flagged in red.
+- **Storage & aggregate inventory** — disk shelves, disk types/sizes, and aggregate capacity/usage, pulled from whichever real format the ASUP actually used (this tool reads several different NetApp export formats, not just one).
+- **A full best-practice audit** — dozens of rules covering ONTAP lifecycle, cabling, sparing, licensing, firmware currency, and MetroCluster-specific checks where applicable, each with a rationale and a remediation command.
+
+### Step 3 — Upgrades
+Pick a target ONTAP version and toggle license/firmware/cabling fixes you want to model. The tool works out the safe upgrade path automatically and flags anything the target version won't support.
+
+### Step 4 — Capacity
+![Step 4: Capacity](docs/screenshots/06-step4-capacity.png)
+
+Model adding disk shelves or expansion cards. The tool shows the projected impact on rack space, power, thermal output, and usable capacity — and will auto-allocate the HBA cards a shelf addition actually needs, based on real slot-compatibility rules.
+
+### Step 5 — Compare
+![Step 5: Compare](docs/screenshots/07-step5-compare.png)
+
+See the current state and the modeled target side by side: ONTAP version, compliance score, and usable capacity, plus the cabling diagram for each. This is the "will this actually be better" check before you commit to a change.
+
+### Step 6 — Report
+![Step 6: Report](docs/screenshots/08-step6-report.png)
+
+A structured remediation report: overall compliance score, a critical/warning/compliant breakdown, and a prioritized list of findings with recommended fixes. Print it, export it to PDF, or save the underlying plan as a file to hand off or resume later.
+
+---
+
 ## 🆕 New in this Version (v2.75)
 
 - **Software licenses now read from licenses.xml (was showing every license "Inactive"):** reported live on a real ASUP bundle — every license (Cluster, NFS, CIFS, SnapMirror, all of them) showed "Inactive" in the Entitlement panel, even though the real cluster was genuinely licensed for all of them. Root cause: that bundle carried no plain-text "license show" CLI output at all — only a structured licenses.xml export — and the parser only ever looked for plain-text license lines. The parser now also reads licenses.xml when present, correctly showing Cluster/NFS/CIFS/SnapMirror as active and a demo FlexClone entitlement as expired (with its real 2018 expiry date) on the real system tested against.
