@@ -4892,7 +4892,13 @@ function updateUpgradeHopTimeline() {
   const curVer = currentState.version.ontap;
   const baseCur = resolveBaseVersionKey(curVer);
   const target = document.getElementById("target-ontap").value;
-  const hops = UI_UPGRADE_HOPS[baseCur] ? UI_UPGRADE_HOPS[baseCur][target] : [];
+  // UI_UPGRADE_HOPS (and the hop-considerations library) are keyed by base version only --
+  // resolve a patch-suffixed target selection (e.g. "9.15.1P2") down to its base ("9.15.1")
+  // before using it for any lookup. Without this, selecting a patch release as the target
+  // silently failed every lookup keyed on it (hops undefined, timeline and considerations both
+  // hidden), even though the upgrade itself is perfectly valid.
+  const baseTarget = resolveBaseVersionKey(target);
+  const hops = UI_UPGRADE_HOPS[baseCur] ? UI_UPGRADE_HOPS[baseCur][baseTarget] : [];
 
   const box = document.getElementById("upgrade-timeline-box");
   const timeline = document.getElementById("hop-timeline");
@@ -4911,7 +4917,7 @@ function updateUpgradeHopTimeline() {
     box.classList.add("hidden");
   }
 
-  const considerations = getUpgradeHopsConsiderations(baseCur, target, hops);
+  const considerations = getUpgradeHopsConsiderations(baseCur, baseTarget, hops);
   const list = document.getElementById("hop-considerations-list");
   const compBox = document.getElementById("hop-considerations-box");
 
