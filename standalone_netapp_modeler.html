@@ -7267,12 +7267,32 @@ function getPlatformProfile(modelStr) {
 }
 
 // Detailed multi-hop upgrade considerations and risks
-function getUpgradeHopsConsiderations(currentVersion, targetVersion, controllerModel) {
+// baseCur: the current version's resolved base key (e.g. resolveBaseVersionKey(currentState.version.ontap)).
+// target: the selected target base version.
+// hops: the real intermediate-hop array for this exact (baseCur, target) pair, i.e.
+// UI_UPGRADE_HOPS[baseCur][target] as already computed by the caller for the timeline display --
+// e.g. ["9.13.1", "9.15.1"] for a 9.12.1 -> 9.15.1 upgrade. Passing this in (rather than
+// re-deriving a path here) guarantees the considerations shown always match the exact hop
+// sequence the timeline above them displays. Note an empty hops array is ambiguous on its own
+// -- UI_UPGRADE_HOPS uses [] both for "already on target" (baseCur === target) and for "direct
+// one-step upgrade, no intermediate stop required" (baseCur !== target) -- so target is passed
+// separately rather than inferring "no upgrade" from hops.length === 0.
+function getUpgradeHopsConsiderations(baseCur, target, hops) {
   const considerations = [];
-  
-  if (compareVersions(currentVersion, targetVersion) >= 0) return []; // no upgrade
 
-  // Sequence of hops to evaluate
+  if (!baseCur || !target || baseCur === target) return []; // already on target version
+
+  // The exact sequence of versions this upgrade passes through, in order (target is always the
+  // final checkpoint, whether or not it's already the last element of hops).
+  const fullPath = [baseCur, ...(hops || [])];
+  if (fullPath[fullPath.length - 1] !== target) fullPath.push(target);
+
+  // Library of hop-pair considerations, keyed by exact (from, to). Only entries whose (from, to)
+  // matches a *consecutive pair in fullPath* are ever shown -- previously this filtered on
+  // "does hop.to fall between current and target", which pulled in unrelated entries whose
+  // `.from` was never actually reached on this specific upgrade (e.g. a 9.12.1 -> 9.15.1 upgrade
+  // -- whose real path is 9.12.1 -> 9.13.1 -> 9.15.1 and never touches 9.14.1 -- was also
+  // showing the unrelated "9.14.1 -> 9.15.1" considerations block).
   const hopSequence = [
     { from: "9.7", to: "9.8", title: "Hop 9.7 ➔ 9.8 Considerations", directUpgrade: true, risks: [
       "Root Volume Capacity Limit: ONTAP 9.8 expands controller diagnostic logging, requiring at least 32GB root volume size on both controllers. System will abort upgrade pre-checks if root size is insufficient.",
@@ -7460,21 +7480,36 @@ function getUpgradeHopsConsiderations(currentVersion, targetVersion, controllerM
     ]}
   ];
 
-  // Filter hops that apply to the current upgrade span
-  hopSequence.forEach(hop => {
-    if (compareVersions(currentVersion, hop.to) < 0 && compareVersions(targetVersion, hop.to) >= 0) {
-      // Only push hops that have full content (skip stub-only entries with no title)
-      if (hop.title) {
-        considerations.push({
-          title: hop.title || `Hop → ${hop.to}`,
-          directUpgrade: hop.directUpgrade !== false,
-          risks:   Array.isArray(hop.risks)   ? hop.risks   : [],
-          preReqs: Array.isArray(hop.preReqs) ? hop.preReqs : [],
-          commands: Array.isArray(hop.commands) ? hop.commands : []
-        });
-      }
+  // Walk fullPath's consecutive checkpoints in order. For each step, prefer an exact (from, to)
+  // match; if this exact single step has no dedicated entry (e.g. 9.13.1 -> 9.15.1, which isn't
+  // authored on its own), fall back to a "shortcut" entry that starts at an earlier checkpoint
+  // *actually on this path* and ends exactly at this step's destination (e.g. the "9.12.1 ->
+  // 9.15.1" multi-hop entry, when 9.12.1 is an earlier checkpoint). A shortcut entry is never
+  // used to cover a step whose `.from` isn't a real checkpoint on this specific upgrade -- that
+  // was the original bug (e.g. showing "9.14.1 -> 9.15.1" for an upgrade that never touches
+  // 9.14.1 at all).
+  const usedTitles = new Set();
+  for (let i = 0; i < fullPath.length - 1; i++) {
+    const stepFrom = fullPath[i];
+    const stepTo = fullPath[i + 1];
+    let match = hopSequence.find(h => h.from === stepFrom && h.to === stepTo);
+    if (!match) {
+      match = hopSequence.find(h => {
+        const fromIdx = fullPath.indexOf(h.from);
+        return h.to === stepTo && fromIdx !== -1 && fromIdx <= i;
+      });
     }
-  });
+    if (match && match.title && !usedTitles.has(match.title)) {
+      usedTitles.add(match.title);
+      considerations.push({
+        title: match.title,
+        directUpgrade: match.directUpgrade !== false,
+        risks:   Array.isArray(match.risks)   ? match.risks   : [],
+        preReqs: Array.isArray(match.preReqs) ? match.preReqs : [],
+        commands: Array.isArray(match.commands) ? match.commands : []
+      });
+    }
+  }
 
   return considerations;
 }
@@ -14536,7 +14571,7 @@ function updateUpgradeHopTimeline() {
     box.classList.add("hidden");
   }
 
-  const considerations = getUpgradeHopsConsiderations(currentState.version.ontap, target, currentState.version.model);
+  const considerations = getUpgradeHopsConsiderations(baseCur, target, hops);
   const list = document.getElementById("hop-considerations-list");
   const compBox = document.getElementById("hop-considerations-box");
 

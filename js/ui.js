@@ -4911,7 +4911,7 @@ function updateUpgradeHopTimeline() {
     box.classList.add("hidden");
   }
 
-  const considerations = getUpgradeHopsConsiderations(currentState.version.ontap, target, currentState.version.model);
+  const considerations = getUpgradeHopsConsiderations(baseCur, target, hops);
   const list = document.getElementById("hop-considerations-list");
   const compBox = document.getElementById("hop-considerations-box");
 
