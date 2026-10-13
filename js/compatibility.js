@@ -2065,7 +2065,7 @@ export function compareVersions(v1, v2) {
 // "limited_support". 9.7/9.8/9.9.1 remain "end_of_support" — their End Limited Support
 // dates (Oct 2024 / Dec 2025 / Jun 2026) have genuinely passed.
 export const ONTAP_LIFECYCLE = {
-  "9.7":    { status: "end_of_support",  releaseDate: "2019-10", endDate: "2022-10", latestPatch: "9.7P22",  notes: "End of Limited Support October 2024. No patches or security fixes available." },
+  "9.7":    { status: "end_of_support",  releaseDate: "2019-11", endDate: "2023-07", latestPatch: "9.7P22",  notes: "End of Limited Support July 2025. No patches or security fixes available." },
   "9.8":    { status: "end_of_support",  releaseDate: "2020-10", endDate: "2023-12", latestPatch: "9.8P20",  notes: "End of Limited Support December 2025. No patches or security fixes available." },
   "9.9.1":  { status: "end_of_support",  releaseDate: "2021-06", endDate: "2024-06", latestPatch: "9.9.1P22", notes: "End of Limited Support June 2026. No patches or security fixes available." },
   "9.10.1": { status: "limited_support", releaseDate: "2022-01", endDate: "2025-01", latestPatch: "9.10.1P22", notes: "Limited Support since Jan 2025, critical/security fixes only, through Jan 2027. Upgrade to 9.14.1+ recommended." },
@@ -2073,11 +2073,11 @@ export const ONTAP_LIFECYCLE = {
   "9.12.1": { status: "limited_support", releaseDate: "2023-02", endDate: "2026-02", latestPatch: "9.12.1P20", notes: "Limited Support since Feb 2026. Critical fixes only, through Feb 2028. Upgrade to 9.14.1+ recommended." },
   "9.13.1": { status: "limited_support", releaseDate: "2023-06", endDate: "2026-06", latestPatch: "9.13.1P21", notes: "Limited Support since Jun 2026. Critical fixes only, through Jun 2028. Upgrade to 9.15.1+ strongly recommended." },
   "9.14.1": { status: "active",          releaseDate: "2024-01", endDate: "2027-01", latestPatch: "9.14.1P18", notes: "Full Support through Jan 2027. Latest patch: P18. Widely deployed LTS release." },
-  "9.15.1": { status: "active",          releaseDate: "2024-05", endDate: "2027-07", latestPatch: "9.15.1P20", notes: "Full Support through July 2027. Latest patch: P20. Recommended for AFF A1K/A90/A70 and FAS70/90." },
+  "9.15.1": { status: "active",          releaseDate: "2024-07", endDate: "2027-07", latestPatch: "9.15.1P20", notes: "Full Support through July 2027. Latest patch: P20. Recommended for AFF A1K/A90/A70 and FAS70/90." },
   "9.16.1": { status: "recommended",     releaseDate: "2025-01", endDate: "2028-01", latestPatch: "9.16.1P15", notes: "Full Support through Jan 2028. Latest patch: P15. Required for AFF A20/A30/A50, AFF C30/C60/C80, ASA R2, FAS50." },
-  "9.17.1": { status: "recommended",     releaseDate: "2026-01", endDate: "2028-09", latestPatch: "9.17.1P11", notes: "Full Support through Sep 2028. Latest patch: P11." },
-  "9.18.1": { status: "recommended",     releaseDate: "2026-02", endDate: "2029-01", latestPatch: "9.18.1P7",  notes: "Full Support through Jan 2029. Latest patch: P7." },
-  "9.19.1": { status: "recommended",     releaseDate: "2026-05", endDate: "2029-05", latestPatch: "9.19.1P3",  notes: "Full Support through May 2029. Latest patch: P3. Latest GA release." }
+  "9.17.1": { status: "recommended",     releaseDate: "2025-09", endDate: "2028-09", latestPatch: "9.17.1P11", notes: "Full Support through Sep 2028. Latest patch: P11." },
+  "9.18.1": { status: "recommended",     releaseDate: "2025-11", endDate: "2028-11", latestPatch: "9.18.1P7",  notes: "Full Support through Nov 2028. Latest patch: P7." },
+  "9.19.1": { status: "recommended",     releaseDate: "2026-07", endDate: "2029-07", latestPatch: "9.19.1P3",  notes: "Full Support through July 2029. Latest patch: P3. Latest GA release." }
 };
 
 export const ONTAP_HOPS = {

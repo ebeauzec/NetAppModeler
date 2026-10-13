@@ -34,6 +34,8 @@ sys.path.insert(0, SCRIPT_DIR)
 
 import harvest_reference_data as harvester  # noqa: E402
 import apply_reference_data as checker  # noqa: E402
+import harvest_ontap_lifecycle as ontap_harvester  # noqa: E402
+import apply_ontap_lifecycle as ontap_checker  # noqa: E402
 
 PORT = 8765
 
@@ -98,7 +100,36 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(500, {"error": str(e)})
             return
 
-        self._send_json(404, {"error": "not found", "routes": ["/health", "/check-updates"]})
+        if path == "/check-ontap-updates":
+            try:
+                print("Harvesting ONTAP lifecycle data (NetApp release-support-reference.html, "
+                      "endoflife.date, platform EOA index)...")
+                raw = ontap_harvester.harvest()
+
+                with open(ontap_checker.COMPATIBILITY_PATH, "r", encoding="utf-8") as f:
+                    compat_src = f.read()
+                with open(ontap_checker.DATA_SOURCES_PATH, "r", encoding="utf-8") as f:
+                    data_sources_src = f.read()
+
+                findings = ontap_checker.compute_findings(raw, compat_src, data_sources_src)
+
+                self._send_json(200, {
+                    "checkedAt": __import__("datetime").datetime.now().isoformat(),
+                    "versionLinesChecked": len((raw.get("releaseSupportReference") or {}).get("data") or {}),
+                    "eoaPlatformsFound": len((raw.get("eoaPlatforms") or {}).get("data") or []),
+                    "findings": findings,
+                    "clean": len(findings) == 0,
+                    "notAutomated": raw.get("notAutomated", {}),
+                    "note": ("Nothing was auto-applied — this only reports what changed. "
+                             "Run tools/apply_ontap_lifecycle.py for the full report, then "
+                             "hand-edit js/compatibility.js / DATA_SOURCES.md and rebuild if "
+                             "anything needs fixing.")
+                })
+            except Exception as e:
+                self._send_json(500, {"error": str(e)})
+            return
+
+        self._send_json(404, {"error": "not found", "routes": ["/health", "/check-updates", "/check-ontap-updates"]})
 
     def log_message(self, fmt, *args):
         print(f"[update-server] {self.address_string()} - {fmt % args}")

@@ -3,7 +3,7 @@
 > **PURPOSE:** Every value in `compatibility.js` and version-related constants in `ui.js` and `bestPractices.js` must be traceable to an authoritative NetApp source. This document records those sources and must be updated whenever data is refreshed.
 >
 > **LAST VERIFIED:** October 13, 2026 (ONTAP lifecycle/platform support tables, firmware baselines below); August 12, 2026 (platform port/cabling data — unchanged since, except FAS500f, see Known Data Corrections)  
-> **CURRENT LATEST ONTAP:** 9.19.1 (May 2026) — still the latest GA as of this verification date  
+> **CURRENT LATEST ONTAP:** 9.19.1 (GA July 2026) — still the latest GA as of this verification date  
 > **NEXT EXPECTED RELEASE:** 9.20.1 (Q4 2026, not yet released)
 
 ---
@@ -15,7 +15,8 @@ Always check these sources when updating data in the tool:
 | Source | URL | What it covers |
 |--------|-----|----------------|
 | **NetApp Hardware Universe (HWU)** | https://hwu.netapp.com | Platform min/max ONTAP, shelf compat, slot configs, RAM limits |
-| **ONTAP Lifecycle (endoflife.date)** | https://endoflife.date/netapp-ontap | GA dates, Full/Limited Support end dates |
+| **ONTAP Release Support Reference (NetApp, PRIMARY for GA dates)** | https://docs.netapp.com/us-en/ontap/release-notes/release-support-reference.html | Official GA dates per release line + the exact support-tier-by-year table (confirmed 2026-10-13: End of Full Support = GA + 3y, End of Limited Support = GA + 5y). Public, no login. Found via the separately-maintained NetApp Reference Library's own citation — not a dependency of this project. Harvested by `tools/harvest_ontap_lifecycle.py`. |
+| **ONTAP Lifecycle (endoflife.date, secondary cross-check)** | https://endoflife.date/api/netapp-ontap.json | GA dates + a single `eol` date per line — used only to flag disagreement with the primary source above, never to override it (confirmed 2026-10-13 to be less accurate on 3 of 11 rows). |
 | **ONTAP Release Notes** | https://docs.netapp.com/us-en/ontap/release-notes.html | New platform support per release |
 | **NetApp Software Lifecycle Policy** | https://www.netapp.com/us/media/nb-3085.pdf | Lifecycle definitions |
 | **NetApp ONTAP Upgrade Advisor** | https://aiq.netapp.com/upgrade | Supported upgrade paths |
@@ -163,6 +164,34 @@ README.md's "Checking for Updates" section.
 
 ---
 
+## ONTAP Lifecycle & Platform Availability Harvest Tooling (added v2.76)
+
+Same pattern as the cabling harvester above, parallel tooling: `tools/harvest_ontap_lifecycle.py`
+fetches NetApp's own official [release-support-reference.html](https://docs.netapp.com/us-en/ontap/release-notes/release-support-reference.html)
+(GA dates + the exact support-tier-by-year table it publishes, from which End of Full Support =
+GA + 3 years and End of Limited Support = GA + 5 years is derived and confirmed against every
+already-correct row in this document), [endoflife.date's API](https://endoflife.date/api/netapp-ontap.json)
+as a secondary cross-check, and NetApp's [End-of-Availability index](https://docs.netapp.com/us-en/ontap-systems/endofavail/)
+(platform names only — no exact EOA/EOS dates; those require an authenticated support-site login).
+All three are confirmed public, no-login sources, reachable with the same plain-`urllib` +
+self-identifying-User-Agent + proxy-aware-opener technique as the cabling harvester — saved to
+`data/ontap_lifecycle_raw.json`. `tools/apply_ontap_lifecycle.py` then cross-checks the harvested
+GA/End-Full-Support dates against `js/compatibility.js`'s `ONTAP_LIFECYCLE`, and the EOA platform
+list against this document's Platform Registry below, reporting drift only — same "never silently
+rewrite a source file" philosophy as `apply_reference_data.py`. Wired into
+`tools/update_server.py`'s `/check-ontap-updates` route and the in-app "Check for Updates" button
+alongside the existing cabling check; see README.md's "Checking for Updates" section.
+
+**Deliberately not automated: ONTAP P-release/patch numbers** (e.g. the real latest patch on the
+9.17.1 line). NetApp's only public listing of those is `mysupport.netapp.com`'s downloads page,
+confirmed 2026-10-13 to be a client-side-rendered app that returns only a loading-spinner shell to
+a plain fetch — it requires an authenticated NetApp support login to see real data. This project
+stays 100% no-login by design (the same reason `hwu.netapp.com` was never scraped for cabling data
+either), so `ONTAP_LIFECYCLE`'s `latestPatch` field stays a manual update per the Update Procedure
+below.
+
+---
+
 ## ONTAP Version Registry (Last verified: October 13, 2026)
 
 Source: endoflife.date/netapp-ontap
@@ -176,7 +205,7 @@ this table (the documented single source of truth); see Known Data Corrections b
 | Version | GA Released | End Full Support | End Limited Support | Status (Oct 2026) |
 |---------|------------|-----------------|--------------------|--------------------|
 | 9.0–9.6 | 2016–2019 | — | — | OBSOLETE |
-| 9.7 | Oct 2019 | Oct 2022 | Oct 2024 | Self-Service Only |
+| 9.7 | Nov 2019 | Jul 31 2023 | Jul 31 2025 | Self-Service Only (CORRECTED 2026-10-13 via live endoflife.date re-check: GA was "Oct 2019"/eol "Oct 2022" — real GA Nov 1 2019, eol Jul 31 2023) |
 | 9.8 | Oct 2020 | Dec 31 2023 | Dec 31 2025 | Self-Service Only |
 | 9.9.1 | Jun 2021 | Jun 30 2024 | Jun 30 2026 | Self-Service Only (CORRECTED: was "Transitioning" — End Limited Support passed Jun 2026) |
 | 9.10.1 | Jan 2022 | Jan 31 2025 | Jan 31 2027 | LIMITED SUPPORT |
@@ -184,12 +213,22 @@ this table (the documented single source of truth); see Known Data Corrections b
 | 9.12.1 | Feb 2023 | Feb 28 2026 | Feb 28 2028 | LIMITED SUPPORT |
 | 9.13.1 | Jun 2023 | Jun 30 2026 | Jun 30 2028 | LIMITED SUPPORT |
 | 9.14.1 | Jan 2024 | Jan 31 2027 | Jan 31 2029 | FULL SUPPORT |
-| 9.15.1 | May 2024 | Jul 31 2027 | Jul 31 2029 | FULL SUPPORT |
-| 9.16.1 | Jan 2025 | Jan 31 2028 | Jan 31 2030 | FULL SUPPORT |
-| 9.17.1 | Jan 15 2026 | Sep 30 2028 | Sep 30 2030 | FULL SUPPORT |
-| 9.18.1 | Feb 4 2026 | Jan 31 2029 | Jan 31 2031 | FULL SUPPORT |
-| **9.19.1** | **May 2026** | **May 31 2029** | **May 31 2031** | **FULL SUPPORT — LATEST GA** |
+| 9.15.1 | Jul 2024 | Jul 31 2027 | Jul 31 2029 | FULL SUPPORT (CORRECTED 2026-10-13 via NetApp's own `release-support-reference.html`: GA was "May 2024" — real GA July 2024. End Full/Limited were already correct) |
+| 9.16.1 | Jan 2025 | Jan 31 2028 | Jan 31 2030 | FULL SUPPORT (REVERTED 2026-10-13: an earlier pass today changed End Full/Limited to "Feb 26 2028"/"Feb 26 2030" using endoflife.date's slightly-off `eol` field — NetApp's own `release-support-reference.html` confirms the exact support-tier formula is GA + 3y (End Full) / GA + 5y (End Limited); from the correct Jan 2025 GA that's Jan 2028/Jan 2030, the original values) |
+| 9.17.1 | Sep 2025 | Sep 30 2028 | Sep 30 2030 | FULL SUPPORT (CORRECTED 2026-10-13 via NetApp's own `release-support-reference.html`: GA was "Jan 15 2026" — real GA September 2025. End Full/Limited were already correct) |
+| 9.18.1 | Nov 2025 | Nov 30 2028 | Nov 30 2030 | FULL SUPPORT (CORRECTED 2026-10-13 via NetApp's own `release-support-reference.html`: GA was "Feb 4 2026" — real GA November 2025; End Full/Limited recomputed via the GA+3y/GA+5y formula, below) |
+| **9.19.1** | **Jul 2026** | **Jul 31 2029** | **Jul 31 2031** | **FULL SUPPORT — LATEST GA** (CORRECTED 2026-10-13: GA was "May 2026" — real GA July 2026, confirmed by both endoflife.date and NetApp's own `release-support-reference.html`) |
 | 9.20.1 | Q4 2026 (expected) | — | — | NOT RELEASED |
+
+**2026-10-13, second reconciliation pass (this table's own first pass earlier today used endoflife.date alone; this one adds NetApp's own first-party
+`docs.netapp.com/us-en/ontap/release-notes/release-support-reference.html`, confirmed public/no-login):** that page gives the authoritative GA date
+per version AND the exact support-tier structure — a published table of what's available in which year after GA (Technical support/Root-cause
+analysis/Software downloads run through Year 5; Service updates/patch releases and vulnerability alerts stop after Year 3). That resolves to a
+clean **End of Full Support = GA + 3 years, End of Limited Support = GA + 5 years** formula, confirmed exactly against every row in this table whose
+GA date was already correct (9.9.1 through 9.14.1, 9.19.1). Three rows (9.15.1, 9.17.1, 9.18.1) had a wrong GA date despite an already-correct
+End Full/Limited pair (suggesting the End dates were computed correctly at some point from a different, correct GA figure, and only the GA field
+itself later drifted) — now corrected using this more authoritative source. endoflife.date remains useful as a second independent public source
+and is still what `tools/harvest_ontap_lifecycle.py` cross-checks, but NetApp's own page wins any disagreement between the two.
 
 ---
 
@@ -331,13 +370,14 @@ Source: NetApp Hardware Universe (hwu.netapp.com)
 When a new ONTAP version is released or a platform changes support status:
 
 ### 1. Verify release data
-- [ ] Check https://endoflife.date/netapp-ontap
+- [ ] Run `python tools/harvest_ontap_lifecycle.py` then `python tools/apply_ontap_lifecycle.py` (or click "Check for Updates" in-app) — pulls NetApp's own release-support-reference.html (primary) + endoflife.date (cross-check) + the EOA platform index automatically and reports drift
 - [ ] Check https://docs.netapp.com/us-en/ontap/release-notes.html for new/dropped platforms
 - [ ] Check https://hwu.netapp.com for platform max ONTAP changes
+- [ ] Check NetApp's downloads page (requires support-site login — not automatable here) for the real latest P-release per branch
 - [ ] Update the tables in this document (DATA_SOURCES.md) first
 
 ### 2. Update js/compatibility.js
-- [ ] `ONTAP_LIFECYCLE` — add new version entry with exact dates from endoflife.date
+- [ ] `ONTAP_LIFECYCLE` — add new version entry; GA/End-Full/End-Limited dates from step 1's harvest (or GA + 3y/+5y by hand), `latestPatch` from the manual P-release check above
 - [ ] `ONTAP_HOPS` — add upgrade paths FROM and TO the new version
 - [ ] `maxOntap` for platforms dropping support (check HWU)
 - [ ] `minOntap` for newly introduced platforms

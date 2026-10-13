@@ -2,7 +2,23 @@ import { DEMO_DATA, demoASA_A400, demoAFF_C800 } from './demoData.js';
 import { parseASUP, formatGB, parseSizeToGB, getSectionCoverage, mergeClusterASUPs, inferMissingData, computeOverallConfidence } from './parser.js';
 
 import { runAudit, calculateComplianceScore, BP_LIFECYCLE, getPlatformMaxDrives } from './bestPractices.js';
-import { getPlatformProfile, getUpgradeHopsConsiderations, NETAPP_PLATFORMS, EXP_CARDS_CATALOG, compareVersions, getPlatformSlots, isHighEndPlatform, REMEDIATION_REFS } from './compatibility.js';
+import { getPlatformProfile, getUpgradeHopsConsiderations, NETAPP_PLATFORMS, EXP_CARDS_CATALOG, compareVersions, getPlatformSlots, isHighEndPlatform, REMEDIATION_REFS, ONTAP_LIFECYCLE } from './compatibility.js';
+
+// Every officially-supported ONTAP base version (9.7 through the latest GA) plus its real
+// latest patch/P-release, derived live from compatibility.js's ONTAP_LIFECYCLE rather than
+// a separately hand-typed list. This used to be its own hardcoded array with only a few
+// arbitrary early P-releases per branch (e.g. "9.17.1P1" when the real latest was P11) —
+// confirmed stale on every branch 9.14.1 and newer as of 2026-10-13. Deriving it here means
+// refreshing ONTAP_LIFECYCLE (by hand, or via tools/harvest_ontap_lifecycle.py) is the only
+// place this ever needs updating again.
+function buildTargetOptions() {
+  const out = [];
+  Object.entries(ONTAP_LIFECYCLE).forEach(([ver, entry]) => {
+    out.push(ver);
+    if (entry.latestPatch && entry.latestPatch !== ver) out.push(entry.latestPatch);
+  });
+  return out;
+}
 import { getShelfCabling } from './rackLayouts.js';
 
 // Escapes text pulled from parsed ASUP content (node/shelf/aggregate/license names,
@@ -46,6 +62,17 @@ function computeUsableCapacityGB(diskCount, diskGB, groupSize, isMetroCluster) {
 // headers it controls. If the helper isn't running, this fails fast and
 // tells the user how to start it — it never silently retries or falls back
 // to fetching anything itself.
+//
+// Two independent checks run (both local-helper-only, same guarantee): the
+// cabling/port catalog check (existing, tools/harvest_reference_data.py +
+// tools/apply_reference_data.py) and the ONTAP lifecycle check added
+// 2026-10-13 (tools/harvest_ontap_lifecycle.py + tools/apply_ontap_lifecycle.py
+// — GA/End-of-Support dates sourced from NetApp's own release-support-
+// reference.html, cross-checked against endoflife.date, plus which platforms
+// NetApp's EOA index now lists). ONTAP P-release/patch numbers are NOT part
+// of either check — NetApp's only public listing of those requires an
+// authenticated support-site login, which this app deliberately never uses;
+// see harvest_ontap_lifecycle.py's module docstring.
 const UPDATE_HELPER_URL = "http://127.0.0.1:8765";
 
 async function checkForUpdates() {
@@ -53,53 +80,110 @@ async function checkForUpdates() {
   const content = document.getElementById("update-results-content");
   if (!modal || !content) return;
 
-  content.innerHTML = `<div style="text-align:center; padding: 1rem 0;">Checking local update helper and re-fetching NetApp's reference pages (~15s)...</div>`;
+  content.innerHTML = `<div style="text-align:center; padding: 1rem 0;">Checking local update helper and re-fetching NetApp's reference pages (~20s)...</div>`;
   modal.style.display = "flex";
 
-  let resp;
+  // The helper re-fetches several docs.netapp.com pages sequentially per call
+  // (see tools/harvest_reference_data.py / tools/harvest_ontap_lifecycle.py) —
+  // that alone takes ~15-20s combined, so this needs real headroom, not a
+  // short "is it up" timeout.
+  const fetchOpts = (typeof AbortSignal !== "undefined" && AbortSignal.timeout) ? { signal: AbortSignal.timeout(60000) } : {};
+
+  let cablingResp, cablingErr, ontapResp, ontapErr;
   try {
-    // The helper re-fetches ~10 docs.netapp.com pages sequentially each call
-    // (see tools/harvest_reference_data.py) — that alone takes ~14s, so this
-    // needs real headroom, not a short "is it up" timeout.
-    const fetchOpts = (typeof AbortSignal !== "undefined" && AbortSignal.timeout) ? { signal: AbortSignal.timeout(45000) } : {};
-    resp = await fetch(`${UPDATE_HELPER_URL}/check-updates`, fetchOpts);
-  } catch (e) {
+    cablingResp = await fetch(`${UPDATE_HELPER_URL}/check-updates`, fetchOpts);
+  } catch (e) { cablingErr = e; }
+  try {
+    ontapResp = await fetch(`${UPDATE_HELPER_URL}/check-ontap-updates`, fetchOpts);
+  } catch (e) { ontapErr = e; }
+
+  if (cablingErr && ontapErr) {
+    // NOTE: a page — even this one, already open — cannot start a local process
+    // itself; that's a universal browser sandbox restriction with no exception on
+    // any browser, not something this app chooses not to do. launch.py/launch.bat
+    // is the closest thing to "started through the app" a browser permits: one
+    // double-click starts the helper AND opens the app together, so this button
+    // just works with no second manual step. Leading with that, not a manual
+    // terminal command, is deliberate — see the 2026-10-13 session note in
+    // DATA_SOURCES.md for why an OS protocol-handler wasn't built instead.
     content.innerHTML = `
       <p><strong style="color: var(--color-warning);">Local update helper isn't running.</strong></p>
-      <p>This app stays 100% offline by design — it never reaches the internet on its own. To check for newer platform/cabling reference data:</p>
+      <p>This app stays 100% offline by design — a browser page can't start a local program on its own (no exceptions, on any browser — not a choice this app makes). To check for newer reference data:</p>
       <ol style="padding-left: 1.2rem;">
-        <li>Close this window (and the browser tab, if you opened the HTML file directly).</li>
-        <li>Next time, start the app via <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">launch.bat</code> (or <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python launch.py</code>) instead of opening the HTML file — it starts this helper for you automatically.</li>
-        <li>Or, to keep using this open tab: open a terminal in the project folder, run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python tools/update_server.py</code>, then click "Check for Updates" again.</li>
+        <li><strong>Close this tab</strong>, then double-click <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">launch.bat</code> (or run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python launch.py</code>) instead of opening the HTML file directly. It starts this helper and opens the app together in one step — "Check for Updates" then just works, every time, with no further manual action.</li>
+        <li>To keep using this already-open tab instead: open a terminal in the project folder, run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python tools/update_server.py</code>, then click "Check for Updates" again.</li>
       </ol>
       <p style="font-size:0.78rem; margin-top:0.75rem;">Closing the helper's console window stops it and returns the app to fully offline. This button only ever talks to 127.0.0.1 — never the wider internet.</p>
     `;
     return;
   }
 
-  if (!resp.ok) {
+  let sections = "";
+
+  // --- Section 1: cabling/port catalog drift ---
+  if (cablingErr) {
+    sections += `<p style="color: var(--color-danger);">Cabling data check failed: helper connection error.</p>`;
+  } else if (!cablingResp.ok) {
     let errText = "";
-    try { const j = await resp.json(); errText = j.error || ""; } catch (e) { /* ignore parse failure */ }
-    content.innerHTML = `<p style="color: var(--color-danger);">Update helper returned an error${errText ? ": " + escapeHtml(errText) : "."}</p>`;
-    return;
+    try { const j = await cablingResp.json(); errText = j.error || ""; } catch (e) { /* ignore parse failure */ }
+    sections += `<p style="color: var(--color-danger);">Cabling data check: helper returned an error${errText ? ": " + escapeHtml(errText) : "."}</p>`;
+  } else {
+    const data = await cablingResp.json();
+    if (data.clean) {
+      sections += `
+        <p style="color: var(--color-success);">✅ Cabling/port catalog: no drift detected across ${data.platformsChecked} sourced platform(s).</p>
+      `;
+    } else {
+      const rows = (data.drift || []).map(d =>
+        `<li><strong>${escapeHtml(d.model)}</strong>: missing port(s) ${(d.missingPorts || []).map(p => escapeHtml(p)).join(", ")}</li>`
+      ).join("");
+      sections += `
+        <p style="color: var(--color-warning);">⚠️ Cabling/port catalog: drift detected on ${(data.drift || []).length} platform(s):</p>
+        <ul style="padding-left: 1.2rem;">${rows}</ul>
+      `;
+    }
   }
 
-  const data = await resp.json();
-  if (data.clean) {
-    content.innerHTML = `
-      <p style="color: var(--color-success);">✅ No drift detected across ${data.platformsChecked} sourced platform(s).</p>
-      <p style="font-size:0.78rem;">Checked against NetApp's official cabling guides (docs.netapp.com). Nothing was changed automatically.</p>
-    `;
+  sections += `<hr style="border-color: rgba(255,255,255,0.08); margin: 1rem 0;">`;
+
+  // --- Section 2: ONTAP lifecycle (GA/EOS dates) + platform EOA status ---
+  if (ontapErr) {
+    sections += `<p style="color: var(--color-danger);">ONTAP lifecycle check failed: helper connection error.</p>`;
+  } else if (!ontapResp.ok) {
+    let errText = "";
+    try { const j = await ontapResp.json(); errText = j.error || ""; } catch (e) { /* ignore parse failure */ }
+    sections += `<p style="color: var(--color-danger);">ONTAP lifecycle check: helper returned an error${errText ? ": " + escapeHtml(errText) : "."}</p>`;
   } else {
-    const rows = (data.drift || []).map(d =>
-      `<li><strong>${escapeHtml(d.model)}</strong>: missing port(s) ${(d.missingPorts || []).map(p => escapeHtml(p)).join(", ")}</li>`
-    ).join("");
-    content.innerHTML = `
-      <p style="color: var(--color-warning);">⚠️ Drift detected on ${(data.drift || []).length} platform(s):</p>
-      <ul style="padding-left: 1.2rem;">${rows}</ul>
-      <p style="font-size:0.78rem; margin-top:0.75rem;">${escapeHtml(data.note || "")}</p>
-    `;
+    const data = await ontapResp.json();
+    if (data.clean) {
+      sections += `
+        <p style="color: var(--color-success);">✅ ONTAP lifecycle: no drift detected across ${data.versionLinesChecked} version line(s), ${data.eoaPlatformsFound} EOA platform(s) checked.</p>
+      `;
+    } else {
+      const drift = (data.findings || []).filter(f => f.type === "drift" || f.type === "new_release");
+      const eoaNotNoted = (data.findings || []).filter(f => f.type === "eoa_not_noted");
+      sections += `<p style="color: var(--color-warning);">⚠️ ONTAP lifecycle: ${(data.findings || []).length} finding(s).</p>`;
+      if (drift.length) {
+        sections += `
+          <p style="font-weight:600; margin-top:0.5rem;">Version date drift / new releases (${drift.length}):</p>
+          <ul style="padding-left: 1.2rem;">${drift.map(f => `<li>${escapeHtml(f.message)}</li>`).join("")}</ul>
+        `;
+      }
+      if (eoaNotNoted.length) {
+        sections += `
+          <p style="font-weight:600; margin-top:0.5rem;">Platforms EOA on NetApp's page but not noted in DATA_SOURCES.md (${eoaNotNoted.length}) — informational, NetApp's index page carries no exact dates to add automatically:</p>
+          <ul style="padding-left: 1.2rem; max-height: 140px; overflow-y: auto;">${eoaNotNoted.map(f => `<li>${escapeHtml(f.message)}</li>`).join("")}</ul>
+        `;
+      }
+    }
+    if (data.notAutomated && data.notAutomated.ontapPatchReleases) {
+      sections += `<p style="font-size:0.78rem; margin-top:0.75rem; opacity:0.8;">Not checked here: ${escapeHtml(data.notAutomated.ontapPatchReleases)}</p>`;
+    }
   }
+
+  sections += `<p style="font-size:0.78rem; margin-top:0.75rem;">Nothing was changed automatically — this only reports what's changed upstream. Review findings against the cited sources, then hand-edit js/compatibility.js / DATA_SOURCES.md and rebuild if anything needs fixing.</p>`;
+
+  content.innerHTML = sections;
 }
 
 // --- Application State ---
@@ -414,7 +498,7 @@ function populateManualPlatformDropdown() {
     const selectedModel = select.value;
     const profile = getPlatformProfile(selectedModel);
     
-    const targetOptions = ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.14.1P1','9.14.1P2','9.14.1P3','9.15.1','9.15.1P1','9.15.1P2','9.16.1','9.16.1P1','9.16.1P2','9.17.1','9.17.1P1','9.18.1','9.18.1P1','9.19.1'];
+    const targetOptions = buildTargetOptions();
     
     targetOptions.forEach(optVal => {
       if (compareVersions(optVal, profile.maxOntap) <= 0) {
@@ -4792,7 +4876,7 @@ function initStep3Inputs() {
   const curVer = currentState.version.ontap;
   const profile = getPlatformProfile(currentState.version.model);
   
-  const targetOptions = ['9.7','9.8','9.9.1','9.10.1','9.11.1','9.12.1','9.13.1','9.14.1','9.14.1P1','9.14.1P2','9.14.1P3','9.15.1','9.15.1P1','9.15.1P2','9.16.1','9.16.1P1','9.16.1P2','9.17.1','9.17.1P1','9.18.1','9.18.1P1','9.19.1'];
+  const targetOptions = buildTargetOptions();
   
   targetOptions.forEach(opt => {
     const isDowngrade = compareVersions(opt, curVer) < 0 && !curVer.startsWith(opt);
