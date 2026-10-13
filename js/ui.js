@@ -2,7 +2,8 @@ import { DEMO_DATA, demoASA_A400, demoAFF_C800 } from './demoData.js';
 import { parseASUP, formatGB, parseSizeToGB, getSectionCoverage, mergeClusterASUPs, inferMissingData, computeOverallConfidence } from './parser.js';
 
 import { runAudit, calculateComplianceScore, BP_LIFECYCLE, getPlatformMaxDrives } from './bestPractices.js';
-import { getPlatformProfile, getUpgradeHopsConsiderations, NETAPP_PLATFORMS, EXP_CARDS_CATALOG, compareVersions, getPlatformSlots, isHighEndPlatform } from './compatibility.js';
+import { getPlatformProfile, getUpgradeHopsConsiderations, NETAPP_PLATFORMS, EXP_CARDS_CATALOG, compareVersions, getPlatformSlots, isHighEndPlatform, REMEDIATION_REFS } from './compatibility.js';
+import { getShelfCabling } from './rackLayouts.js';
 
 // Escapes text pulled from parsed ASUP content (node/shelf/aggregate/license names,
 // serials, firmware strings, etc.) before it's interpolated into an innerHTML template.

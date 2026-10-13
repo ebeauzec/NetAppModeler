@@ -88,7 +88,7 @@ window.addEventListener('DOMContentLoaded', function() {
     // hardcoded threshold (confirmed live: the rule compared switch firmware against a
     // hardcoded "1.3.0.1" for BES-53248 that had drifted out of sync with
     // compatibility.js's own FIRMWARE_VERSIONS.switches catalog, whose real latest is
-    // 3.10.0.3 — a switch running anywhere from 1.3.0.1 to 3.10.0.2 was silently
+    // 3.12.0.1 — a switch running anywhere from 1.3.0.1 to 3.12.0.0 was silently
     // reporting "compliant") ---
     var switchStateOutdated = {
       version: { model: 'AFF A1K', ontap: '9.19.1' },
@@ -99,14 +99,14 @@ window.addEventListener('DOMContentLoaded', function() {
     };
     var switchReportsOutdated = runAudit(switchStateOutdated);
     var swReportOutdated = switchReportsOutdated.find(function(r) { return r.id === 'BP_SWITCH_RCF'; });
-    check('runAudit: BP_SWITCH_RCF flags BES-53248 on 1.3.0.1 as outdated (real latest is 3.10.0.3, not the old 1.3.0.1 threshold)',
+    check('runAudit: BP_SWITCH_RCF flags BES-53248 on 1.3.0.1 as outdated (real latest is 3.12.0.1, not the old 1.3.0.1 threshold)',
       !!swReportOutdated && swReportOutdated.status === 'warning', swReportOutdated);
 
     var switchStateCurrent = JSON.parse(JSON.stringify(switchStateOutdated));
-    switchStateCurrent.switches[0].version = '3.10.0.3';
+    switchStateCurrent.switches[0].version = '3.12.0.1';
     var switchReportsCurrent = runAudit(switchStateCurrent);
     var swReportCurrent = switchReportsCurrent.find(function(r) { return r.id === 'BP_SWITCH_RCF'; });
-    check('runAudit: BP_SWITCH_RCF reports compliant for BES-53248 on the real current version 3.10.0.3',
+    check('runAudit: BP_SWITCH_RCF reports compliant for BES-53248 on the real current version 3.12.0.1',
       !!swReportCurrent && swReportCurrent.status === 'compliant', swReportCurrent);
 
     // --- bestPractices.js: duplicate-report fix (Task 2) ---
@@ -123,6 +123,22 @@ window.addEventListener('DOMContentLoaded', function() {
     check('runAudit: BP_DISK_FIRMWARE reported at most once (no dupes)', diskFirmwareReports.length <= 1, diskFirmwareReports.length);
     check('runAudit: BP_ACP_STATUS reported at most once (no dupes)', acpReports.length <= 1, acpReports.length);
     check('runAudit: BP_SP_FIRMWARE not reported when spFirmware is empty', spFirmwareReports.length === 0, spFirmwareReports.length);
+
+    // --- bestPractices.js: BP_SP_FIRMWARE catalog lookup picks the longest matching key,
+    // not the first one in object order (confirmed bug: "AFF A90" is a prefix of "AFF A900",
+    // and with "AFF A90" listed first in FIRMWARE_VERSIONS.sp, every AFF A900 system was
+    // silently checked against AFF A90's firmware baseline instead of its own) ---
+    var a900SpState = {
+      version: { model: 'AFF A900', ontap: '9.19.1' },
+      nodes: [{ name: 'node-a', memoryGB: 256, cpus: 32, ports: [] }, { name: 'node-b', memoryGB: 256, cpus: 32, ports: [] }],
+      shelves: [], aggregates: [], spares: [], licenses: [], expansionCards: [], switches: [],
+      metrocluster: 'none', spFirmware: [{ node: 'node-a', version: '16.7' }, { node: 'node-b', version: '16.7' }],
+      diskFirmware: [], acpStatus: {}
+    };
+    var a900SpReports = runAudit(a900SpState);
+    var a900SpReport = a900SpReports.find(function(r) { return r.id === 'BP_SP_FIRMWARE'; });
+    check('runAudit: BP_SP_FIRMWARE matches "AFF A900" to its own catalog entry (16.7), not "AFF A90"\'s (18.6)',
+      !!a900SpReport && a900SpReport.status === 'compliant', a900SpReport);
 
     // --- bestPractices.js: BP_METROCLUSTER real-node-name matching (Task 3) ---
     var mccState = {
@@ -262,6 +278,137 @@ window.addEventListener('DOMContentLoaded', function() {
       !!aggrCapResult && aggrCapResult.usableGB === 120740 && aggrCapResult.usedGB === 71685 && aggrCapResult.freeGB === 49055,
       aggrCapResult);
 
+    // --- parser.js: modern tabular "storage aggregate show" format is recognized —
+    // confirmed real gap 2026-10-13: the only aggregate-inventory pass in this file
+    // split on the literal "Aggregate " text from the OLDER "aggr status"/"aggr status -r"
+    // style dump; cDOT's current default "storage aggregate show" listing (no such
+    // per-row marker) matched nothing at all, silently replacing every real aggregate
+    // with the fully fabricated aggr_data_a/aggr_data_b placeholders. Covers both a
+    // short name that fits on one line and a long name ONTAP wraps onto its own line
+    // with size/available/etc. on the following indented line. ---
+    var tabularAggrAsup = [
+      'cluster1::> storage aggregate show',
+      'Aggregate     Size Available Used% State   #Vols  Nodes            RAID Status',
+      '--------- --------- --------- ----- ------- ------ ---------------- ------------',
+      'aggr0_n1     349.3GB   17.21GB   95% online       3 n1               raid_dp, normal',
+      'aggr_data_longname_01',
+      '              10.00TB    4.00TB   60% online       5 n1               raid_dp, normal',
+      '',
+      '2 entries were displayed.'
+    ].join('\n');
+    var tabularAggrResult = parseASUP(tabularAggrAsup);
+    var shortNameAggr = tabularAggrResult.aggregates.find(function(a) { return a.name === 'aggr0_n1'; });
+    var wrappedNameAggr = tabularAggrResult.aggregates.find(function(a) { return a.name === 'aggr_data_longname_01'; });
+    check('parseASUP: "storage aggregate show" tabular format — short single-line name parsed with real capacity, not the fabricated aggr_data_a/b placeholder',
+      !!shortNameAggr && shortNameAggr.sizeGB === 349 && shortNameAggr.freeGB === 17,
+      shortNameAggr);
+    check('parseASUP: "storage aggregate show" tabular format — long wrapped-onto-next-line name parsed with real capacity',
+      !!wrappedNameAggr && wrappedNameAggr.sizeGB === 10000 && wrappedNameAggr.freeGB === 4000 && wrappedNameAggr.node === 'n1',
+      wrappedNameAggr);
+
+    // --- parser.js: HA status columns were read in the wrong position — confirmed real
+    // bug 2026-10-13: the regex required "true"/"false" immediately after the node name,
+    // but real "storage failover show" output has the PARTNER node name there instead
+    // ("Node  Partner  Possible  State Description"), so the single default command for
+    // this field essentially never matched real output, leaving data.haStatus empty and
+    // BP_HA_STATUS silently never firing. ---
+    var haStatusAsup = [
+      'cluster1::> storage failover show',
+      '                              Takeover',
+      'Node           Partner        Possible State Description',
+      '-------------- -------------- -------- -------------------------------------',
+      'node1          node2          true     Connected to node2',
+      'node2          node1          false    Waiting for giveback of aggregates',
+    ].join('\n');
+    var haStatusResult = parseASUP(haStatusAsup);
+    var haNode1 = haStatusResult.haStatus.find(function(h) { return h.node === 'node1'; });
+    var haNode2 = haStatusResult.haStatus.find(function(h) { return h.node === 'node2'; });
+    check('parseASUP: HA status parses real "storage failover show" output (node1: possible, connected)',
+      !!haNode1 && haNode1.enabled === true && haNode1.partner === 'node2' && haNode1.state === 'Connected to node2',
+      haNode1);
+    check('parseASUP: HA status parses real "storage failover show" output (node2: not possible, waiting)',
+      !!haNode2 && haNode2.enabled === false && /waiting/i.test(haNode2.state),
+      haNode2);
+
+    // --- parser.js: modern tabular "storage disk show -container-type spare" format is
+    // recognized — confirmed real gap 2026-10-13: the only spare-disk pass in this file
+    // required the older "Spare Disks (node): NETAPP model (size, type) - N spares"
+    // summary line; cDOT's current default per-disk spare listing (no such summary line
+    // anywhere) matched nothing, silently substituting the fully fabricated 1-spare-per-
+    // node default and feeding Rule 4 (Spare Disk Availability) fake data. Two spares on
+    // node1, one on node2, grouped by (owner, type, size) as real per-disk rows. ---
+    var tabularSparesAsup = [
+      'cluster1::> storage disk show -container-type spare',
+      '                     Usable           Disk    Container   Container',
+      'Disk                   Size Shelf Bay Type    Type        Name      Owner',
+      '---------------- ---------- ----- --- ------- ----------- --------- --------',
+      '1.0.0                1.75TB     0   0 SSD     spare       -         node1',
+      '1.0.1                1.75TB     0   1 SSD     spare       -         node1',
+      '1.0.2                1.75TB     0   2 SSD     spare       -         node2',
+      '',
+      '3 entries were displayed.'
+    ].join('\n');
+    var tabularSparesResult = parseASUP(tabularSparesAsup);
+    var node1Spares = tabularSparesResult.spares.find(function(s) { return s.node === 'node1'; });
+    var node2Spares = tabularSparesResult.spares.find(function(s) { return s.node === 'node2'; });
+    check('parseASUP: "storage disk show -container-type spare" tabular format — real per-node spare counts, not the fabricated 1-per-node default',
+      !!node1Spares && node1Spares.count === 2 && !!node2Spares && node2Spares.count === 1,
+      tabularSparesResult.spares);
+
+    // --- parser.js: LIFs parse real default "network interface show" output — confirmed
+    // real gap 2026-10-13: the only LIF pass required admin/oper as two separate
+    // space-delimited "up"/"down" tokens and the vserver name repeated on every row, but
+    // real default output combines them into one "up/up"-style field and groups LIFs
+    // under a single Vserver header line instead. Covers a home LIF, an off-home+down
+    // LIF (home node name isn't knowable from this command, only the Is-Home boolean),
+    // and vserver grouping across two vservers. ---
+    var lifAsup = [
+      'cluster1::> network interface show',
+      '            Logical    Status     Network            Current    Current Is',
+      'Vserver     Interface  Admin/Oper Address/Mask        Node       Port    Home',
+      '----------- ---------- ---------- ------------------ ---------- ------- ----',
+      'vs1',
+      '            data1      up/up      10.0.0.5/24        node1      e0c     true',
+      '            data2      up/down    10.0.0.6/24        node2      e0c     false',
+      'vs2',
+      '            mgmt       up/up      10.0.0.1/24        node1      e0M     true',
+      '3 entries were displayed.'
+    ].join('\n');
+    var lifResult = parseASUP(lifAsup);
+    var homeLif = lifResult.lifs.find(function(l) { return l.lif === 'data1'; });
+    var offHomeLif = lifResult.lifs.find(function(l) { return l.lif === 'data2'; });
+    var vs2Lif = lifResult.lifs.find(function(l) { return l.lif === 'mgmt'; });
+    check('parseASUP: LIFs — real "network interface show" combined admin/oper "up/up" field parses as a home, up/up LIF',
+      !!homeLif && homeLif.statusAdmin === 'up' && homeLif.statusOper === 'up' && homeLif.isHome === true,
+      homeLif);
+    check('parseASUP: LIFs — off-home, admin-up/oper-down LIF detected (feeds BP_LIF_DOWN / off-home revert warnings)',
+      !!offHomeLif && offHomeLif.isHome === false && offHomeLif.statusOper === 'down',
+      offHomeLif);
+    check('parseASUP: LIFs — vserver grouping correctly attributes LIFs under their own vserver header line, not the previous one',
+      !!vs2Lif && vs2Lif.vserver === 'vs2' && !!homeLif && homeLif.vserver === 'vs1',
+      { vs2Lif: vs2Lif, homeLif: homeLif });
+
+    // --- parser.js: Broken Disks and Health Alerts no longer require the literal CLI
+    // command-echo text to be present first — confirmed real gap 2026-10-13: a per-file
+    // multi-bundle ASUP capture (output only, command line never echoed — the same
+    // reason STORAGE-SHELF.txt-style per-file sourcing exists elsewhere in this file)
+    // would silently find zero broken disks / health alerts regardless of how many
+    // actually existed, since the old code required "storage disk show ... -broken" /
+    // "health alert show" text to be found before even trying the row pattern. ---
+    var noEchoAsup = [
+      'random unrelated preface text, no command ever echoed',
+      'node1:1.0.5  SAS      15000   broken  disk failure reported',
+      'node1    42   critical   Fan module failed in shelf 3',
+      'more unrelated trailing text'
+    ].join('\n');
+    var noEchoResult = parseASUP(noEchoAsup);
+    check('parseASUP: broken disks detected without a "storage disk show ... -broken" command-echo line present',
+      noEchoResult.brokenDisks.length === 1 && noEchoResult.brokenDisks[0].disk === 'node1:1.0.5' && noEchoResult.brokenDisks[0].reason === 'broken',
+      noEchoResult.brokenDisks);
+    check('parseASUP: health alerts detected without a "health alert show" command-echo line present',
+      noEchoResult.healthAlerts.length === 1 && noEchoResult.healthAlerts[0].severity === 'critical' && noEchoResult.healthAlerts[0].node === 'node1',
+      noEchoResult.healthAlerts);
+
     // --- parser.js: model detection prefers the system-board field over a sub-component's
     // (confirmed against a real customer ASUP: a Flash Cache module's own "Model name:"
     // line was matched before the real system board's, resolving to the wrong platform) ---
@@ -275,6 +422,30 @@ window.addEventListener('DOMContentLoaded', function() {
     var subComponentParsed = parseASUP(subComponentFirstAsup);
     check('parseASUP: model detection prefers system-board "Model Name" (near BIOS version) over an earlier sub-component match',
       subComponentParsed.version.model === 'FAS8040', subComponentParsed.version.model);
+
+    // --- parser.js: keyword-fallback model inference (no "Model Name:"/"System Model:"
+    // field present) must not let a shorter model keyword shadow a longer one it's a
+    // prefix of — confirmed real bug: "a90" was checked before "a900" existed as its own
+    // branch, so any bundle whose only model mention was plain "AFF A900" text (no
+    // structured field) was silently misclassified as AFF A90, pointing every downstream
+    // port/slot/firmware lookup at the wrong platform. Same bug confirmed for AFF
+    // A700/A300/A200, ASA A900/C800 (all now fixed by reordering + adding the missing
+    // longer-keyword branches) ---
+    var shadowCases = [
+      ['random text mentioning AFF A900 once, no structured model field', 'AFF A900'],
+      ['random text mentioning ASA A900 once, no structured model field', 'ASA A900'],
+      ['random text mentioning AFF A700 once, no structured model field', 'AFF A700'],
+      ['random text mentioning AFF A300 once, no structured model field', 'AFF A300'],
+      ['random text mentioning AFF A200 once, no structured model field', 'AFF A200'],
+      ['random text mentioning AFF C800 once, no structured model field', 'AFF C800'],
+      ['random text mentioning ASA C800 once, no structured model field', 'ASA C800'],
+      ['random text mentioning ASA A800 once, no structured model field', 'ASA A800'],
+    ];
+    shadowCases.forEach(function(c) {
+      var parsed = parseASUP(c[0]);
+      check('parseASUP: keyword-fallback model inference does not let a shorter keyword shadow "' + c[1] + '"',
+        parsed.version.model === c[1], parsed.version.model);
+    });
 
     // --- parser.js: Pass 4 keyword-scan shelf ids must be clean small integers, not
     // "<model><index>" string concatenations (confirmed against a real customer ASUP: Set#forEach
@@ -572,7 +743,100 @@ window.addEventListener('DOMContentLoaded', function() {
 """
 
 
+def _check_consumer_imports(consumer_fname, sibling_fnames):
+    """Static guard against the bug class found 2026-10-13: a js/*.js file calling a
+    symbol exported by a sibling js/*.js file without importing it. This only "works"
+    in the standalone bundle, where build_standalone.py concatenates every js/*.js
+    file into one shared scope — it strips the `import`/`export` keywords themselves
+    but does NOT reorder or remove the symbols those keywords named, so a function
+    exported by one file is simply a bare top-level declaration in the bundle,
+    reachable from any other file's code by plain name regardless of whether that
+    file ever imported it. That masks a real defect: the consumer file is not a
+    self-contained ES module when served directly (the documented "Development Mode"
+    in README.md) — three real instances of this were found and fixed 2026-10-13:
+    js/ui.js calling getShelfCabling() (js/rackLayouts.js) and indexing
+    REMEDIATION_REFS (js/compatibility.js) with no import at all (hard crash /
+    silent empty-string fallback), and js/bestPractices.js referencing
+    FIRMWARE_VERSIONS (js/compatibility.js) behind a `typeof ... !== 'undefined'`
+    guard that silently went to the empty-catalog branch with no import (no crash,
+    but three firmware-currency audit rules could never fire in dev mode).
+
+    Returns (ok, missing_list) where missing_list is [(symbol, source_filename), ...].
+    """
+    js_dir = os.path.join(BASE_DIR, "js")
+    export_re = re.compile(r'^export\s+(?:const|function|class)\s+(\w+)', re.MULTILINE)
+
+    exported_by = {}  # symbol -> source filename
+    for fname in sibling_fnames:
+        path = os.path.join(js_dir, fname)
+        if not os.path.exists(path):
+            continue
+        with open(path, "r", encoding="utf-8") as f:
+            src = f.read()
+        for m in export_re.finditer(src):
+            exported_by[m.group(1)] = fname
+
+    consumer_path = os.path.join(js_dir, consumer_fname)
+    with open(consumer_path, "r", encoding="utf-8") as f:
+        consumer_src = f.read()
+
+    import_lines = [l for l in consumer_src.splitlines() if re.match(r'^\s*import\s*\{', l)]
+    imported_symbols = set()
+    for line in import_lines:
+        m = re.match(r'^\s*import\s*\{([^}]*)\}\s*from', line)
+        if m:
+            imported_symbols.update(s.strip() for s in m.group(1).split(','))
+
+    # Body with the import lines themselves removed, so a symbol's own import
+    # statement doesn't count as a "usage" of it.
+    body = "\n".join(l for l in consumer_src.splitlines() if not re.match(r'^\s*import\s*\{', l))
+
+    # Strip comments so a symbol name only mentioned in prose (e.g. a code comment
+    # referencing "compatibility.js's FIRMWARE_VERSIONS.switches") isn't mistaken for
+    # a real usage. Approximate but sufficient for this lint: block comments first,
+    # then line comments (skipping "//" that's part of a URL, e.g. "https://...").
+    no_block_comments = re.sub(r'/\*.*?\*/', ' ', body, flags=re.DOTALL)
+    no_comments = re.sub(r'(?<!:)//[^\n]*', '', no_block_comments)
+
+    locally_defined_re = re.compile(r'\b(?:function|const|let|var|class)\s+(\w+)')
+    locally_defined = set(locally_defined_re.findall(no_comments))
+
+    missing = []
+    for symbol, fname in exported_by.items():
+        if symbol in imported_symbols or symbol in locally_defined:
+            continue
+        # Require actual code usage (call, property/index access, or a bare `typeof
+        # SYMBOL` guard — the FIRMWARE_VERSIONS bug used exactly that pattern to dodge
+        # a ReferenceError while still silently depending on the missing import).
+        if re.search(r'\b' + re.escape(symbol) + r'\s*[\(\.\[]', no_comments) or \
+           re.search(r'\btypeof\s+' + re.escape(symbol) + r'\b', no_comments):
+            missing.append((symbol, fname))
+
+    return len(missing) == 0, missing
+
+
+def check_module_imports():
+    checks = [
+        ("ui.js", ["rackLayouts.js", "compatibility.js", "bestPractices.js", "parser.js", "demoData.js"]),
+        ("bestPractices.js", ["compatibility.js"]),
+    ]
+    all_ok = True
+    for consumer, siblings in checks:
+        ok, missing = _check_consumer_imports(consumer, siblings)
+        all_ok = all_ok and ok
+        sibling_list = ",".join(s.replace(".js", "") for s in siblings)
+        print(f"[{'PASS' if ok else 'FAIL'}] static check: every js/{{{sibling_list}}}.js export used in {consumer} is actually imported there")
+        if not ok:
+            details = ", ".join(f"{s} (from {f})" for s, f in missing)
+            print(f"        details: referenced but not imported: {details}")
+    return all_ok
+
+
 def main():
+    if not check_module_imports():
+        print("\nStatic import check failed — fix before running the DOM test suite.")
+        return 1
+
     print("Rebuilding standalone bundle...")
     build = subprocess.run([sys.executable, os.path.join(BASE_DIR, "build_standalone.py")],
                             cwd=BASE_DIR, capture_output=True, text=True)

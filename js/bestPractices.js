@@ -3,7 +3,15 @@
  * Audits a parsed system state and returns compliance results.
  */
 
-import { getPlatformProfile, compareVersions, EXP_CARDS_CATALOG, PLATFORM_SLOT_DETAILS, ONTAP_LIFECYCLE, isHighEndPlatform } from './compatibility.js';
+import { getPlatformProfile, compareVersions, EXP_CARDS_CATALOG, PLATFORM_SLOT_DETAILS, ONTAP_LIFECYCLE, isHighEndPlatform, FIRMWARE_VERSIONS } from './compatibility.js';
+// NOTE (2026-10-13): FIRMWARE_VERSIONS was used below (BP_SWITCH_RCF, BP_SP_FIRMWARE,
+// BP_DISK_FIRMWARE) behind `typeof FIRMWARE_VERSIONS !== 'undefined'` guards without ever
+// being imported. `typeof` on an undeclared identifier doesn't throw, so this didn't crash —
+// it silently fell back to an empty {} catalog every time in modular/dev-server mode (the
+// documented README "Development Mode"), meaning all three firmware-currency rules could
+// never flag anything as outdated there, only in the bundled build where concatenation
+// happens to expose it as a shared top-level name. Now imported properly; the `typeof`
+// guards are left in place as harmless defensive checks.
 
 // Derived from compatibility.js's ONTAP_LIFECYCLE (the single source of truth for
 // ONTAP release lifecycle dates) rather than a separately hand-typed table. This used
@@ -1146,8 +1154,16 @@ export function runAudit(systemState) {
   // --- Rule: BP_SP_FIRMWARE: Service Processor / BMC Firmware Currency ---
   if (systemState.spFirmware && systemState.spFirmware.length > 0) {
     const model = (systemState.version && systemState.version.model) || '';
-    const spSpec = Object.entries(typeof FIRMWARE_VERSIONS !== 'undefined' ? (FIRMWARE_VERSIONS.sp || {}) : {})
-      .find(([k]) => model.toUpperCase().startsWith(k.toUpperCase()));
+    // Longest-matching key wins, not first-in-insertion-order: catalog keys can be prefixes
+    // of each other (e.g. "AFF A90" is a prefix of "AFF A900"), so a plain .find() would let
+    // a shorter, unrelated key silently steal the match for a more specific platform depending
+    // on object key order. This previously caused AFF A900/A300 and ASA A900 to be checked
+    // against AFF A90/A30's firmware baseline instead of their own.
+    const spMatches = Object.entries(typeof FIRMWARE_VERSIONS !== 'undefined' ? (FIRMWARE_VERSIONS.sp || {}) : {})
+      .filter(([k]) => model.toUpperCase().startsWith(k.toUpperCase()));
+    const spSpec = spMatches.length
+      ? spMatches.reduce((longest, cur) => cur[0].length > longest[0].length ? cur : longest)
+      : null;
     const latestSP = spSpec ? spSpec[1].latest : null;
     const outdatedNodes = latestSP
       ? systemState.spFirmware.filter(sp => sp.version && sp.version !== latestSP && compareVersions(sp.version, latestSP) < 0)

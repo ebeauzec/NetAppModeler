@@ -429,10 +429,15 @@ export const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
   },
-  // FAS500f: a real current-generation NetApp platform, part of the "250-class" chassis family
-  // alongside AFF A250/C250 and ASA A250/C250 (FAS-branded flash SKU). ⚠ UNVERIFIED: fields below
-  // are copied from AFF A250 as a same-family placeholder pending full confirmation. Confirm
-  // against HWU or docs.netapp.com before relying on these fields (see DATA_SOURCES.md).
+  // FAS500f: part of the "250-class" chassis family alongside AFF A250/C250 and ASA A250/C250
+  // (FAS-branded flash SKU). NOT current-generation despite being newly added to this catalog
+  // in v2.70 — it reached End of Availability 2022-06 and End of Support 2027-06 (NetApp
+  // Support Site EOS records); it had simply never been catalogued here before, falling
+  // through to Default. host/data/san ports and maxPcieSlots below are now sourced directly
+  // from docs.netapp.com/us-en/ontap-systems/fas500f/install-detailed-guide.html (2U chassis,
+  // 2 HA controllers, 24 drive slots, 4 PCIe expansion slots; FC host ports 2a-2d; 10GbE host
+  // ports e4a-e4d). Cluster-port role, storage/shelf-expansion ports, and HBA card part numbers
+  // are still unconfirmed — no sourced doc found for those — and remain AFF A250 placeholders.
   "FAS500f": {
     maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
@@ -448,15 +453,17 @@ export const NETAPP_PLATFORMS = {
     },
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
     maxFirmware: "v16.1",
-    description: "⚠ UNVERIFIED SPECS — Entry NVMe All Flash array, FAS-branded (250-class chassis).",
+    description: "Entry NVMe All Flash array, FAS-branded (250-class chassis). EOA 2022-06, EOS 2027-06 — not current-generation hardware.",
     ports: {
       cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
-      san: ["0e", "0f"],
+      data: ["e4a", "e4b", "e4c", "e4d"],
+      san: ["2a", "2b", "2c", "2d"],
+      // ⚠ UNVERIFIED: no sourced doc found for storage/shelf-expansion ports specifically —
+      // still a same-family AFF A250 placeholder.
       storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
-    maxPcieSlots: 2
+    maxPcieSlots: 4
   },
   "AFF A220": {
     maxOntap: "9.15.1",
@@ -2044,20 +2051,33 @@ export function compareVersions(v1, v2) {
 }
 
 
+// Dates realigned 2026-10-13 to match DATA_SOURCES.md's ONTAP Version Registry exactly
+// (releaseDate = GA date, endDate = End of Full Support date — this file previously carried
+// its own independently-drifted copy of these dates, up to several months off from the
+// documented source-of-truth table). latestPatch values refreshed against current NetApp
+// ONTAP downloads-page data (previously stale on every version from 9.9.1 through 9.19.1).
+//
+// status fix (9.10.1, 9.11.1): both were marked "end_of_support" with "no patches or
+// security fixes available" — wrong as of today. Per DATA_SOURCES.md's own End Limited
+// Support dates (9.10.1: Jan 31 2027; 9.11.1: Jul 31 2027), both are still within their
+// Limited Support window today — critical/security fixes ARE still available, and telling
+// a field engineer otherwise is a real, consequential inaccuracy. Corrected to
+// "limited_support". 9.7/9.8/9.9.1 remain "end_of_support" — their End Limited Support
+// dates (Oct 2024 / Dec 2025 / Jun 2026) have genuinely passed.
 export const ONTAP_LIFECYCLE = {
-  "9.7":    { status: "end_of_support",  releaseDate: "2019-09", endDate: "2023-07", latestPatch: "9.7P22",  notes: "End of Support July 2023. No patches or security fixes available." },
-  "9.8":    { status: "end_of_support",  releaseDate: "2020-10", endDate: "2024-01", latestPatch: "9.8P20",  notes: "End of Support January 2024." },
-  "9.9.1":  { status: "end_of_support",  releaseDate: "2021-04", endDate: "2024-07", latestPatch: "9.9.1P15", notes: "End of Support July 2024." },
-  "9.10.1": { status: "end_of_support",  releaseDate: "2021-10", endDate: "2025-01", latestPatch: "9.10.1P15", notes: "End of Support January 2025. No patches or security fixes." },
-  "9.11.1": { status: "end_of_support",  releaseDate: "2022-04", endDate: "2025-07", latestPatch: "9.11.1P18", notes: "End of Support July 2025. Upgrade urgently to 9.14.1+." },
-  "9.12.1": { status: "limited_support", releaseDate: "2022-10", endDate: "2026-01", latestPatch: "9.12.1P12", notes: "Limited Support since Jan 2026. Critical fixes only. Upgrade to 9.14.1+ recommended." },
-  "9.13.1": { status: "limited_support", releaseDate: "2023-06", endDate: "2026-07", latestPatch: "9.13.1P10", notes: "Limited Support expires July 2026. Upgrade to 9.15.1+ strongly recommended." },
-  "9.14.1": { status: "active",          releaseDate: "2024-01", endDate: "2027-01", latestPatch: "9.14.1P16", notes: "Full Support through Jan 2027. Latest patch: P16. Widely deployed LTS release." },
-  "9.15.1": { status: "active",          releaseDate: "2024-05", endDate: "2027-07", latestPatch: "9.15.1P19", notes: "Full Support through July 2027. Latest patch: P19. Recommended for AFF A1K/A90/A70 and FAS70/90." },
-  "9.16.1": { status: "recommended",     releaseDate: "2025-01", endDate: "2028-01", latestPatch: "9.16.1P11", notes: "Full Support through Jan 2028. Latest patch: P11. Current recommended release for new deployments. Required for AFF A20/A30/A50, AFF C30/C60/C80, ASA R2, FAS50." },
-  "9.17.1": { status: "recommended",     releaseDate: "2025-06", endDate: "2028-07", latestPatch: "9.17.1P1",  notes: "Full Support through July 2028. Latest patch: P1." },
-  "9.18.1": { status: "recommended",     releaseDate: "2026-01", endDate: "2029-01", latestPatch: "9.18.1P1",  notes: "Full Support through Jan 2029. Latest patch: P1." },
-  "9.19.1": { status: "recommended",     releaseDate: "2026-06", endDate: "2029-07", latestPatch: "9.19.1",    notes: "Full Support through July 2029." }
+  "9.7":    { status: "end_of_support",  releaseDate: "2019-10", endDate: "2022-10", latestPatch: "9.7P22",  notes: "End of Limited Support October 2024. No patches or security fixes available." },
+  "9.8":    { status: "end_of_support",  releaseDate: "2020-10", endDate: "2023-12", latestPatch: "9.8P20",  notes: "End of Limited Support December 2025. No patches or security fixes available." },
+  "9.9.1":  { status: "end_of_support",  releaseDate: "2021-06", endDate: "2024-06", latestPatch: "9.9.1P22", notes: "End of Limited Support June 2026. No patches or security fixes available." },
+  "9.10.1": { status: "limited_support", releaseDate: "2022-01", endDate: "2025-01", latestPatch: "9.10.1P22", notes: "Limited Support since Jan 2025, critical/security fixes only, through Jan 2027. Upgrade to 9.14.1+ recommended." },
+  "9.11.1": { status: "limited_support", releaseDate: "2022-07", endDate: "2025-07", latestPatch: "9.11.1P20", notes: "Limited Support since Jul 2025, critical/security fixes only, through Jul 2027. Upgrade to 9.14.1+ recommended." },
+  "9.12.1": { status: "limited_support", releaseDate: "2023-02", endDate: "2026-02", latestPatch: "9.12.1P20", notes: "Limited Support since Feb 2026. Critical fixes only, through Feb 2028. Upgrade to 9.14.1+ recommended." },
+  "9.13.1": { status: "limited_support", releaseDate: "2023-06", endDate: "2026-06", latestPatch: "9.13.1P21", notes: "Limited Support since Jun 2026. Critical fixes only, through Jun 2028. Upgrade to 9.15.1+ strongly recommended." },
+  "9.14.1": { status: "active",          releaseDate: "2024-01", endDate: "2027-01", latestPatch: "9.14.1P18", notes: "Full Support through Jan 2027. Latest patch: P18. Widely deployed LTS release." },
+  "9.15.1": { status: "active",          releaseDate: "2024-05", endDate: "2027-07", latestPatch: "9.15.1P20", notes: "Full Support through July 2027. Latest patch: P20. Recommended for AFF A1K/A90/A70 and FAS70/90." },
+  "9.16.1": { status: "recommended",     releaseDate: "2025-01", endDate: "2028-01", latestPatch: "9.16.1P15", notes: "Full Support through Jan 2028. Latest patch: P15. Required for AFF A20/A30/A50, AFF C30/C60/C80, ASA R2, FAS50." },
+  "9.17.1": { status: "recommended",     releaseDate: "2026-01", endDate: "2028-09", latestPatch: "9.17.1P11", notes: "Full Support through Sep 2028. Latest patch: P11." },
+  "9.18.1": { status: "recommended",     releaseDate: "2026-02", endDate: "2029-01", latestPatch: "9.18.1P7",  notes: "Full Support through Jan 2029. Latest patch: P7." },
+  "9.19.1": { status: "recommended",     releaseDate: "2026-05", endDate: "2029-05", latestPatch: "9.19.1P3",  notes: "Full Support through May 2029. Latest patch: P3. Latest GA release." }
 };
 
 export const ONTAP_HOPS = {
@@ -2094,44 +2114,83 @@ export const FIRMWARE_VERSIONS = {
     // Matrix / HWU. Tracked in PLATFORM_COVERAGE.md.
   },
   sp: {
-    // BMC/SP firmware version by controller platform model string (prefix match)
-    "AFF A1K":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A90":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A70":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A50":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A30":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A900": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A700": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A300": { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A250": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A220": { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF C800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF C400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF C250": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A1K":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A90":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A70":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A900": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A250": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA C800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA C400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS9500":  { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS8700":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS8300":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS8200":  { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS2750":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS2720":  { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "default":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    // BMC/SP firmware version by controller platform model string (prefix match — see
+    // BP_SP_FIRMWARE in bestPractices.js, which now picks the longest matching key so a
+    // shorter prefix like "AFF A90" can't shadow a more specific one like "AFF A900").
+    // Source: NetApp firmware-support-matrix + per-model KB articles (CONTAP-474887,
+    // CONTAP-344840, CONTAP-705061, CONTAP-323139, CONTAP-657167, CONTAP-323134). Each
+    // platform family tracks SP/BMC firmware on its own independent version line — these
+    // are NOT globally-ordered version numbers, don't compare across families.
+    "AFF A1K":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A90":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A70":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C80":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS90":    { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS70":    { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFX":      { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A1K":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A90":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A70":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A50":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A30":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A20":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C60":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C30":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS50":    { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A50":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A30":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A20":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA C30":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A900": { latest: "16.7",   family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A900": { latest: "16.7",   family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS9500":  { latest: "16.7",   family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A800": { latest: "10.9P2", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C800": { latest: "10.9P2", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A800": { latest: "10.9P2", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA C800": { latest: "10.9P2", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A400": { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C400": { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A400": { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA C400": { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8700":  { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8300":  { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A250": { latest: "15.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C250": { latest: "15.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A250": { latest: "15.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA C250": { latest: "15.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS500f":  { latest: "15.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A220": { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A150": { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C190": { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A150": { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2750":  { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2720":  { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A700": { latest: "4.5P1", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A700s":{ latest: "4.5P1", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS9000":  { latest: "4.5P1", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A300": { latest: "5.8",   family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8200":  { latest: "5.8",   family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A200": { latest: "5.8",   family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2650":  { latest: "5.8",   family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2620":  { latest: "5.8",   family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8060":  { latest: "3.10",  family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8080":  { latest: "3.10",  family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2820":  { latest: "17.5",  family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "default":  { latest: "11.9",  family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
   },
   switches: {
-    "BES-53248":       { latest: "3.10.0.3", rcf: "v1.9", type: "EFOS",  checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/switch-bes-53248/" },
-    "Nexus 9336C-FX2": { latest: "10.4(2)F", rcf: "v1.9", type: "NX-OS", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/switch-cisco-9336c-fx2/" },
+    // BES-53248 and Nexus 9336C-FX2 are both EOA (End of Availability) — "latest" here means
+    // the final/highest firmware each model ever shipped, not an actively-developed train.
+    "BES-53248":       { latest: "3.12.0.1", rcf: "v1.9", type: "EFOS",  checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/switch-bes-53248/" },
+    // Corrected: this was carrying "10.4(2)F", which is the Cisco 9332D-GX2A/9364D-GX2A
+    // (AFX-generation switch) firmware train, not 9336C-FX2's. 9336C-FX2 is EOA and never
+    // ran NX-OS 10.x; its real final-supported train tops out at 9.3(12).
+    "Nexus 9336C-FX2": { latest: "9.3(12)",  rcf: "v1.9", type: "NX-OS", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/switch-cisco-9336c-fx2/" },
     "Nexus 92300YC":   { latest: "9.3(13)",   rcf: "v1.7", type: "NX-OS", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/" },
     "Nexus 3132Q-V":   { latest: "9.3(13)",   rcf: "v1.7", type: "NX-OS", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/" },
+    // Added: parser.js's switchPatterns detects "NVIDIA SN2100" but this catalog had no entry
+    // for it at all, so BP_SWITCH_RCF could never evaluate firmware currency for this model.
+    "SN2100":          { latest: "5.11.0",   rcf: "n/a", type: "Cumulus Linux (EOA)", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/" },
   },
   disks: {
     // Disk firmware by NetApp part-number model prefix ΓÇö check storage disk show -fields model,firmware-revision

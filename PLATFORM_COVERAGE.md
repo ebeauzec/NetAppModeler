@@ -169,12 +169,11 @@ repeated cabling bugs on.
 
 ## New stubs added 2026-08-16 — specs unverified, need HWU/docs.netapp.com
 
-AFX 1K, FAS2850, FAS2880, and FAS500f are real current-generation NetApp
-platforms without full catalog entries yet. Each stub below borrows its
-`ports`, `supportedCards`, and `maxPcieSlots` from a same-family sibling
-already in `js/compatibility.js` as a placeholder, and is marked with a
-`⚠ UNVERIFIED SPECS` prefix in its `description` field so it's visibly
-flagged in the UI until corrected.
+AFX 1K, FAS2850, FAS2880, and FAS500f were added to the catalog without full
+entries. Each stub below borrows its `ports`, `supportedCards`, and
+`maxPcieSlots` from a same-family sibling already in `js/compatibility.js`
+as a placeholder, and is marked with a `⚠ UNVERIFIED SPECS` prefix in its
+`description` field so it's visibly flagged in the UI until corrected.
 
 | Platform | Borrowed from | Real gap this fixed |
 |---|---|---|
@@ -183,8 +182,26 @@ flagged in the UI until corrected.
 | FAS2880 | FAS2820 | Not recognized at all — fell through to `Default` |
 | FAS500f | AFF A250 | Not recognized at all — fell through to `Default` |
 
-Next step: source real HWU/`install-cable.html` data for these four and
-drop the `⚠ UNVERIFIED SPECS` marker, same process as the Done section above.
+**2026-10-13 correction:** FAS500f is NOT current-generation hardware — it
+reached End of Availability 2022-06 and End of Support 2027-06 per NetApp
+Support Site EOS records (source for all dates/notes in this section:
+NetApp's published EOA/EOS records, cross-checked 2026-10-13). It was simply
+never catalogued here before v2.70, unrelated to how old the platform
+actually is. `docs.netapp.com/us-en/ontap-systems/fas500f/install-detailed-guide.html`
+turned out to be scrapable (unlike most Tier 2/3 platforms) and gave a real,
+FAS500f-specific port catalog: `host/data` ports are 10GbE `e4a-e4d`, `san`
+(FC host) ports are `2a-2d`, chassis is a 2U unit with 2 HA controllers, 24
+drive slots, and 4 PCIe expansion slots (was 2). `js/compatibility.js`'s
+FAS500f entry and its description were corrected and the `⚠ UNVERIFIED
+SPECS` marker narrowed to just the fields still unconfirmed: cluster-port
+role, storage/shelf-expansion ports, and HBA card part numbers (no sourced
+doc found for those specifically — still AFF A250 placeholders).
+
+Next step: source real HWU/`install-cable.html` data for AFX 1K, FAS2850,
+and FAS2880, and for FAS500f's remaining unconfirmed fields, same process as
+the Done section above. Attempts to find FAS2850/FAS2880-specific pages on
+docs.netapp.com did not turn up a distinct source from FAS2820's as of
+2026-10-13 — still open.
 
 ## Open gap: ds212c shelf firmware not tracked
 

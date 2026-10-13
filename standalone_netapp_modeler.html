@@ -3359,8 +3359,19 @@ function parseASUP(files) {
                            combinedText.match(/Controller Firmware:\s*([^\r\n]+)/i);
   if (sysFirmwareMatch) {
     data.version.systemFirmware = sysFirmwareMatch[1].trim();
+  } else if (!isDemoMode) {
+    // Unlike every other field in this file, systemFirmware had no parseWarnings entry
+    // when none of its 4 recognized label formats matched — it silently kept the
+    // hardcoded "v1.0" default (set at data.version init above) with zero indication
+    // anywhere that it's a placeholder, not a real reading. This can't fix the format
+    // coverage gap itself (no further real-world label variant confirmed yet to add),
+    // but at least surfaces it like every other defaulted field does.
+    data.parseWarnings.push({
+      section: "Controller System Firmware",
+      message: `System/BIOS firmware version could not be parsed; using default placeholder (${data.version.systemFirmware}).`
+    });
   }
-  
+
   let isModelParsed = false;
   let modelSource = 'missing';
   // \b before the alternation matters: without it, a bare "Platform" label
@@ -3445,20 +3456,39 @@ function parseASUP(files) {
       data.version.partNumber = rawModel; // preserve original for reference
     }
   } else {
-    // Infer from keyword presence — marked as 'inferred', not 'parsed'
+    // Infer from keyword presence — marked as 'inferred', not 'parsed'.
+    //
+    // NOTE (2026-10-13): every branch here is ordered longest/most-specific keyword
+    // first. This is load-bearing, not cosmetic — .includes() means a shorter keyword
+    // that's a textual prefix of a longer one (e.g. "a90" is a prefix of "a900", "c80"
+    // of "c800") will match first if checked first, silently misclassifying the real
+    // platform as the shorter/smaller one. Confirmed real bugs fixed this pass: AFF
+    // A900/A700/A300/A200 and ASA A900/C800 were ALL falling into their respective
+    // "a90"/"a70"/"a30"/"a20"/"c80" shorter-prefix branches (A300 in particular had its
+    // own dedicated `a300` branch below that was permanently unreachable dead code,
+    // since `a30` was always checked first and always matched first). This is the same
+    // bug class as the already-fixed AFX 1K/AFX 2K and Nexus 9336C/9336C-FX2 ordering
+    // bugs — see PLATFORM_COVERAGE.md. Keep new entries ordered accordingly.
     if (lowerText.includes("asa a1k")) { data.version.model = "ASA A1K"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("asa a900")) { data.version.model = "ASA A900"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa a90")) { data.version.model = "ASA A90"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa a70")) { data.version.model = "ASA A70"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa a50")) { data.version.model = "ASA A50"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa a30")) { data.version.model = "ASA A30"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa a20")) { data.version.model = "ASA A20"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("asa c800")) { data.version.model = "ASA C800"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa c30")) { data.version.model = "ASA C30"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a1k")) { data.version.model = "AFF A1K"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a900")) { data.version.model = "AFF A900"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a90")) { data.version.model = "AFF A90"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a700")) { data.version.model = "AFF A700"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a70")) { data.version.model = "AFF A70"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a50")) { data.version.model = "AFF A50"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a300")) { data.version.model = "AFF A300"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a30")) { data.version.model = "AFF A30"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a200")) { data.version.model = "AFF A200"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a20")) { data.version.model = "AFF A20"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("c800")) { data.version.model = "AFF C800"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("c80")) { data.version.model = "AFF C80"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("c60")) { data.version.model = "AFF C60"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("c30")) { data.version.model = "AFF C30"; isModelParsed = true; modelSource = 'inferred'; }
@@ -3467,11 +3497,17 @@ function parseASUP(files) {
     else if (lowerText.includes("fas70")) { data.version.model = "FAS70"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("fas50")) { data.version.model = "FAS50"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("8300")) { data.version.model = "FAS8300"; isModelParsed = true; modelSource = 'inferred'; }
-    else if (lowerText.includes("a300")) { data.version.model = "AFF A300"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a250")) { data.version.model = "AFF A250"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("c190")) { data.version.model = "AFF C190"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("fas")) {
       const match = combinedText.match(/(FAS\d{4})/i);
+      if (match) { data.version.model = match[1].toUpperCase(); isModelParsed = true; modelSource = 'inferred'; }
+    } else if (lowerText.includes("asa")) {
+      // Generic fallback for ASA models without their own keyword branch above
+      // (e.g. ASA A800/A400/A250/A150 — previously fell through to the fully
+      // fabricated default model with no match at all, unlike AFF/FAS which both
+      // already had a generic regex fallback here).
+      const match = combinedText.match(/(ASA\s+[A-Z]?\d{2,3})/i);
       if (match) { data.version.model = match[1].toUpperCase(); isModelParsed = true; modelSource = 'inferred'; }
     } else if (lowerText.includes("aff")) {
       const match = combinedText.match(/(AFF\s+[A-Z]?\d{2,3})/i);
@@ -4327,6 +4363,83 @@ function parseASUP(files) {
     }
   }
 
+  // Modern tabular "storage aggregate show" format (cDOT's standard default aggregate
+  // listing command — confirmed 2026-10-13 to be completely unrecognized by the block
+  // split above, which only matches the older "aggr status"/"aggr status -r" style
+  // (literal "Aggregate <name> (status, raid_type)" header line). The tabular format's
+  // own column header ("Aggregate   Size   Available   Used%   State...") has no such
+  // per-row marker, so a bundle whose only aggregate dump is this format silently
+  // produced zero real aggregates — same failure mode (fully fabricated aggr_data_a/b
+  // placeholders) as the already-fixed aggr-info.xml gap, just for the single most
+  // commonly captured modern ONTAP aggregate listing instead of a rarer XML export.
+  // Real output wraps the aggregate name onto its own line when it's too long for the
+  // name column, with size/available/etc. on the following indented line — handled by
+  // the two-line continuation branch below.
+  if (data.aggregates.length === 0) {
+    const aggrTableHeaderRegex = /^[ \t]*Aggregate[ \t]+Size[ \t]+Available[ \t]+Used%[ \t]+State/im;
+    const headerIdx = combinedText.search(aggrTableHeaderRegex);
+    if (headerIdx !== -1) {
+      const tableLines = combinedText.slice(headerIdx).split('\n');
+      const sameLineRow = /^(\S+)[ \t]+([\d.]+[GT]B?)[ \t]+([\d.]+[GT]B?)[ \t]+(\d+)%[ \t]+(\S+)[ \t]+(\d+)[ \t]+(\S+)[ \t]+(raid_dp|raid4|raid_tec)/i;
+      const wrappedNameOnly = /^(\S{2,})\s*$/;
+      const continuationRow = /^[ \t]+([\d.]+[GT]B?)[ \t]+([\d.]+[GT]B?)[ \t]+(\d+)%[ \t]+(\S+)[ \t]+(\d+)[ \t]+(\S+)[ \t]+(raid_dp|raid4|raid_tec)/i;
+
+      for (let li = 1; li < tableLines.length; li++) { // start at 1: skip the header line itself
+        const line = tableLines[li];
+        if (/^[ \t]*-+[ \t]*$/.test(line) || /^-{3,}/.test(line)) continue; // "---------" separator rows
+        let aggrName, sizeStr, availStr, raidType, nodeStr;
+        const direct = line.match(sameLineRow);
+        if (direct) {
+          [, aggrName, sizeStr, availStr, , , , nodeStr, raidType] = direct;
+        } else {
+          const nameOnly = line.match(wrappedNameOnly);
+          if (nameOnly && li + 1 < tableLines.length) {
+            const cont = tableLines[li + 1].match(continuationRow);
+            if (cont) {
+              aggrName = nameOnly[1];
+              [, sizeStr, availStr, , , , nodeStr, raidType] = cont;
+              li++; // consumed the continuation line
+            }
+          }
+        }
+        if (!aggrName) {
+          // Blank line or unrelated text ends the table (next section's heading, etc.)
+          if (line.trim() === '' && li > 1) break;
+          continue;
+        }
+        if (data.aggregates.some(a => a.name === aggrName)) continue;
+
+        const sizeGB = parseSizeToGB(sizeStr);
+        const freeGB = parseSizeToGB(availStr);
+        const usedGB = Math.max(0, sizeGB - freeGB);
+        const xmlCap = aggrInfoCapacityByName[aggrName];
+
+        data.aggregates.push({
+          name: aggrName,
+          node: (data.nodes && data.nodes.find(n => n.name.toLowerCase() === nodeStr.toLowerCase())?.name) || nodeStr,
+          sizeGB,
+          // "storage aggregate show" has no separate raw-vs-usable distinction the way
+          // the classic "aggr status"/"Size:/Usable:/Used:/Free:" text format does —
+          // Size here already means what's actually allocatable, so usableGB = sizeGB,
+          // unless aggr-info.xml (if also present in this bundle) has the authoritative
+          // byte-exact figures, in which case that takes precedence like it does above.
+          usableGB: xmlCap ? xmlCap.usableGB : sizeGB,
+          usedGB: xmlCap ? xmlCap.usedGB : usedGB,
+          freeGB: xmlCap ? xmlCap.freeGB : freeGB,
+          raidType: raidType.toLowerCase(),
+          rgSize: 0,
+          disksCount: 0,
+          diskType: data.shelves[0]?.disks[0]?.type || "SSD",
+          diskSizeGB: data.shelves[0]?.disks[0]?.sizeGB || 960,
+          isMirrored: false,
+          totalDiskCount: 0,
+          isRootAggr: /^aggr0/i.test(aggrName),
+          haPolicy: null
+        });
+      }
+    }
+  }
+
   // Fallback aggregates if none parsed
   if (data.aggregates.length === 0) {
     if (!isDemoMode) {
@@ -4394,6 +4507,51 @@ function parseASUP(files) {
         sizeGB,
         type,
         count
+      });
+    }
+  }
+
+  // Modern tabular "storage disk show -container-type spare" format — confirmed
+  // 2026-10-13 to be completely unrecognized by the regex above, which only matches
+  // the older "Spare Disks (node): NETAPP model (size, type) - N spares" summary line
+  // (the classic sysconfig/"aggr status -s" style). cDOT's per-disk spare listing has
+  // no such summary line at all — a bundle whose only spare-disk source is this command
+  // silently fell through to the fully fabricated 1-spare-per-node default, feeding the
+  // sparing-compliance audit rule (Rule 4) fake data instead of the real spare count.
+  // Real columns: "Disk  Usable Size  Shelf  Bay  Disk Type  Container Type  Container
+  // Name  Owner" — one row per physical spare disk; grouped here by (owner, normalized
+  // type, size) into the same {node, type, sizeGB, count} shape Rule 4 already expects.
+  if (data.spares.length === 0) {
+    // Matches just the field-name header line ("Disk ... Shelf Bay Type ...") — the
+    // group-label line real ONTAP prints above it ("Usable ... Container Container")
+    // varies/wraps too unpredictably to anchor on.
+    const spareTableHeaderRegex = /^[ \t]*Disk[ \t]+.*Shelf[ \t]+Bay[ \t]+Type/im;
+    const headerIdx = combinedText.search(spareTableHeaderRegex);
+    if (headerIdx !== -1) {
+      const tableText = combinedText.slice(headerIdx);
+      const spareRowRegex = /^(\S+)[ \t]+([\d.]+[GT]B?)[ \t]+(\d+)[ \t]+(\d+)[ \t]+(\S+)[ \t]+spare[ \t]+\S+[ \t]+(\S+)[ \t]*$/gim;
+      const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
+      const counted = {}; // "node|type|sizeGB" -> count
+      let spareRowMatch;
+      while ((spareRowMatch = spareRowRegex.exec(tableText)) !== null) {
+        const [, , sizeStr, , , diskTypeCol, owner] = spareRowMatch;
+        const sizeGB = parseSizeToGB(sizeStr);
+        if (!sizeGB) continue;
+        const type = /ssd|nvme/i.test(diskTypeCol) ? (isAllFlash ? "NVMe SSD" : "SAS SSD") : "SAS HDD";
+        const key = `${owner}|${type}|${sizeGB}`;
+        counted[key] = (counted[key] || 0) + 1;
+      }
+      Object.keys(counted).forEach(key => {
+        const [node, type, sizeGBStr] = key.split('|');
+        const sizeGB = parseInt(sizeGBStr, 10);
+        data.spares.push({
+          node,
+          model: `${type} (${(sizeGB / 1000).toFixed(1)}TB class)`, // no NetApp part number in this tabular output
+          sizeStr: sizeGB >= 1000 ? `${(sizeGB / 1000).toFixed(2)}TB` : `${sizeGB}GB`,
+          sizeGB,
+          type,
+          count: counted[key]
+        });
       });
     }
   }
@@ -4929,31 +5087,64 @@ function parseASUP(files) {
   data.alerts = extractASUPAlerts(combinedText, files);
 
   // 3a. Storage Failover / HA Status
-  const sfMatches = [...combinedText.matchAll(/^(\S+)\s+(true|false)\s+(\S.*?)\s{2,}(\S.*?)$/gim)];
+  // Fixed 2026-10-13: real ONTAP `storage failover show` output columns are
+  // "Node  Partner  Possible  State Description" — e.g. "node1  node2  true  Connected to node2".
+  // The previous regex required column 2 (right after the node name) to literally be
+  // "true"/"false", but that's column 3 ("Possible") in real output; column 2 is the
+  // partner node's name. That meant the single most common default-capture CLI command
+  // for this field could essentially never match (a partner would have to be literally
+  // named "true" or "false"), leaving data.haStatus empty for almost every real bundle
+  // and silently disabling BP_HA_STATUS. Mirrors "Possible" onto the existing `enabled`
+  // field (closest available meaning: takeover is not currently possible for this node).
+  const sfMatches = [...combinedText.matchAll(/^(\S+)\s+(\S+)\s+(true|false)\s+(\S.*?)$/gim)];
   data.haStatus = sfMatches.map(m => ({
     node: m[1].trim(),
-    enabled: m[2].toLowerCase() === 'true',
-    state: m[3].trim(),
-    partner: m[4].trim()
+    partner: m[2].trim(),
+    enabled: m[3].toLowerCase() === 'true',
+    state: m[4].trim()
   }));
 
   // 3b. Broken Disks
-  const brokenSection = combinedText.match(/storage disk show.*?-broken[\s\S]*?(?=\n\n[A-Z]|$)/i);
+  // Fixed 2026-10-13: previously gated behind finding the literal "storage disk show
+  // ... -broken" command-echo text first. Real multi-file ASUP bundles commonly capture
+  // each command's output in its own section/file without ever echoing the command
+  // itself (the same reason STORAGE-SHELF.txt-style per-file sourcing was added
+  // elsewhere in this parser) — a bundle shaped that way had zero broken disks detected
+  // regardless of whether any actually existed. The row pattern itself (an explicit
+  // disk path plus the literal "broken"/"failed"/"prefailed" keyword) is distinctive
+  // enough to search for directly, without requiring the command-echo anchor.
   data.brokenDisks = [];
-  if (brokenSection) {
-    const brokenMatches = [...brokenSection[0].matchAll(/(\S+:\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(broken|failed|prefailed)/gi)];
+  {
+    const brokenMatches = [...combinedText.matchAll(/(\S+:\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(broken|failed|prefailed)/gi)];
     data.brokenDisks = brokenMatches.map(m => ({ disk: m[1], type: m[2], rpm: m[3], reason: m[4] }));
   }
 
   // 3c. System Health Alerts
-  const alertSection = combinedText.match(/health alert show[\s\S]*?(?=\n\n[A-Z]|$)/i);
+  // Fixed 2026-10-13: same class of gap as Broken Disks above — previously gated behind
+  // finding the literal "health alert show" command-echo text first, which a per-file
+  // multi-bundle capture (output only, no echoed command) would never contain. The row
+  // pattern (a node name, numeric alert ID, and an explicit severity keyword) is
+  // distinctive enough to search for directly.
   data.healthAlerts = [];
-  if (alertSection) {
-    const alertMatches = [...alertSection[0].matchAll(/^\s*(\S+)\s+(\d+)\s+(error|warning|critical|notice)\s+(.+)$/gim)];
+  {
+    const alertMatches = [...combinedText.matchAll(/^\s*(\S+)\s+(\d+)\s+(error|warning|critical|notice)\s+(.+)$/gim)];
     data.healthAlerts = alertMatches.map(m => ({ node: m[1], id: m[2], severity: m[3], description: m[4].trim() }));
   }
 
   // 3d. SnapMirror Relationships
+  // NOTE (2026-10-13): a parser.js format-coverage audit flagged this as possibly only
+  // matching one layout (requiring a trailing true/false/"-" "Healthy" column). Real
+  // ONTAP "snapmirror show" output does carry a Healthy column by default, but an
+  // alternate layout without it could plausibly exist in some capture. Deliberately NOT
+  // adding a fallback for that here: `data.snapmirrorRelationships[].healthy` is read
+  // downstream (ui.js, bestPractices.js BP_SNAPMIRROR_LAG) as a plain boolean — `!r.healthy`
+  // — with no "unknown" state, so a fallback pass that can't determine real health would
+  // have to guess `true` (risks masking a genuinely broken replication relationship) or
+  // `false` (risks a false-positive critical finding on a relationship never actually
+  // confirmed unhealthy). Both are worse than the status quo without a concrete sample of
+  // the alternate real-world format to parse correctly in the first place. Left as-is;
+  // revisit if/when a real bundle surfaces the alternate layout (same pattern as every
+  // other confirmed fix in this file's history — see DATA_SOURCES.md).
   data.snapmirrorRelationships = [];
   const smMatches = [...combinedText.matchAll(/^(\S+:\S+)\s+(\S+:\S+)\s+(\S+)\s+(\d+\s+\S+)\s+(true|false|\-)/gim)];
   if (smMatches.length > 0) {
@@ -4967,18 +5158,68 @@ function parseASUP(files) {
   }
 
   // 3e. Logical Interfaces (LIFs)
+  // Fixed 2026-10-13: real default "network interface show" output combines admin/oper
+  // into ONE slash-joined field ("up/up"), not two separate space-delimited tokens, and
+  // groups LIFs under a Vserver header line that only appears once per vserver (indented
+  // rows below it, not a repeated per-row vserver column) — e.g.:
+  //   Vserver     Interface  Admin/Oper Address/Mask        Node       Port    Home
+  //   ----------- ---------- ---------- ------------------ ---------- ------- ----
+  //   vs1
+  //               data1      up/up      10.0.0.5/24        node1      e0c     true
+  // The previous regex required "up"/"down" as two separate trailing groups and the
+  // vserver name on the same line as every row, so this — the single most common
+  // default-capture form — never matched, leaving data.lifs silently empty. Also: this
+  // format's "Is Home" column is a bare boolean with no separate home-node NAME column,
+  // so homeNode can only be derived (= current node) when the LIF genuinely is home;
+  // when it's off-home, the real original home node isn't knowable from this output.
   data.lifs = [];
-  const lifMatches = [...combinedText.matchAll(/^\s*(\S+)\s+(\S+)\s+(\/\d+|\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(up|down)\s+(up|down)/gim)];
-  data.lifs = lifMatches.map(m => ({
-    lif: m[1],
-    node: m[2],
-    address: m[3],
-    homeNode: m[4],
-    homePort: m[5],
-    statusAdmin: m[6],
-    statusOper: m[7],
-    isHome: m[2].trim().toLowerCase() === m[4].trim().toLowerCase()
-  }));
+  {
+    const lifRowRegex = /^[ \t]+(\S+)[ \t]+(up|down)\/(up|down)[ \t]+(\S+)[ \t]+(\S+)[ \t]+(\S+)[ \t]+(true|false)[ \t]*$/i;
+    const vserverHeaderRegex = /^(\S+)[ \t]*$/;
+    let currentVserver = null;
+    const lines = combinedText.split('\n');
+    for (const line of lines) {
+      const rowMatch = line.match(lifRowRegex);
+      if (rowMatch) {
+        const [, lif, statusAdmin, statusOper, address, node, port, isHomeStr] = rowMatch;
+        const isHome = isHomeStr.toLowerCase() === 'true';
+        data.lifs.push({
+          lif,
+          vserver: currentVserver,
+          node,
+          address,
+          homeNode: isHome ? node : 'unknown (home node not shown by this command)',
+          homePort: isHome ? port : null,
+          statusAdmin: statusAdmin.toLowerCase(),
+          statusOper: statusOper.toLowerCase(),
+          isHome
+        });
+        continue;
+      }
+      // A bare non-indented single-token line between header/rows is a vserver grouping
+      // label (ONTAP omits the repeated vserver name on every row). Ignore the table's
+      // own separator ("----------- ...") and blank lines.
+      const vMatch = line.match(vserverHeaderRegex);
+      if (vMatch && !/^-+$/.test(vMatch[1]) && vMatch[1].toLowerCase() !== 'vserver') {
+        currentVserver = vMatch[1];
+      }
+    }
+  }
+  // Fallback: an older/structured "-fields" style dump with separate admin/oper and an
+  // explicit home-node-name column, if present and the format above found nothing.
+  if (data.lifs.length === 0) {
+    const lifMatches = [...combinedText.matchAll(/^\s*(\S+)\s+(\S+)\s+(\/\d+|\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(up|down)\s+(up|down)/gim)];
+    data.lifs = lifMatches.map(m => ({
+      lif: m[1],
+      node: m[2],
+      address: m[3],
+      homeNode: m[4],
+      homePort: m[5],
+      statusAdmin: m[6],
+      statusOper: m[7],
+      isHome: m[2].trim().toLowerCase() === m[4].trim().toLowerCase()
+    }));
+  }
 
   // 3f. Aggregate Space Usage
   data.aggregates.forEach(agg => {
@@ -5926,10 +6167,15 @@ const NETAPP_PLATFORMS = {
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
     maxPcieSlots: 2
   },
-  // FAS500f: a real current-generation NetApp platform, part of the "250-class" chassis family
-  // alongside AFF A250/C250 and ASA A250/C250 (FAS-branded flash SKU). ⚠ UNVERIFIED: fields below
-  // are copied from AFF A250 as a same-family placeholder pending full confirmation. Confirm
-  // against HWU or docs.netapp.com before relying on these fields (see DATA_SOURCES.md).
+  // FAS500f: part of the "250-class" chassis family alongside AFF A250/C250 and ASA A250/C250
+  // (FAS-branded flash SKU). NOT current-generation despite being newly added to this catalog
+  // in v2.70 — it reached End of Availability 2022-06 and End of Support 2027-06 (NetApp
+  // Support Site EOS records); it had simply never been catalogued here before, falling
+  // through to Default. host/data/san ports and maxPcieSlots below are now sourced directly
+  // from docs.netapp.com/us-en/ontap-systems/fas500f/install-detailed-guide.html (2U chassis,
+  // 2 HA controllers, 24 drive slots, 4 PCIe expansion slots; FC host ports 2a-2d; 10GbE host
+  // ports e4a-e4d). Cluster-port role, storage/shelf-expansion ports, and HBA card part numbers
+  // are still unconfirmed — no sourced doc found for those — and remain AFF A250 placeholders.
   "FAS500f": {
     maxOntap: "9.19.1",
     supportedShelves: ["ns224"],
@@ -5945,15 +6191,17 @@ const NETAPP_PLATFORMS = {
     },
     supportedLicenses: ["Cluster", "NFS", "CIFS", "FCP", "iSCSI", "SnapMirror", "FlexClone", "FabricPool"],
     maxFirmware: "v16.1",
-    description: "⚠ UNVERIFIED SPECS — Entry NVMe All Flash array, FAS-branded (250-class chassis).",
+    description: "Entry NVMe All Flash array, FAS-branded (250-class chassis). EOA 2022-06, EOS 2027-06 — not current-generation hardware.",
     ports: {
       cluster: ["e0a", "e0b"],
-      data: ["e0c", "e0d"],
-      san: ["0e", "0f"],
+      data: ["e4a", "e4b", "e4c", "e4d"],
+      san: ["2a", "2b", "2c", "2d"],
+      // ⚠ UNVERIFIED: no sourced doc found for storage/shelf-expansion ports specifically —
+      // still a same-family AFF A250 placeholder.
       storage: ["e2a", "e2b", "e3a", "e3b"]
     },
     supportedCards: ["nic_25g_4port", "fc_hba_32g_2port", "roce_hba_100g_2port"],
-    maxPcieSlots: 2
+    maxPcieSlots: 4
   },
   "AFF A220": {
     maxOntap: "9.15.1",
@@ -7541,20 +7789,33 @@ function compareVersions(v1, v2) {
 }
 
 
+// Dates realigned 2026-10-13 to match DATA_SOURCES.md's ONTAP Version Registry exactly
+// (releaseDate = GA date, endDate = End of Full Support date — this file previously carried
+// its own independently-drifted copy of these dates, up to several months off from the
+// documented source-of-truth table). latestPatch values refreshed against current NetApp
+// ONTAP downloads-page data (previously stale on every version from 9.9.1 through 9.19.1).
+//
+// status fix (9.10.1, 9.11.1): both were marked "end_of_support" with "no patches or
+// security fixes available" — wrong as of today. Per DATA_SOURCES.md's own End Limited
+// Support dates (9.10.1: Jan 31 2027; 9.11.1: Jul 31 2027), both are still within their
+// Limited Support window today — critical/security fixes ARE still available, and telling
+// a field engineer otherwise is a real, consequential inaccuracy. Corrected to
+// "limited_support". 9.7/9.8/9.9.1 remain "end_of_support" — their End Limited Support
+// dates (Oct 2024 / Dec 2025 / Jun 2026) have genuinely passed.
 const ONTAP_LIFECYCLE = {
-  "9.7":    { status: "end_of_support",  releaseDate: "2019-09", endDate: "2023-07", latestPatch: "9.7P22",  notes: "End of Support July 2023. No patches or security fixes available." },
-  "9.8":    { status: "end_of_support",  releaseDate: "2020-10", endDate: "2024-01", latestPatch: "9.8P20",  notes: "End of Support January 2024." },
-  "9.9.1":  { status: "end_of_support",  releaseDate: "2021-04", endDate: "2024-07", latestPatch: "9.9.1P15", notes: "End of Support July 2024." },
-  "9.10.1": { status: "end_of_support",  releaseDate: "2021-10", endDate: "2025-01", latestPatch: "9.10.1P15", notes: "End of Support January 2025. No patches or security fixes." },
-  "9.11.1": { status: "end_of_support",  releaseDate: "2022-04", endDate: "2025-07", latestPatch: "9.11.1P18", notes: "End of Support July 2025. Upgrade urgently to 9.14.1+." },
-  "9.12.1": { status: "limited_support", releaseDate: "2022-10", endDate: "2026-01", latestPatch: "9.12.1P12", notes: "Limited Support since Jan 2026. Critical fixes only. Upgrade to 9.14.1+ recommended." },
-  "9.13.1": { status: "limited_support", releaseDate: "2023-06", endDate: "2026-07", latestPatch: "9.13.1P10", notes: "Limited Support expires July 2026. Upgrade to 9.15.1+ strongly recommended." },
-  "9.14.1": { status: "active",          releaseDate: "2024-01", endDate: "2027-01", latestPatch: "9.14.1P16", notes: "Full Support through Jan 2027. Latest patch: P16. Widely deployed LTS release." },
-  "9.15.1": { status: "active",          releaseDate: "2024-05", endDate: "2027-07", latestPatch: "9.15.1P19", notes: "Full Support through July 2027. Latest patch: P19. Recommended for AFF A1K/A90/A70 and FAS70/90." },
-  "9.16.1": { status: "recommended",     releaseDate: "2025-01", endDate: "2028-01", latestPatch: "9.16.1P11", notes: "Full Support through Jan 2028. Latest patch: P11. Current recommended release for new deployments. Required for AFF A20/A30/A50, AFF C30/C60/C80, ASA R2, FAS50." },
-  "9.17.1": { status: "recommended",     releaseDate: "2025-06", endDate: "2028-07", latestPatch: "9.17.1P1",  notes: "Full Support through July 2028. Latest patch: P1." },
-  "9.18.1": { status: "recommended",     releaseDate: "2026-01", endDate: "2029-01", latestPatch: "9.18.1P1",  notes: "Full Support through Jan 2029. Latest patch: P1." },
-  "9.19.1": { status: "recommended",     releaseDate: "2026-06", endDate: "2029-07", latestPatch: "9.19.1",    notes: "Full Support through July 2029." }
+  "9.7":    { status: "end_of_support",  releaseDate: "2019-10", endDate: "2022-10", latestPatch: "9.7P22",  notes: "End of Limited Support October 2024. No patches or security fixes available." },
+  "9.8":    { status: "end_of_support",  releaseDate: "2020-10", endDate: "2023-12", latestPatch: "9.8P20",  notes: "End of Limited Support December 2025. No patches or security fixes available." },
+  "9.9.1":  { status: "end_of_support",  releaseDate: "2021-06", endDate: "2024-06", latestPatch: "9.9.1P22", notes: "End of Limited Support June 2026. No patches or security fixes available." },
+  "9.10.1": { status: "limited_support", releaseDate: "2022-01", endDate: "2025-01", latestPatch: "9.10.1P22", notes: "Limited Support since Jan 2025, critical/security fixes only, through Jan 2027. Upgrade to 9.14.1+ recommended." },
+  "9.11.1": { status: "limited_support", releaseDate: "2022-07", endDate: "2025-07", latestPatch: "9.11.1P20", notes: "Limited Support since Jul 2025, critical/security fixes only, through Jul 2027. Upgrade to 9.14.1+ recommended." },
+  "9.12.1": { status: "limited_support", releaseDate: "2023-02", endDate: "2026-02", latestPatch: "9.12.1P20", notes: "Limited Support since Feb 2026. Critical fixes only, through Feb 2028. Upgrade to 9.14.1+ recommended." },
+  "9.13.1": { status: "limited_support", releaseDate: "2023-06", endDate: "2026-06", latestPatch: "9.13.1P21", notes: "Limited Support since Jun 2026. Critical fixes only, through Jun 2028. Upgrade to 9.15.1+ strongly recommended." },
+  "9.14.1": { status: "active",          releaseDate: "2024-01", endDate: "2027-01", latestPatch: "9.14.1P18", notes: "Full Support through Jan 2027. Latest patch: P18. Widely deployed LTS release." },
+  "9.15.1": { status: "active",          releaseDate: "2024-05", endDate: "2027-07", latestPatch: "9.15.1P20", notes: "Full Support through July 2027. Latest patch: P20. Recommended for AFF A1K/A90/A70 and FAS70/90." },
+  "9.16.1": { status: "recommended",     releaseDate: "2025-01", endDate: "2028-01", latestPatch: "9.16.1P15", notes: "Full Support through Jan 2028. Latest patch: P15. Required for AFF A20/A30/A50, AFF C30/C60/C80, ASA R2, FAS50." },
+  "9.17.1": { status: "recommended",     releaseDate: "2026-01", endDate: "2028-09", latestPatch: "9.17.1P11", notes: "Full Support through Sep 2028. Latest patch: P11." },
+  "9.18.1": { status: "recommended",     releaseDate: "2026-02", endDate: "2029-01", latestPatch: "9.18.1P7",  notes: "Full Support through Jan 2029. Latest patch: P7." },
+  "9.19.1": { status: "recommended",     releaseDate: "2026-05", endDate: "2029-05", latestPatch: "9.19.1P3",  notes: "Full Support through May 2029. Latest patch: P3. Latest GA release." }
 };
 
 const ONTAP_HOPS = {
@@ -7591,44 +7852,83 @@ const FIRMWARE_VERSIONS = {
     // Matrix / HWU. Tracked in PLATFORM_COVERAGE.md.
   },
   sp: {
-    // BMC/SP firmware version by controller platform model string (prefix match)
-    "AFF A1K":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A90":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A70":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A50":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A30":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A900": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A700": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A300": { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A250": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF A220": { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF C800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF C400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "AFF C250": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A1K":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A90":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A70":  { latest: "24.05",  family: "BMC18", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A900": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA A250": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA C800": { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "ASA C400": { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS9500":  { latest: "11.12", family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS8700":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS8300":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS8200":  { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS2750":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "FAS2720":  { latest: "11.7",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
-    "default":  { latest: "11.9",  family: "SP11",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    // BMC/SP firmware version by controller platform model string (prefix match — see
+    // BP_SP_FIRMWARE in bestPractices.js, which now picks the longest matching key so a
+    // shorter prefix like "AFF A90" can't shadow a more specific one like "AFF A900").
+    // Source: NetApp firmware-support-matrix + per-model KB articles (CONTAP-474887,
+    // CONTAP-344840, CONTAP-705061, CONTAP-323139, CONTAP-657167, CONTAP-323134). Each
+    // platform family tracks SP/BMC firmware on its own independent version line — these
+    // are NOT globally-ordered version numbers, don't compare across families.
+    "AFF A1K":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A90":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A70":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C80":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS90":    { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS70":    { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFX":      { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A1K":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A90":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A70":  { latest: "18.6",   family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A50":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A30":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A20":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C60":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C30":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS50":    { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A50":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A30":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A20":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA C30":  { latest: "19.2P1", family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A900": { latest: "16.7",   family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A900": { latest: "16.7",   family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS9500":  { latest: "16.7",   family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A800": { latest: "10.9P2", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C800": { latest: "10.9P2", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A800": { latest: "10.9P2", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA C800": { latest: "10.9P2", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A400": { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C400": { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A400": { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA C400": { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8700":  { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8300":  { latest: "13.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A250": { latest: "15.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C250": { latest: "15.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A250": { latest: "15.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA C250": { latest: "15.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS500f":  { latest: "15.13", family: "BMC", updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A220": { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A150": { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF C190": { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "ASA A150": { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2750":  { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2720":  { latest: "11.12", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A700": { latest: "4.5P1", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A700s":{ latest: "4.5P1", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS9000":  { latest: "4.5P1", family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A300": { latest: "5.8",   family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8200":  { latest: "5.8",   family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "AFF A200": { latest: "5.8",   family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2650":  { latest: "5.8",   family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2620":  { latest: "5.8",   family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8060":  { latest: "3.10",  family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS8080":  { latest: "3.10",  family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "FAS2820":  { latest: "17.5",  family: "BMC", updateCmd: "system service-processor image update -node {node} -package sp_fw.zip", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
+    "default":  { latest: "11.9",  family: "SP",  updateCmd: "system service-processor image update -node {node}", checkCmd: "system service-processor show -node {node} -fields firmware-version" },
   },
   switches: {
-    "BES-53248":       { latest: "3.10.0.3", rcf: "v1.9", type: "EFOS",  checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/switch-bes-53248/" },
-    "Nexus 9336C-FX2": { latest: "10.4(2)F", rcf: "v1.9", type: "NX-OS", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/switch-cisco-9336c-fx2/" },
+    // BES-53248 and Nexus 9336C-FX2 are both EOA (End of Availability) — "latest" here means
+    // the final/highest firmware each model ever shipped, not an actively-developed train.
+    "BES-53248":       { latest: "3.12.0.1", rcf: "v1.9", type: "EFOS",  checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/switch-bes-53248/" },
+    // Corrected: this was carrying "10.4(2)F", which is the Cisco 9332D-GX2A/9364D-GX2A
+    // (AFX-generation switch) firmware train, not 9336C-FX2's. 9336C-FX2 is EOA and never
+    // ran NX-OS 10.x; its real final-supported train tops out at 9.3(12).
+    "Nexus 9336C-FX2": { latest: "9.3(12)",  rcf: "v1.9", type: "NX-OS", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/switch-cisco-9336c-fx2/" },
     "Nexus 92300YC":   { latest: "9.3(13)",   rcf: "v1.7", type: "NX-OS", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/" },
     "Nexus 3132Q-V":   { latest: "9.3(13)",   rcf: "v1.7", type: "NX-OS", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/" },
+    // Added: parser.js's switchPatterns detects "NVIDIA SN2100" but this catalog had no entry
+    // for it at all, so BP_SWITCH_RCF could never evaluate firmware currency for this model.
+    "SN2100":          { latest: "5.11.0",   rcf: "n/a", type: "Cumulus Linux (EOA)", checkCmd: "show version", updateGuide: "https://docs.netapp.com/us-en/ontap-systems-switches/" },
   },
   disks: {
     // Disk firmware by NetApp part-number model prefix ΓÇö check storage disk show -fields model,firmware-revision
@@ -8330,6 +8630,14 @@ function getShelfCabling(model, shelfType, shelfIndex) {
  */
 
 
+// NOTE (2026-10-13): FIRMWARE_VERSIONS was used below (BP_SWITCH_RCF, BP_SP_FIRMWARE,
+// BP_DISK_FIRMWARE) behind `typeof FIRMWARE_VERSIONS !== 'undefined'` guards without ever
+// being imported. `typeof` on an undeclared identifier doesn't throw, so this didn't crash —
+// it silently fell back to an empty {} catalog every time in modular/dev-server mode (the
+// documented README "Development Mode"), meaning all three firmware-currency rules could
+// never flag anything as outdated there, only in the bundled build where concatenation
+// happens to expose it as a shared top-level name. Now imported properly; the `typeof`
+// guards are left in place as harmless defensive checks.
 
 // Derived from compatibility.js's ONTAP_LIFECYCLE (the single source of truth for
 // ONTAP release lifecycle dates) rather than a separately hand-typed table. This used
@@ -9472,8 +9780,16 @@ function runAudit(systemState) {
   // --- Rule: BP_SP_FIRMWARE: Service Processor / BMC Firmware Currency ---
   if (systemState.spFirmware && systemState.spFirmware.length > 0) {
     const model = (systemState.version && systemState.version.model) || '';
-    const spSpec = Object.entries(typeof FIRMWARE_VERSIONS !== 'undefined' ? (FIRMWARE_VERSIONS.sp || {}) : {})
-      .find(([k]) => model.toUpperCase().startsWith(k.toUpperCase()));
+    // Longest-matching key wins, not first-in-insertion-order: catalog keys can be prefixes
+    // of each other (e.g. "AFF A90" is a prefix of "AFF A900"), so a plain .find() would let
+    // a shorter, unrelated key silently steal the match for a more specific platform depending
+    // on object key order. This previously caused AFF A900/A300 and ASA A900 to be checked
+    // against AFF A90/A30's firmware baseline instead of their own.
+    const spMatches = Object.entries(typeof FIRMWARE_VERSIONS !== 'undefined' ? (FIRMWARE_VERSIONS.sp || {}) : {})
+      .filter(([k]) => model.toUpperCase().startsWith(k.toUpperCase()));
+    const spSpec = spMatches.length
+      ? spMatches.reduce((longest, cur) => cur[0].length > longest[0].length ? cur : longest)
+      : null;
     const latestSP = spSpec ? spSpec[1].latest : null;
     const outdatedNodes = latestSP
       ? systemState.spFirmware.filter(sp => sp.version && sp.version !== latestSP && compareVersions(sp.version, latestSP) < 0)
@@ -9658,6 +9974,7 @@ function calculateComplianceScore(auditReports) {
 // --- END js/bestPractices.js ---
 
 // --- START js/ui.js ---
+
 
 
 

@@ -2,9 +2,9 @@
 
 > **PURPOSE:** Every value in `compatibility.js` and version-related constants in `ui.js` and `bestPractices.js` must be traceable to an authoritative NetApp source. This document records those sources and must be updated whenever data is refreshed.
 >
-> **LAST VERIFIED:** August 12, 2026 (platform port/cabling data); July 28, 2026 (ONTAP lifecycle/platform support tables below)  
-> **CURRENT LATEST ONTAP:** 9.19.1 (May 2026)  
-> **NEXT EXPECTED RELEASE:** 9.20.1 (Q4 2026)
+> **LAST VERIFIED:** October 13, 2026 (ONTAP lifecycle/platform support tables, firmware baselines below); August 12, 2026 (platform port/cabling data — unchanged since, except FAS500f, see Known Data Corrections)  
+> **CURRENT LATEST ONTAP:** 9.19.1 (May 2026) — still the latest GA as of this verification date  
+> **NEXT EXPECTED RELEASE:** 9.20.1 (Q4 2026, not yet released)
 
 ---
 
@@ -163,16 +163,22 @@ README.md's "Checking for Updates" section.
 
 ---
 
-## ONTAP Version Registry (Last verified: July 28, 2026)
+## ONTAP Version Registry (Last verified: October 13, 2026)
 
 Source: endoflife.date/netapp-ontap
 
-| Version | GA Released | End Full Support | End Limited Support | Status (Jul 2026) |
+**2026-10-13 reconciliation:** this table and `js/compatibility.js`'s `ONTAP_LIFECYCLE`
+had drifted independently out of sync with each other — GA/End-Full-Support dates
+disagreed by one to several months on most rows, and the 9.17.1 GA date disagreed by
+about seven months. `ONTAP_LIFECYCLE` has been realigned to exactly match the dates in
+this table (the documented single source of truth); see Known Data Corrections below.
+
+| Version | GA Released | End Full Support | End Limited Support | Status (Oct 2026) |
 |---------|------------|-----------------|--------------------|--------------------|
 | 9.0–9.6 | 2016–2019 | — | — | OBSOLETE |
 | 9.7 | Oct 2019 | Oct 2022 | Oct 2024 | Self-Service Only |
 | 9.8 | Oct 2020 | Dec 31 2023 | Dec 31 2025 | Self-Service Only |
-| 9.9.1 | Jun 2021 | Jun 30 2024 | Jun 30 2026 | Transitioning |
+| 9.9.1 | Jun 2021 | Jun 30 2024 | Jun 30 2026 | Self-Service Only (CORRECTED: was "Transitioning" — End Limited Support passed Jun 2026) |
 | 9.10.1 | Jan 2022 | Jan 31 2025 | Jan 31 2027 | LIMITED SUPPORT |
 | 9.11.1 | Jul 2022 | Jul 31 2025 | Jul 31 2027 | LIMITED SUPPORT |
 | 9.12.1 | Feb 2023 | Feb 28 2026 | Feb 28 2028 | LIMITED SUPPORT |
@@ -196,13 +202,13 @@ Source: NetApp Hardware Universe (hwu.netapp.com)
 | Platform | Min ONTAP | Max ONTAP | Status | Notes |
 |----------|-----------|-----------|--------|-------|
 | AFF A200 | 9.4 | 9.11.1 | EOL | Dropped in 9.12.1 |
-| AFF A220 | 9.4 | 9.17.1* | EOS Nov 2026 | * confirm final max in HWU |
+| AFF A220 | 9.4 | 9.17.1* | EOS 2028-03 | CORRECTION (was "EOS Nov 2026"): EOA 2023-03, EOS 2028-03 per NetApp EOA/EOS records. * confirm final max in HWU |
 | AFF A250 | 9.8 | 9.19.1 | ACTIVE | |
-| AFF A300 | 9.4 | 9.17.1* | EOS Nov 2026 | * confirm final max in HWU |
+| AFF A300 | 9.4 | 9.17.1* | EOS (lapsed 2026-06) | CORRECTION (was "EOS Nov 2026"): EOA 2021-06, EOS 2026-06 per NetApp EOA/EOS records — support has already ended, not pending. * confirm final max in HWU |
 | AFF A320 | 9.6 | 9.14.1 | EOS | Dropped in 9.15.1 |
 | AFF A400 | 9.7 | 9.19.1 | ACTIVE | |
-| AFF A700 | 9.5 | 9.19.1 | ACTIVE | Confirmed still supported |
-| AFF A700s | 9.5 | 9.14.1 | EOS | Dropped in 9.15.1 |
+| AFF A700 | 9.5 | 9.19.1 | ACTIVE | Confirmed still supported. EOA 2023-10, EOS 2028-10 (still within support) |
+| AFF A700s | 9.5 | 9.14.1 | EOS (lapsed 2026-06) | Dropped in 9.15.1. EOA 2021-06, EOS 2026-06 per NetApp EOA/EOS records |
 | AFF A800 | 9.7 | 9.19.1 | ACTIVE | Confirmed still supported |
 | AFF A900 | 9.10.1 | 9.19.1 | ACTIVE | |
 | AFF A150 | 9.12.1 | 9.19.1 | ACTIVE | Replaces AFF A220 |
@@ -217,7 +223,7 @@ Source: NetApp Hardware Universe (hwu.netapp.com)
 
 | Platform | Min ONTAP | Max ONTAP | Status | Notes |
 |----------|-----------|-----------|--------|-------|
-| AFF C190 | 9.6 | 9.19.1 | ACTIVE | |
+| AFF C190 | 9.6 | 9.19.1 | ACTIVE | EOA 2022-06, EOS 2027-06 per NetApp EOA/EOS records — still within support but closer to end than plain "ACTIVE" implied |
 | AFF C250 | 9.12.1 | 9.19.1 | ACTIVE | |
 | AFF C400 | 9.12.1 | 9.19.1 | ACTIVE | |
 | AFF C800 | 9.12.1 | 9.19.1 | ACTIVE | |
@@ -261,7 +267,7 @@ Source: NetApp Hardware Universe (hwu.netapp.com)
 | FAS2720 | 9.7 | 9.14.1 | EOS | |
 | FAS2750 | 9.7 | 9.15.1 | EOS | |
 | FAS2820 | 9.12.1 | 9.19.1 | ACTIVE | |
-| FAS8200 | 9.3 | 9.16.1 | EOS | Dropped in 9.17.1 |
+| FAS8200 | 9.3 | 9.16.1 | EOS | Dropped in 9.17.1. EOA 2022-06, EOS 2027-06 per NetApp EOA/EOS records (still within hardware support, just dropped from current ONTAP) |
 | FAS8300 | 9.7 | 9.19.1 | ACTIVE | |
 | FAS8700 | 9.7 | 9.19.1 | ACTIVE | Confirmed still supported |
 | FAS9000 | 9.5 | 9.19.1 | ACTIVE | |
@@ -300,6 +306,23 @@ Source: NetApp Hardware Universe (hwu.netapp.com)
 | Parser never read onboard SAS Host Adapter ports from `sysconfig -a` text (any platform) | Whole-document `SAS Host Adapter` regex pass extracts real storage ports, catalog is fallback only | v2.65 | Real customer ASUP (12-shelf FAS8040) |
 | Audit dashboard's initial cabling render ran before HBA auto-allocation, missing auto-added ports | `allocateHBACardsForState()` now runs before the initial render, not after | v2.66 | Real customer ASUP (12-shelf FAS8040), confirmed live |
 | Aggregate capacity stayed at 0 GB when only `aggr status -r` text was present (no "Size:" line) | Falls back to `aggr-info.xml`'s `<size>`/`<available_size>`/`<usedsize>` when present | v2.68 | Real customer ASUP (12-shelf FAS8040), confirmed live |
+| AFF A220/A300 EOS listed as pending "Nov 2026" | A220 EOS 2028-03; A300 EOS 2026-06 (already lapsed) | v2.76 | NetApp EOA/EOS records |
+| AFF C190/A700s, FAS8200 had no EOA/EOS dates despite being close to or past them | Added: C190 EOS 2027-06; A700s EOS 2026-06 (lapsed); FAS8200 EOS 2027-06 | v2.76 | NetApp EOA/EOS records |
+| FAS500f described as "real current-generation" platform | It's EOA 2022-06/EOS 2027-06 — simply uncatalogued before v2.70, not new hardware | v2.76 | NetApp EOA/EOS records |
+| FAS500f ports were AFF A250 placeholders (`data: e0c/e0d`, `san: 0e/0f`, 2 PCIe slots) | Real (sourced): `data: e4a-e4d` (10GbE host), `san: 2a-2d` (FC host), 4 PCIe slots | v2.76 | docs.netapp.com/us-en/ontap-systems/fas500f/install-detailed-guide.html |
+| `FIRMWARE_VERSIONS.switches["BES-53248"]` latest was `3.10.0.3` | `3.12.0.1` | v2.76 | NetApp firmware-support-matrix |
+| `FIRMWARE_VERSIONS.switches["Nexus 9336C-FX2"]` latest was `10.4(2)F` (actually the AFX-generation 9332D-GX2A/9364D-GX2A firmware train, not 9336C-FX2's) | `9.3(12)` — 9336C-FX2 is EOA and never ran NX-OS 10.x | v2.76 | NetApp firmware-support-matrix |
+| `NVIDIA SN2100` had no entry in `FIRMWARE_VERSIONS.switches` despite `parser.js` detecting it, so BP_SWITCH_RCF could never check it | Added: latest `5.11.0` (Cumulus Linux) | v2.76 | NetApp switch firmware records |
+| `FIRMWARE_VERSIONS.sp` (SP/BMC-by-model) was never through the sourced-correction process; grouped A1K/A90/A70/A50/A30 together at one value and was missing several platforms entirely (FAS90/70, C80, A20, C60/C30, A700s, FAS9000, A200, FAS2650/2620, FAS8060/8080, FAS2820) | Rebuilt per real independent per-family firmware tracks (6 families, not 1), sourced from NetApp KB (CONTAP-474887/344840/705061/323139/657167/323134); A50/A30/A20/C60/C30/FAS50 now correctly split from A1K/A90/A70/C80/FAS90/FAS70 (they use different firmware, matching the already-known port-scheme family split) | v2.76 | NetApp firmware-support-matrix + per-model KB articles |
+| `BP_SP_FIRMWARE`'s catalog lookup used `.find()` on object-insertion order with `startsWith()`, so a shorter key (`"AFF A90"`) listed earlier could shadow a longer, more specific key (`"AFF A900"`) that's really a match too — AFF A900/A300 and ASA A900 were silently checked against the wrong platform's firmware baseline | Lookup now picks the longest matching key, independent of object key order | v2.76 | Code inspection, not a data-source fix |
+| `ONTAP_LIFECYCLE`'s `releaseDate`/`endDate` had drifted independently from this file's own Version Registry table (above), by 1-9 months on most rows, worst on 9.17.1 (~7 months) | Realigned to exactly match this table's GA/End-Full-Support columns | v2.76 | This file's own ONTAP Version Registry (internal consistency fix) |
+| 9.10.1 and 9.11.1 marked `status: "end_of_support"` ("no patches or security fixes available") | Both are still in their Limited Support window today (End Limited Support Jan/Jul 2027) — corrected to `"limited_support"` | v2.76 | This file's own End Limited Support dates, checked against today's date |
+| `latestPatch` was stale on every version 9.9.1 through 9.19.1 (e.g. 9.17.1 showed `P1`, real latest is `P11`) | Refreshed from current NetApp ONTAP downloads-page data | v2.76 | mysupport.netapp.com/site/products/all/details/ontap9/downloads-tab |
+| `js/parser.js` model-detection keyword fallback misclassified AFF A900/A700/A300/A200, ASA A900/C800 as the shorter A90/A70/A30/A20/C80 sibling (prefix-shadowing, same bug class as the already-fixed AFX 1K/9336C) | Reordered longest-keyword-first; added missing branches + a generic ASA fallback regex | v2.76 | Code inspection, not a data-source fix |
+| `js/parser.js` never recognized the modern tabular `storage aggregate show` / `storage disk show -container-type spare` formats — the current default ONTAP commands for both | New dedicated passes for both, including wrapped long aggregate names | v2.76 | ONTAP CLI output conventions |
+| `js/parser.js` HA status regex required `true`/`false` in the wrong column (partner name is actually there; `Possible` is column 3) | Fixed column mapping to match real `storage failover show` output | v2.76 | ONTAP CLI output conventions |
+| `js/parser.js` LIFs required admin/oper as two separate tokens and a per-row repeated vserver name; real `network interface show` combines them (`up/up`) and groups under one vserver header line | Rewritten to match real default output; old assumption kept as a fallback | v2.76 | ONTAP CLI output conventions |
+| `js/parser.js` Broken Disks / Health Alerts required the CLI command text to be echoed before searching for data rows — never true for per-file multi-bundle captures | Search for the row pattern directly, no command-echo anchor required | v2.76 | Code inspection, consistent with existing STORAGE-SHELF.txt per-file handling |
 
 ---
 

@@ -136,8 +136,19 @@ export function parseASUP(files) {
                            combinedText.match(/Controller Firmware:\s*([^\r\n]+)/i);
   if (sysFirmwareMatch) {
     data.version.systemFirmware = sysFirmwareMatch[1].trim();
+  } else if (!isDemoMode) {
+    // Unlike every other field in this file, systemFirmware had no parseWarnings entry
+    // when none of its 4 recognized label formats matched — it silently kept the
+    // hardcoded "v1.0" default (set at data.version init above) with zero indication
+    // anywhere that it's a placeholder, not a real reading. This can't fix the format
+    // coverage gap itself (no further real-world label variant confirmed yet to add),
+    // but at least surfaces it like every other defaulted field does.
+    data.parseWarnings.push({
+      section: "Controller System Firmware",
+      message: `System/BIOS firmware version could not be parsed; using default placeholder (${data.version.systemFirmware}).`
+    });
   }
-  
+
   let isModelParsed = false;
   let modelSource = 'missing';
   // \b before the alternation matters: without it, a bare "Platform" label
@@ -222,20 +233,39 @@ export function parseASUP(files) {
       data.version.partNumber = rawModel; // preserve original for reference
     }
   } else {
-    // Infer from keyword presence — marked as 'inferred', not 'parsed'
+    // Infer from keyword presence — marked as 'inferred', not 'parsed'.
+    //
+    // NOTE (2026-10-13): every branch here is ordered longest/most-specific keyword
+    // first. This is load-bearing, not cosmetic — .includes() means a shorter keyword
+    // that's a textual prefix of a longer one (e.g. "a90" is a prefix of "a900", "c80"
+    // of "c800") will match first if checked first, silently misclassifying the real
+    // platform as the shorter/smaller one. Confirmed real bugs fixed this pass: AFF
+    // A900/A700/A300/A200 and ASA A900/C800 were ALL falling into their respective
+    // "a90"/"a70"/"a30"/"a20"/"c80" shorter-prefix branches (A300 in particular had its
+    // own dedicated `a300` branch below that was permanently unreachable dead code,
+    // since `a30` was always checked first and always matched first). This is the same
+    // bug class as the already-fixed AFX 1K/AFX 2K and Nexus 9336C/9336C-FX2 ordering
+    // bugs — see PLATFORM_COVERAGE.md. Keep new entries ordered accordingly.
     if (lowerText.includes("asa a1k")) { data.version.model = "ASA A1K"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("asa a900")) { data.version.model = "ASA A900"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa a90")) { data.version.model = "ASA A90"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa a70")) { data.version.model = "ASA A70"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa a50")) { data.version.model = "ASA A50"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa a30")) { data.version.model = "ASA A30"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa a20")) { data.version.model = "ASA A20"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("asa c800")) { data.version.model = "ASA C800"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("asa c30")) { data.version.model = "ASA C30"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a1k")) { data.version.model = "AFF A1K"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a900")) { data.version.model = "AFF A900"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a90")) { data.version.model = "AFF A90"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a700")) { data.version.model = "AFF A700"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a70")) { data.version.model = "AFF A70"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a50")) { data.version.model = "AFF A50"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a300")) { data.version.model = "AFF A300"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a30")) { data.version.model = "AFF A30"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("a200")) { data.version.model = "AFF A200"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a20")) { data.version.model = "AFF A20"; isModelParsed = true; modelSource = 'inferred'; }
+    else if (lowerText.includes("c800")) { data.version.model = "AFF C800"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("c80")) { data.version.model = "AFF C80"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("c60")) { data.version.model = "AFF C60"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("c30")) { data.version.model = "AFF C30"; isModelParsed = true; modelSource = 'inferred'; }
@@ -244,11 +274,17 @@ export function parseASUP(files) {
     else if (lowerText.includes("fas70")) { data.version.model = "FAS70"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("fas50")) { data.version.model = "FAS50"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("8300")) { data.version.model = "FAS8300"; isModelParsed = true; modelSource = 'inferred'; }
-    else if (lowerText.includes("a300")) { data.version.model = "AFF A300"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("a250")) { data.version.model = "AFF A250"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("c190")) { data.version.model = "AFF C190"; isModelParsed = true; modelSource = 'inferred'; }
     else if (lowerText.includes("fas")) {
       const match = combinedText.match(/(FAS\d{4})/i);
+      if (match) { data.version.model = match[1].toUpperCase(); isModelParsed = true; modelSource = 'inferred'; }
+    } else if (lowerText.includes("asa")) {
+      // Generic fallback for ASA models without their own keyword branch above
+      // (e.g. ASA A800/A400/A250/A150 — previously fell through to the fully
+      // fabricated default model with no match at all, unlike AFF/FAS which both
+      // already had a generic regex fallback here).
+      const match = combinedText.match(/(ASA\s+[A-Z]?\d{2,3})/i);
       if (match) { data.version.model = match[1].toUpperCase(); isModelParsed = true; modelSource = 'inferred'; }
     } else if (lowerText.includes("aff")) {
       const match = combinedText.match(/(AFF\s+[A-Z]?\d{2,3})/i);
@@ -1104,6 +1140,83 @@ export function parseASUP(files) {
     }
   }
 
+  // Modern tabular "storage aggregate show" format (cDOT's standard default aggregate
+  // listing command — confirmed 2026-10-13 to be completely unrecognized by the block
+  // split above, which only matches the older "aggr status"/"aggr status -r" style
+  // (literal "Aggregate <name> (status, raid_type)" header line). The tabular format's
+  // own column header ("Aggregate   Size   Available   Used%   State...") has no such
+  // per-row marker, so a bundle whose only aggregate dump is this format silently
+  // produced zero real aggregates — same failure mode (fully fabricated aggr_data_a/b
+  // placeholders) as the already-fixed aggr-info.xml gap, just for the single most
+  // commonly captured modern ONTAP aggregate listing instead of a rarer XML export.
+  // Real output wraps the aggregate name onto its own line when it's too long for the
+  // name column, with size/available/etc. on the following indented line — handled by
+  // the two-line continuation branch below.
+  if (data.aggregates.length === 0) {
+    const aggrTableHeaderRegex = /^[ \t]*Aggregate[ \t]+Size[ \t]+Available[ \t]+Used%[ \t]+State/im;
+    const headerIdx = combinedText.search(aggrTableHeaderRegex);
+    if (headerIdx !== -1) {
+      const tableLines = combinedText.slice(headerIdx).split('\n');
+      const sameLineRow = /^(\S+)[ \t]+([\d.]+[GT]B?)[ \t]+([\d.]+[GT]B?)[ \t]+(\d+)%[ \t]+(\S+)[ \t]+(\d+)[ \t]+(\S+)[ \t]+(raid_dp|raid4|raid_tec)/i;
+      const wrappedNameOnly = /^(\S{2,})\s*$/;
+      const continuationRow = /^[ \t]+([\d.]+[GT]B?)[ \t]+([\d.]+[GT]B?)[ \t]+(\d+)%[ \t]+(\S+)[ \t]+(\d+)[ \t]+(\S+)[ \t]+(raid_dp|raid4|raid_tec)/i;
+
+      for (let li = 1; li < tableLines.length; li++) { // start at 1: skip the header line itself
+        const line = tableLines[li];
+        if (/^[ \t]*-+[ \t]*$/.test(line) || /^-{3,}/.test(line)) continue; // "---------" separator rows
+        let aggrName, sizeStr, availStr, raidType, nodeStr;
+        const direct = line.match(sameLineRow);
+        if (direct) {
+          [, aggrName, sizeStr, availStr, , , , nodeStr, raidType] = direct;
+        } else {
+          const nameOnly = line.match(wrappedNameOnly);
+          if (nameOnly && li + 1 < tableLines.length) {
+            const cont = tableLines[li + 1].match(continuationRow);
+            if (cont) {
+              aggrName = nameOnly[1];
+              [, sizeStr, availStr, , , , nodeStr, raidType] = cont;
+              li++; // consumed the continuation line
+            }
+          }
+        }
+        if (!aggrName) {
+          // Blank line or unrelated text ends the table (next section's heading, etc.)
+          if (line.trim() === '' && li > 1) break;
+          continue;
+        }
+        if (data.aggregates.some(a => a.name === aggrName)) continue;
+
+        const sizeGB = parseSizeToGB(sizeStr);
+        const freeGB = parseSizeToGB(availStr);
+        const usedGB = Math.max(0, sizeGB - freeGB);
+        const xmlCap = aggrInfoCapacityByName[aggrName];
+
+        data.aggregates.push({
+          name: aggrName,
+          node: (data.nodes && data.nodes.find(n => n.name.toLowerCase() === nodeStr.toLowerCase())?.name) || nodeStr,
+          sizeGB,
+          // "storage aggregate show" has no separate raw-vs-usable distinction the way
+          // the classic "aggr status"/"Size:/Usable:/Used:/Free:" text format does —
+          // Size here already means what's actually allocatable, so usableGB = sizeGB,
+          // unless aggr-info.xml (if also present in this bundle) has the authoritative
+          // byte-exact figures, in which case that takes precedence like it does above.
+          usableGB: xmlCap ? xmlCap.usableGB : sizeGB,
+          usedGB: xmlCap ? xmlCap.usedGB : usedGB,
+          freeGB: xmlCap ? xmlCap.freeGB : freeGB,
+          raidType: raidType.toLowerCase(),
+          rgSize: 0,
+          disksCount: 0,
+          diskType: data.shelves[0]?.disks[0]?.type || "SSD",
+          diskSizeGB: data.shelves[0]?.disks[0]?.sizeGB || 960,
+          isMirrored: false,
+          totalDiskCount: 0,
+          isRootAggr: /^aggr0/i.test(aggrName),
+          haPolicy: null
+        });
+      }
+    }
+  }
+
   // Fallback aggregates if none parsed
   if (data.aggregates.length === 0) {
     if (!isDemoMode) {
@@ -1171,6 +1284,51 @@ export function parseASUP(files) {
         sizeGB,
         type,
         count
+      });
+    }
+  }
+
+  // Modern tabular "storage disk show -container-type spare" format — confirmed
+  // 2026-10-13 to be completely unrecognized by the regex above, which only matches
+  // the older "Spare Disks (node): NETAPP model (size, type) - N spares" summary line
+  // (the classic sysconfig/"aggr status -s" style). cDOT's per-disk spare listing has
+  // no such summary line at all — a bundle whose only spare-disk source is this command
+  // silently fell through to the fully fabricated 1-spare-per-node default, feeding the
+  // sparing-compliance audit rule (Rule 4) fake data instead of the real spare count.
+  // Real columns: "Disk  Usable Size  Shelf  Bay  Disk Type  Container Type  Container
+  // Name  Owner" — one row per physical spare disk; grouped here by (owner, normalized
+  // type, size) into the same {node, type, sizeGB, count} shape Rule 4 already expects.
+  if (data.spares.length === 0) {
+    // Matches just the field-name header line ("Disk ... Shelf Bay Type ...") — the
+    // group-label line real ONTAP prints above it ("Usable ... Container Container")
+    // varies/wraps too unpredictably to anchor on.
+    const spareTableHeaderRegex = /^[ \t]*Disk[ \t]+.*Shelf[ \t]+Bay[ \t]+Type/im;
+    const headerIdx = combinedText.search(spareTableHeaderRegex);
+    if (headerIdx !== -1) {
+      const tableText = combinedText.slice(headerIdx);
+      const spareRowRegex = /^(\S+)[ \t]+([\d.]+[GT]B?)[ \t]+(\d+)[ \t]+(\d+)[ \t]+(\S+)[ \t]+spare[ \t]+\S+[ \t]+(\S+)[ \t]*$/gim;
+      const isAllFlash = data.version.model.includes("AFF") || data.version.model.includes("ASA");
+      const counted = {}; // "node|type|sizeGB" -> count
+      let spareRowMatch;
+      while ((spareRowMatch = spareRowRegex.exec(tableText)) !== null) {
+        const [, , sizeStr, , , diskTypeCol, owner] = spareRowMatch;
+        const sizeGB = parseSizeToGB(sizeStr);
+        if (!sizeGB) continue;
+        const type = /ssd|nvme/i.test(diskTypeCol) ? (isAllFlash ? "NVMe SSD" : "SAS SSD") : "SAS HDD";
+        const key = `${owner}|${type}|${sizeGB}`;
+        counted[key] = (counted[key] || 0) + 1;
+      }
+      Object.keys(counted).forEach(key => {
+        const [node, type, sizeGBStr] = key.split('|');
+        const sizeGB = parseInt(sizeGBStr, 10);
+        data.spares.push({
+          node,
+          model: `${type} (${(sizeGB / 1000).toFixed(1)}TB class)`, // no NetApp part number in this tabular output
+          sizeStr: sizeGB >= 1000 ? `${(sizeGB / 1000).toFixed(2)}TB` : `${sizeGB}GB`,
+          sizeGB,
+          type,
+          count: counted[key]
+        });
       });
     }
   }
@@ -1706,31 +1864,64 @@ export function parseASUP(files) {
   data.alerts = extractASUPAlerts(combinedText, files);
 
   // 3a. Storage Failover / HA Status
-  const sfMatches = [...combinedText.matchAll(/^(\S+)\s+(true|false)\s+(\S.*?)\s{2,}(\S.*?)$/gim)];
+  // Fixed 2026-10-13: real ONTAP `storage failover show` output columns are
+  // "Node  Partner  Possible  State Description" — e.g. "node1  node2  true  Connected to node2".
+  // The previous regex required column 2 (right after the node name) to literally be
+  // "true"/"false", but that's column 3 ("Possible") in real output; column 2 is the
+  // partner node's name. That meant the single most common default-capture CLI command
+  // for this field could essentially never match (a partner would have to be literally
+  // named "true" or "false"), leaving data.haStatus empty for almost every real bundle
+  // and silently disabling BP_HA_STATUS. Mirrors "Possible" onto the existing `enabled`
+  // field (closest available meaning: takeover is not currently possible for this node).
+  const sfMatches = [...combinedText.matchAll(/^(\S+)\s+(\S+)\s+(true|false)\s+(\S.*?)$/gim)];
   data.haStatus = sfMatches.map(m => ({
     node: m[1].trim(),
-    enabled: m[2].toLowerCase() === 'true',
-    state: m[3].trim(),
-    partner: m[4].trim()
+    partner: m[2].trim(),
+    enabled: m[3].toLowerCase() === 'true',
+    state: m[4].trim()
   }));
 
   // 3b. Broken Disks
-  const brokenSection = combinedText.match(/storage disk show.*?-broken[\s\S]*?(?=\n\n[A-Z]|$)/i);
+  // Fixed 2026-10-13: previously gated behind finding the literal "storage disk show
+  // ... -broken" command-echo text first. Real multi-file ASUP bundles commonly capture
+  // each command's output in its own section/file without ever echoing the command
+  // itself (the same reason STORAGE-SHELF.txt-style per-file sourcing was added
+  // elsewhere in this parser) — a bundle shaped that way had zero broken disks detected
+  // regardless of whether any actually existed. The row pattern itself (an explicit
+  // disk path plus the literal "broken"/"failed"/"prefailed" keyword) is distinctive
+  // enough to search for directly, without requiring the command-echo anchor.
   data.brokenDisks = [];
-  if (brokenSection) {
-    const brokenMatches = [...brokenSection[0].matchAll(/(\S+:\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(broken|failed|prefailed)/gi)];
+  {
+    const brokenMatches = [...combinedText.matchAll(/(\S+:\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(broken|failed|prefailed)/gi)];
     data.brokenDisks = brokenMatches.map(m => ({ disk: m[1], type: m[2], rpm: m[3], reason: m[4] }));
   }
 
   // 3c. System Health Alerts
-  const alertSection = combinedText.match(/health alert show[\s\S]*?(?=\n\n[A-Z]|$)/i);
+  // Fixed 2026-10-13: same class of gap as Broken Disks above — previously gated behind
+  // finding the literal "health alert show" command-echo text first, which a per-file
+  // multi-bundle capture (output only, no echoed command) would never contain. The row
+  // pattern (a node name, numeric alert ID, and an explicit severity keyword) is
+  // distinctive enough to search for directly.
   data.healthAlerts = [];
-  if (alertSection) {
-    const alertMatches = [...alertSection[0].matchAll(/^\s*(\S+)\s+(\d+)\s+(error|warning|critical|notice)\s+(.+)$/gim)];
+  {
+    const alertMatches = [...combinedText.matchAll(/^\s*(\S+)\s+(\d+)\s+(error|warning|critical|notice)\s+(.+)$/gim)];
     data.healthAlerts = alertMatches.map(m => ({ node: m[1], id: m[2], severity: m[3], description: m[4].trim() }));
   }
 
   // 3d. SnapMirror Relationships
+  // NOTE (2026-10-13): a parser.js format-coverage audit flagged this as possibly only
+  // matching one layout (requiring a trailing true/false/"-" "Healthy" column). Real
+  // ONTAP "snapmirror show" output does carry a Healthy column by default, but an
+  // alternate layout without it could plausibly exist in some capture. Deliberately NOT
+  // adding a fallback for that here: `data.snapmirrorRelationships[].healthy` is read
+  // downstream (ui.js, bestPractices.js BP_SNAPMIRROR_LAG) as a plain boolean — `!r.healthy`
+  // — with no "unknown" state, so a fallback pass that can't determine real health would
+  // have to guess `true` (risks masking a genuinely broken replication relationship) or
+  // `false` (risks a false-positive critical finding on a relationship never actually
+  // confirmed unhealthy). Both are worse than the status quo without a concrete sample of
+  // the alternate real-world format to parse correctly in the first place. Left as-is;
+  // revisit if/when a real bundle surfaces the alternate layout (same pattern as every
+  // other confirmed fix in this file's history — see DATA_SOURCES.md).
   data.snapmirrorRelationships = [];
   const smMatches = [...combinedText.matchAll(/^(\S+:\S+)\s+(\S+:\S+)\s+(\S+)\s+(\d+\s+\S+)\s+(true|false|\-)/gim)];
   if (smMatches.length > 0) {
@@ -1744,18 +1935,68 @@ export function parseASUP(files) {
   }
 
   // 3e. Logical Interfaces (LIFs)
+  // Fixed 2026-10-13: real default "network interface show" output combines admin/oper
+  // into ONE slash-joined field ("up/up"), not two separate space-delimited tokens, and
+  // groups LIFs under a Vserver header line that only appears once per vserver (indented
+  // rows below it, not a repeated per-row vserver column) — e.g.:
+  //   Vserver     Interface  Admin/Oper Address/Mask        Node       Port    Home
+  //   ----------- ---------- ---------- ------------------ ---------- ------- ----
+  //   vs1
+  //               data1      up/up      10.0.0.5/24        node1      e0c     true
+  // The previous regex required "up"/"down" as two separate trailing groups and the
+  // vserver name on the same line as every row, so this — the single most common
+  // default-capture form — never matched, leaving data.lifs silently empty. Also: this
+  // format's "Is Home" column is a bare boolean with no separate home-node NAME column,
+  // so homeNode can only be derived (= current node) when the LIF genuinely is home;
+  // when it's off-home, the real original home node isn't knowable from this output.
   data.lifs = [];
-  const lifMatches = [...combinedText.matchAll(/^\s*(\S+)\s+(\S+)\s+(\/\d+|\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(up|down)\s+(up|down)/gim)];
-  data.lifs = lifMatches.map(m => ({
-    lif: m[1],
-    node: m[2],
-    address: m[3],
-    homeNode: m[4],
-    homePort: m[5],
-    statusAdmin: m[6],
-    statusOper: m[7],
-    isHome: m[2].trim().toLowerCase() === m[4].trim().toLowerCase()
-  }));
+  {
+    const lifRowRegex = /^[ \t]+(\S+)[ \t]+(up|down)\/(up|down)[ \t]+(\S+)[ \t]+(\S+)[ \t]+(\S+)[ \t]+(true|false)[ \t]*$/i;
+    const vserverHeaderRegex = /^(\S+)[ \t]*$/;
+    let currentVserver = null;
+    const lines = combinedText.split('\n');
+    for (const line of lines) {
+      const rowMatch = line.match(lifRowRegex);
+      if (rowMatch) {
+        const [, lif, statusAdmin, statusOper, address, node, port, isHomeStr] = rowMatch;
+        const isHome = isHomeStr.toLowerCase() === 'true';
+        data.lifs.push({
+          lif,
+          vserver: currentVserver,
+          node,
+          address,
+          homeNode: isHome ? node : 'unknown (home node not shown by this command)',
+          homePort: isHome ? port : null,
+          statusAdmin: statusAdmin.toLowerCase(),
+          statusOper: statusOper.toLowerCase(),
+          isHome
+        });
+        continue;
+      }
+      // A bare non-indented single-token line between header/rows is a vserver grouping
+      // label (ONTAP omits the repeated vserver name on every row). Ignore the table's
+      // own separator ("----------- ...") and blank lines.
+      const vMatch = line.match(vserverHeaderRegex);
+      if (vMatch && !/^-+$/.test(vMatch[1]) && vMatch[1].toLowerCase() !== 'vserver') {
+        currentVserver = vMatch[1];
+      }
+    }
+  }
+  // Fallback: an older/structured "-fields" style dump with separate admin/oper and an
+  // explicit home-node-name column, if present and the format above found nothing.
+  if (data.lifs.length === 0) {
+    const lifMatches = [...combinedText.matchAll(/^\s*(\S+)\s+(\S+)\s+(\/\d+|\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(\S+)\s+(up|down)\s+(up|down)/gim)];
+    data.lifs = lifMatches.map(m => ({
+      lif: m[1],
+      node: m[2],
+      address: m[3],
+      homeNode: m[4],
+      homePort: m[5],
+      statusAdmin: m[6],
+      statusOper: m[7],
+      isHome: m[2].trim().toLowerCase() === m[4].trim().toLowerCase()
+    }));
+  }
 
   // 3f. Aggregate Space Usage
   data.aggregates.forEach(agg => {
