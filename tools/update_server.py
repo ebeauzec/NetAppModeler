@@ -26,7 +26,7 @@ Then in the app: Settings -> "Check for Updates".
 import json
 import os
 import sys
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -43,15 +43,32 @@ PORT = 8765
 class Handler(BaseHTTPRequestHandler):
     def _send_json(self, status, payload):
         body = json.dumps(payload).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        # The app is opened via file:// (Origin: null) or a local http server —
-        # this server's own CORS policy, not NetApp's, so we can be permissive
-        # for a purely local, user-initiated tool.
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            # The app is opened via file:// (Origin: null) or a local http server —
+            # this server's own CORS policy, not NetApp's, so we can be permissive
+            # for a purely local, user-initiated tool.
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            # Confirmed 2026-10-13: the browser's own 60s AbortSignal.timeout (or
+            # the user navigating away / closing the tab) can tear down the
+            # connection while a slow harvest (/check-updates or
+            # /check-ontap-updates can legitimately take 30-60s+ combined — several
+            # sequential docs.netapp.com fetches, each with its own socket timeout)
+            # is still running. Writing the finished response to that now-dead
+            # socket raised an unhandled exception here, which — because it
+            # happened *inside* the except block that was already trying to send
+            # an error response for a different failure — produced a second,
+            # confusing double-traceback in the console and (since this ran on
+            # the old single-threaded HTTPServer) could leave the server's one
+            # request-handling slot stuck, making every subsequent request
+            # (including from a fresh browser tab) hang indefinitely. The client
+            # already gave up; nothing to do here but note it and move on.
+            print("[update-server] client disconnected before the response could be sent (it likely gave up waiting)")
 
     def do_OPTIONS(self):
         self.send_response(204)
@@ -136,7 +153,16 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    server = HTTPServer(("127.0.0.1", PORT), Handler)
+    # ThreadingHTTPServer, not plain HTTPServer: confirmed 2026-10-13 — the app
+    # fires /check-updates and /check-ontap-updates from the same button click,
+    # and a single-threaded server processes them one at a time, so the second
+    # request waits for the first's ~15-20s harvest to fully finish before even
+    # starting its own (also ~15-20s+) — the combined wait can exceed a minute
+    # and, if the client gives up first, can leave the server's one handling
+    # slot stuck on a half-finished request. Threading lets both run genuinely
+    # concurrently, so the user waits for whichever one is slower, not both
+    # back-to-back.
+    server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     print(f"NetAppModeler update helper running at http://127.0.0.1:{PORT}")
     print("In the app: Settings -> Check for Updates. Ctrl+C to stop (app goes back to fully offline).")
     try:

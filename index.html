@@ -37,7 +37,7 @@
         <svg style="width: 28px; height: 28px; fill: var(--color-primary);" viewBox="0 0 24 24">
           <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
         </svg>
-        NetApp ASUP Analyzer & Modeler <span>v2.75</span>
+        NetApp ASUP Analyzer & Modeler <span>v2.76</span>
       </div>
       <div class="no-print" style="display: flex; gap: 8px; align-items: center;">
         <button id="save-config-btn" class="btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
@@ -1057,12 +1057,45 @@
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
           </svg>
         </div>
-        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.75</h2>
+        <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0;">What's New in v2.76</h2>
         <p style="color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem;">NetApp ASUP Analyzer & Modeler Platform Update</p>
       </div>
 
       <!-- Feature list -->
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+
+        <!-- Feature -20 (v2.76) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🔄</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">ONTAP Target-Version Picker Now Covers Every Supported Version + Real Latest Patch, Dynamically</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              The upgrade-target dropdown's P-release list had drifted stale on every branch 9.14.1 and newer (e.g. offering 9.17.1P1 when the real latest was P11) — it was a separately hand-typed array. It now derives live from the ONTAP_LIFECYCLE table, so refreshing that table is the only place this ever needs updating again. "Check for Updates" also now runs a second, independent drift check against NetApp's own official GA-date page (which also publishes the exact Full/Limited-Support duration formula) and cross-checks endoflife.date and NetApp's End-of-Availability platform index — alongside the existing cabling/port check. ONTAP P-release numbers themselves stay a manual update: NetApp's only public listing of those requires an authenticated support-site login, which this 100%-offline, no-login tool deliberately never uses.
+            </span>
+          </div>
+        </div>
+
+        <!-- Feature -19 (v2.76) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">📋</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">AutoSupport Parser: Eight Real Format-Coverage Gaps Closed</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              An audit of every field the parser extracts against the alternate CLI/XML layouts real ASUP bundles vary across. Highlights: the modern tabular "storage aggregate show" and "storage disk show -container-type spare" commands — ONTAP's own current defaults — were completely unrecognized, silently substituting fabricated placeholder data; HA status read the wrong column entirely (the real "storage failover show" output has the partner node name where the parser expected true/false); LIFs are now parsed from the real combined "up/up" admin/oper format instead of an assumed two-token layout; and a model-detection ordering bug (same class as the already-fixed AFX 1K/9336C bugs) was silently misclassifying AFF A900/A700/A300/A200 as the smaller A90/A70/A30/A20 sibling. Regression suite grew from 51 to 70 tests.
+            </span>
+          </div>
+        </div>
+
+        <!-- Feature -18 (v2.76) -->
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <span style="font-size: 1.4rem; flex-shrink: 0; background: rgba(6,182,212,0.1); border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-info);">🛠️</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.15rem;">Data Correctness Sweep: Firmware Baselines, ONTAP Lifecycle Dates, and Two Logic Bugs</strong>
+            <span style="color: var(--color-muted); font-size: 0.82rem; line-height: 1.4; display: block;">
+              Every factual claim in the platform/firmware/ONTAP-lifecycle catalogs was cross-checked against current NetApp sourcing. Found and fixed: a firmware-compliance lookup bug where "AFF A90" (listed first) silently shadowed "AFF A900" in object key order, so real AFF A900/ASA A900 systems were checked against the wrong SP/BMC firmware baseline; a switch firmware baseline that was actually the firmware train for a newer, different switch generation; ONTAP 9.10.1/9.11.1 wrongly marked "no patches available" when both are still in their Limited Support window; and three missing cross-module imports that silently crashed or disabled firmware-compliance audit rules outside the shipped bundle. See DATA_SOURCES.md's Known Data Corrections table for the full per-field list with sources.
+            </span>
+          </div>
+        </div>
 
         <!-- Feature -17 (v2.75) -->
         <div style="display: flex; gap: 1rem; align-items: flex-start;">

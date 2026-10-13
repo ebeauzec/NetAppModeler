@@ -80,22 +80,24 @@ async function checkForUpdates() {
   const content = document.getElementById("update-results-content");
   if (!modal || !content) return;
 
-  content.innerHTML = `<div style="text-align:center; padding: 1rem 0;">Checking local update helper and re-fetching NetApp's reference pages (~20s)...</div>`;
+  content.innerHTML = `<div style="text-align:center; padding: 1rem 0;">Checking local update helper and re-fetching NetApp's reference pages (up to ~30-40s — two independent checks run at once, but each re-fetches several docs.netapp.com pages)...</div>`;
   modal.style.display = "flex";
 
-  // The helper re-fetches several docs.netapp.com pages sequentially per call
+  // Each check re-fetches several docs.netapp.com pages sequentially server-side
   // (see tools/harvest_reference_data.py / tools/harvest_ontap_lifecycle.py) —
-  // that alone takes ~15-20s combined, so this needs real headroom, not a
-  // short "is it up" timeout.
+  // ~15-20s apiece, so this needs real headroom, not a short "is it up" timeout.
+  // FIRED CONCURRENTLY, not one `await`ed before the other starts — confirmed
+  // 2026-10-13: awaiting them in sequence made the user wait for BOTH checks
+  // back-to-back (~40s+ combined) while the UI's own message still said "~20s",
+  // which looked exactly like "the button does nothing". tools/update_server.py
+  // also switched to ThreadingHTTPServer so the server can genuinely process
+  // both requests in parallel instead of queuing the second behind the first.
   const fetchOpts = (typeof AbortSignal !== "undefined" && AbortSignal.timeout) ? { signal: AbortSignal.timeout(60000) } : {};
-
-  let cablingResp, cablingErr, ontapResp, ontapErr;
-  try {
-    cablingResp = await fetch(`${UPDATE_HELPER_URL}/check-updates`, fetchOpts);
-  } catch (e) { cablingErr = e; }
-  try {
-    ontapResp = await fetch(`${UPDATE_HELPER_URL}/check-ontap-updates`, fetchOpts);
-  } catch (e) { ontapErr = e; }
+  const cablingPromise = fetch(`${UPDATE_HELPER_URL}/check-updates`, fetchOpts).then(r => ({ r }), e => ({ e }));
+  const ontapPromise = fetch(`${UPDATE_HELPER_URL}/check-ontap-updates`, fetchOpts).then(r => ({ r }), e => ({ e }));
+  const [cablingOutcome, ontapOutcome] = await Promise.all([cablingPromise, ontapPromise]);
+  const cablingResp = cablingOutcome.r, cablingErr = cablingOutcome.e;
+  const ontapResp = ontapOutcome.r, ontapErr = ontapOutcome.e;
 
   if (cablingErr && ontapErr) {
     // NOTE: a page — even this one, already open — cannot start a local process
