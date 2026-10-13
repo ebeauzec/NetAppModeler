@@ -728,6 +728,29 @@ window.addEventListener('DOMContentLoaded', function() {
       exhaustText.indexOf('No Storage Port') === -1,
       { autoAddedCards: (manyShelvesState.expansionCards || []).filter(function(c){return c.autoAdded;}) });
 
+    // --- compatibility.js: getUpgradeHopsConsiderations never silently returns
+    // nothing for a real upgrade path — confirmed real bug 2026-10-13: the
+    // hand-curated hopSequence library only covered a subset of the version pairs
+    // ONTAP_HOPS actually offers as valid upgrade targets (e.g. 9.15.1 -> 9.17.1,
+    // a real direct hop per ONTAP_HOPS, had no matching hopSequence entry and no
+    // shortcut match either), so Step 3's considerations panel silently showed
+    // nothing at all for several otherwise-valid upgrade selections, with zero
+    // indication anything was even checked. A generic fallback card now covers any
+    // pair hopSequence doesn't have specific researched content for. Checks every
+    // single pair ONTAP_HOPS actually exposes, not just the one reported case. ---
+    var upgradePairGaps = [];
+    var upgradePairsChecked = 0;
+    Object.keys(ONTAP_HOPS).forEach(function(fromVer) {
+      Object.keys(ONTAP_HOPS[fromVer]).forEach(function(toVer) {
+        if (fromVer === toVer) return;
+        upgradePairsChecked++;
+        var considerations = getUpgradeHopsConsiderations(fromVer, toVer, ONTAP_HOPS[fromVer][toVer]);
+        if (!considerations || considerations.length === 0) upgradePairGaps.push(fromVer + ' -> ' + toVer);
+      });
+    });
+    check('getUpgradeHopsConsiderations: every valid ONTAP_HOPS upgrade pair (' + upgradePairsChecked + ' checked) shows at least one consideration card, not a silent blank panel',
+      upgradePairGaps.length === 0, upgradePairGaps);
+
     var resDiv = document.createElement('div');
     resDiv.id = 'test-results';
     resDiv.textContent = JSON.stringify(results);

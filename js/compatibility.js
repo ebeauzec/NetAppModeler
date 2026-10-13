@@ -2021,6 +2021,37 @@ export function getUpgradeHopsConsiderations(baseCur, target, hops) {
     }
   }
 
+  // Generic fallback (added 2026-10-13): confirmed live that a valid, real upgrade
+  // path with no exact OR shortcut match in hopSequence above (e.g. 9.15.1 -> 9.17.1 --
+  // a real direct hop per ONTAP_HOPS, but never individually authored into this
+  // hand-curated library) silently showed nothing at all -- no risks, no pre-reqs, no
+  // commands, with no indication anything was even checked. hopSequence only covers a
+  // subset of the real version-pair combinations this tool now offers as upgrade
+  // targets (ONTAP_LIFECYCLE/ONTAP_HOPS cover every GA'd version, but hopSequence's
+  // per-pair technical detail was authored by hand and was never extended to match).
+  // Rather than fabricate specific technical claims for pairs that were never actually
+  // researched, this shows one clearly-generic fallback card instead of nothing --
+  // honest that it's generic, not specific, but still actionable.
+  if (considerations.length === 0 && fullPath.length > 1) {
+    considerations.push({
+      title: `Upgrade ${baseCur} ➔ ${target} — General Pre-Upgrade Checklist`,
+      directUpgrade: true,
+      risks: [
+        "No version-specific caveats are catalogued for this exact upgrade path yet — review NetApp's official release notes for every version between " + baseCur + " and " + target + " before proceeding."
+      ],
+      preReqs: [
+        "Confirm cluster and HA health show no outstanding faults before starting.",
+        "Confirm cluster switch RCF/firmware currency (if applicable).",
+        "Run the built-in upgrade pre-checks and resolve any reported issues before proceeding."
+      ],
+      commands: [
+        "cluster image validate -version " + target,
+        "cluster show",
+        "system health alert show"
+      ]
+    });
+  }
+
   return considerations;
 }
 

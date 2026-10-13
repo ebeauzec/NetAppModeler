@@ -2,7 +2,7 @@ import { DEMO_DATA, demoASA_A400, demoAFF_C800 } from './demoData.js';
 import { parseASUP, formatGB, parseSizeToGB, getSectionCoverage, mergeClusterASUPs, inferMissingData, computeOverallConfidence } from './parser.js';
 
 import { runAudit, calculateComplianceScore, BP_LIFECYCLE, getPlatformMaxDrives } from './bestPractices.js';
-import { getPlatformProfile, getUpgradeHopsConsiderations, NETAPP_PLATFORMS, EXP_CARDS_CATALOG, compareVersions, getPlatformSlots, isHighEndPlatform, REMEDIATION_REFS, ONTAP_LIFECYCLE } from './compatibility.js';
+import { getPlatformProfile, getUpgradeHopsConsiderations, NETAPP_PLATFORMS, EXP_CARDS_CATALOG, compareVersions, getPlatformSlots, isHighEndPlatform, REMEDIATION_REFS, ONTAP_LIFECYCLE, ONTAP_HOPS } from './compatibility.js';
 
 // Every officially-supported ONTAP base version (9.7 through the latest GA) plus its real
 // latest patch/P-release, derived live from compatibility.js's ONTAP_LIFECYCLE rather than
@@ -214,102 +214,15 @@ function getCardPorts(cardKey, slot) {
   });
 }
 
-// ONTAP Upgrade paths — only real, GA-released versions (latest: 9.16.1 as of July 2026)
-const UI_UPGRADE_HOPS = {
-  // From 9.7 — must hop via 9.8 → 9.9.1 → 9.12.1 → 9.13.1 → 9.15.1 → 9.16.1
-  "9.7": {
-    "9.7":    [],
-    "9.8":    ["9.8"],
-    "9.9.1":  ["9.8", "9.9.1"],
-    "9.12.1": ["9.8", "9.9.1", "9.12.1"],
-    "9.13.1": ["9.8", "9.9.1", "9.12.1", "9.13.1"],
-    "9.14.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.14.1"],
-    "9.15.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.15.1"],
-    "9.16.1": ["9.8", "9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.16.1"]
-  },
-  // From 9.8 — hop via 9.9.1 → 9.12.1 → 9.13.1 → 9.15.1 → 9.16.1
-  "9.8": {
-    "9.8":    [],
-    "9.9.1":  ["9.9.1"],
-    "9.12.1": ["9.9.1", "9.12.1"],
-    "9.13.1": ["9.9.1", "9.12.1", "9.13.1"],
-    "9.14.1": ["9.9.1", "9.12.1", "9.13.1", "9.14.1"],
-    "9.15.1": ["9.9.1", "9.12.1", "9.13.1", "9.15.1"],
-    "9.16.1": ["9.9.1", "9.12.1", "9.13.1", "9.15.1", "9.16.1"]
-  },
-  // From 9.9.1 — hop via 9.12.1 → 9.13.1 → 9.15.1 → 9.16.1
-  "9.9.1": {
-    "9.9.1":  [],
-    "9.12.1": ["9.12.1"],
-    "9.13.1": ["9.12.1", "9.13.1"],
-    "9.14.1": ["9.12.1", "9.13.1", "9.14.1"],
-    "9.15.1": ["9.12.1", "9.13.1", "9.15.1"],
-    "9.16.1": ["9.12.1", "9.13.1", "9.15.1", "9.16.1"]
-  },
-  // From 9.10.1 — hop via 9.12.1 → 9.14.1 → 9.16.1
-  "9.10.1": {
-    "9.10.1": [],
-    "9.12.1": ["9.12.1"],
-    "9.13.1": ["9.12.1", "9.13.1"],
-    "9.14.1": ["9.12.1", "9.13.1", "9.14.1"],
-    "9.15.1": ["9.12.1", "9.13.1", "9.15.1"],
-    "9.16.1": ["9.12.1", "9.13.1", "9.15.1", "9.16.1"]
-  },
-  // From 9.11.1 — hop via 9.12.1 → 9.14.1 → 9.16.1
-  "9.11.1": {
-    "9.11.1": [],
-    "9.12.1": ["9.12.1"],
-    "9.13.1": ["9.12.1", "9.13.1"],
-    "9.14.1": ["9.12.1", "9.13.1", "9.14.1"],
-    "9.15.1": ["9.12.1", "9.13.1", "9.15.1"],
-    "9.16.1": ["9.12.1", "9.13.1", "9.15.1", "9.16.1"]
-  },
-  // From 9.12.1 — hop via 9.13.1 → 9.15.1 → 9.16.1
-  "9.12.1": {
-    "9.12.1": [],
-    "9.13.1": ["9.13.1"],
-    "9.14.1": ["9.13.1", "9.14.1"],
-    "9.15.1": ["9.13.1", "9.15.1"],
-    "9.16.1": ["9.13.1", "9.15.1", "9.16.1"]
-  },
-  // From 9.13.1 — direct to 9.14.1, hop to 9.15.1 → 9.16.1
-  "9.13.1": {
-    "9.13.1": [],
-    "9.14.1": ["9.14.1"],
-    "9.15.1": [],
-    "9.16.1": ["9.15.1", "9.16.1"]
-  },
-  // From 9.14.1 — direct to 9.15.1, hop to 9.16.1
-  "9.14.1": {
-    "9.14.1": [],
-    "9.15.1": [],
-    "9.16.1": ["9.15.1", "9.16.1"]
-  },
-  // From 9.15.1 — direct to 9.16.1
-  "9.15.1": {
-    "9.15.1": [],
-    "9.16.1": ["9.16.1"]
-  },
-  // From 9.16.1 — currently latest, no further path
-  "9.16.1": {
-    "9.16.1": [],
-    "9.17.1": ["9.17.1"],
-    "9.18.1": ["9.17.1", "9.18.1"],
-    "9.19.1": ["9.17.1", "9.18.1", "9.19.1"]
-  },
-  "9.17.1": {
-    "9.17.1": [],
-    "9.18.1": ["9.18.1"],
-    "9.19.1": ["9.18.1", "9.19.1"]
-  },
-  "9.18.1": {
-    "9.18.1": [],
-    "9.19.1": ["9.19.1"]
-  },
-  "9.19.1": {
-    "9.19.1": []
-  }
-};
+// NOTE (2026-10-13): this used to be its own separately hand-typed upgrade-hop
+// table, UI_UPGRADE_HOPS, duplicating compatibility.js's ONTAP_HOPS (now imported
+// above) with the same shape. The two had drifted out of sync — UI_UPGRADE_HOPS's
+// entries for 9.14.1 and 9.15.1 stopped at 9.16.1, never extended to 9.17.1/
+// 9.18.1/9.19.1 even though ONTAP_HOPS already had them and those versions were
+// already selectable as upgrade targets — so picking e.g. 9.15.1 -> 9.17.1 (a
+// perfectly valid direct hop) silently rendered no timeline and no upgrade
+// considerations at all, confirmed live. Removed; every reference below now
+// uses the single ONTAP_HOPS table instead (see js/compatibility.js).
 
 function resolveMediaType(diskSizeStr) {
   if (!diskSizeStr) return "SSD";
@@ -387,9 +300,9 @@ const SHELF_SPEC_MAP = {
 function resolveBaseVersionKey(version) {
   if (!version) return '9.19.1';
   const v = version.trim();
-  if (UI_UPGRADE_HOPS[v]) return v;
+  if (ONTAP_HOPS[v]) return v;
   const base = v.split('P')[0].trim();
-  if (UI_UPGRADE_HOPS[base]) return base;
+  if (ONTAP_HOPS[base]) return base;
   if (base.startsWith('9.7'))  return '9.7';
   if (base.startsWith('9.8'))  return '9.8';
   if (base.startsWith('9.9'))  return '9.9.1';
@@ -664,7 +577,7 @@ function exportMarkdownPlan() {
   const targetOntap = document.getElementById("target-ontap").value;
   const curVer = currentState.version.ontap;
   const baseCur = resolveBaseVersionKey(curVer);
-  const hops = UI_UPGRADE_HOPS[baseCur] ? UI_UPGRADE_HOPS[baseCur][targetOntap] : [];
+  const hops = ONTAP_HOPS[baseCur] ? ONTAP_HOPS[baseCur][targetOntap] : [];
   const hopList = hops.length > 0 ? hops.join(" -> ") : "No upgrade required";
 
   let md = `# NetApp Storage Upgrade & Implementation Plan\n\n`;
@@ -806,7 +719,7 @@ function generateCliScriptText() {
   const targetOntap = document.getElementById("target-ontap") ? document.getElementById("target-ontap").value : "9.16.1";
   const curVer = currentState.version.ontap;
   const baseCur = resolveBaseVersionKey(curVer);
-  const hops = UI_UPGRADE_HOPS[baseCur] ? UI_UPGRADE_HOPS[baseCur][targetOntap] : [];
+  const hops = ONTAP_HOPS[baseCur] ? ONTAP_HOPS[baseCur][targetOntap] : [];
 
   let script = `#!/bin/bash\n`;
   script += `# ==========================================================================\n`;
@@ -4979,13 +4892,13 @@ function updateUpgradeHopTimeline() {
   const curVer = currentState.version.ontap;
   const baseCur = resolveBaseVersionKey(curVer);
   const target = document.getElementById("target-ontap").value;
-  // UI_UPGRADE_HOPS (and the hop-considerations library) are keyed by base version only --
+  // ONTAP_HOPS (and the hop-considerations library) are keyed by base version only --
   // resolve a patch-suffixed target selection (e.g. "9.15.1P2") down to its base ("9.15.1")
   // before using it for any lookup. Without this, selecting a patch release as the target
   // silently failed every lookup keyed on it (hops undefined, timeline and considerations both
   // hidden), even though the upgrade itself is perfectly valid.
   const baseTarget = resolveBaseVersionKey(target);
-  const hops = UI_UPGRADE_HOPS[baseCur] ? UI_UPGRADE_HOPS[baseCur][baseTarget] : [];
+  const hops = ONTAP_HOPS[baseCur] ? ONTAP_HOPS[baseCur][baseTarget] : [];
 
   const box = document.getElementById("upgrade-timeline-box");
   const timeline = document.getElementById("hop-timeline");
@@ -7372,7 +7285,7 @@ function generateReport() {
 
   const targetOntap = document.getElementById("target-ontap") ? document.getElementById("target-ontap").value : ontapVer;
   const baseCur = resolveBaseVersionKey(ontapVer);
-  const hops = (UI_UPGRADE_HOPS[baseCur] && UI_UPGRADE_HOPS[baseCur][targetOntap]) ? UI_UPGRADE_HOPS[baseCur][targetOntap] : [];
+  const hops = (ONTAP_HOPS[baseCur] && ONTAP_HOPS[baseCur][targetOntap]) ? ONTAP_HOPS[baseCur][targetOntap] : [];
   // ─── Modeled Hardware Additions (from Wizard Step 4/5) ───────────────────
   const _shelfTypeEl = document.getElementById("shelf-type");
   const _diskCountEl = document.getElementById("disk-count");
